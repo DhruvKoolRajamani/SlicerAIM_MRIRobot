@@ -16,35 +16,68 @@
 ==============================================================================*/
 
 // Qt includes
+#include <QtGui>
 #include <QDebug>
+#include <QButtonGroup>
 
-// Slicer includes
+#include "qSlicerApplication.h"
+
+// SlicerQt includes
 #include "qSlicerWorkspaceGenerationModuleWidget.h"
 #include "ui_qSlicerWorkspaceGenerationModuleWidget.h"
 
+// Slicer includes
+#include "vtkMRMLModelDisplayNode.h"
+#include "vtkMRMLMarkupsDisplayNode.h"
+#include "vtkMRMLDisplayNode.h"
+#include "vtkMRMLModelNode.h"
+#include "vtkMRMLMarkupsFiducialNode.h"
+#include "vtkMRMLInteractionNode.h"
+
+// module includes
+#include "vtkMRMLWorkspaceGenerationNode.h"
+#include "vtkSlicerWorkspaceGenerationLogic.h"
+
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class qSlicerWorkspaceGenerationModuleWidgetPrivate: public Ui_qSlicerWorkspaceGenerationModuleWidget
+class qSlicerWorkspaceGenerationModuleWidgetPrivate : public Ui_qSlicerWorkspaceGenerationModuleWidget
 {
+  Q_DECLARE_PUBLIC(qSlicerWorkspaceGenerationModuleWidget);
+
+protected:
+  qSlicerWorkspaceGenerationModuleWidget *const q_ptr;
+
 public:
-  qSlicerWorkspaceGenerationModuleWidgetPrivate();
+  qSlicerWorkspaceGenerationModuleWidgetPrivate(qSlicerWorkspaceGenerationModuleWidget &object);
+  vtkSlicerWorkspaceGenerationLogic *logic() const;
+
+  // Observed nodes (to keep GUI up-to-date)
+  vtkWeakPointer<vtkMRMLWorkspaceGenerationNode> WorkspaceGenerationNode;
+  vtkWeakPointer<vtkMRMLMarkupsDisplayNode> MarkupsDisplayNode;
+  vtkWeakPointer<vtkMRMLModelDisplayNode> ModelDisplayNode;
 };
 
 //-----------------------------------------------------------------------------
 // qSlicerWorkspaceGenerationModuleWidgetPrivate methods
 
 //-----------------------------------------------------------------------------
-qSlicerWorkspaceGenerationModuleWidgetPrivate::qSlicerWorkspaceGenerationModuleWidgetPrivate()
+qSlicerWorkspaceGenerationModuleWidgetPrivate::qSlicerWorkspaceGenerationModuleWidgetPrivate(qSlicerWorkspaceGenerationModuleWidget &object) : q_ptr(&object)
 {
+}
+
+//-----------------------------------------------------------------------------
+vtkSlicerWorkspaceGenerationLogic *qSlicerWorkspaceGenerationModuleWidgetPrivate::logic() const
+{
+  Q_Q(const qSlicerWorkspaceGenerationModuleWidget);
+  return vtkSlicerWorkspaceGenerationLogic::SafeDownCast(q->logic());
 }
 
 //-----------------------------------------------------------------------------
 // qSlicerWorkspaceGenerationModuleWidget methods
 
 //-----------------------------------------------------------------------------
-qSlicerWorkspaceGenerationModuleWidget::qSlicerWorkspaceGenerationModuleWidget(QWidget* _parent)
-  : Superclass( _parent )
-  , d_ptr( new qSlicerWorkspaceGenerationModuleWidgetPrivate )
+qSlicerWorkspaceGenerationModuleWidget::qSlicerWorkspaceGenerationModuleWidget(QWidget *_parent)
+    : Superclass(_parent), d_ptr(new qSlicerWorkspaceGenerationModuleWidgetPrivate(*this))
 {
 }
 

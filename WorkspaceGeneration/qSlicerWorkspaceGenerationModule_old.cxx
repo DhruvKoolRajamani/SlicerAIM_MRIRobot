@@ -15,6 +15,24 @@
 
 ==============================================================================*/
 
+#include <QDebug>
+
+// vtk includes
+#include <vtkSmartPointer.h>
+
+// Slicer Module includes
+#include <qSlicerCoreApplication.h>
+#include <qSlicerModuleManager.h>
+
+// VolumeRendering Logic includes
+#include <vtkSlicerVolumeRenderingLogic.h>
+#include <vtkSlicerVolumeRenderingModuleLogicExport.h>
+
+// VolumeRendering MRML includes
+#include <vtkMRMLScene.h>
+#include <vtkMRMLVolumeNode.h>
+#include <vtkMRMLVolumeRenderingDisplayNode.h>
+
 // WorkspaceGeneration Logic includes
 #include <vtkSlicerWorkspaceGenerationLogic.h>
 
@@ -42,9 +60,8 @@ qSlicerWorkspaceGenerationModulePrivate::qSlicerWorkspaceGenerationModulePrivate
 // qSlicerWorkspaceGenerationModule methods
 
 //-----------------------------------------------------------------------------
-qSlicerWorkspaceGenerationModule::qSlicerWorkspaceGenerationModule(QObject* _parent)
-  : Superclass(_parent)
-  , d_ptr(new qSlicerWorkspaceGenerationModulePrivate)
+qSlicerWorkspaceGenerationModule::qSlicerWorkspaceGenerationModule(QObject *_parent)
+    : Superclass(_parent), d_ptr(new qSlicerWorkspaceGenerationModulePrivate)
 {
 }
 
@@ -62,14 +79,14 @@ QString qSlicerWorkspaceGenerationModule::helpText() const
 //-----------------------------------------------------------------------------
 QString qSlicerWorkspaceGenerationModule::acknowledgementText() const
 {
-  return "This work was partially funded by NIH grant NXNNXXNNNNNN-NNXN";
+  return "This work was partially funded by NIH grant 5R01CA166379-07";
 }
 
 //-----------------------------------------------------------------------------
 QStringList qSlicerWorkspaceGenerationModule::contributors() const
 {
   QStringList moduleContributors;
-  moduleContributors << QString("John Doe (AnyWare Corp.)");
+  moduleContributors << QString("Dhruv Kool Rajamani (AIM Lab)");
   return moduleContributors;
 }
 
@@ -82,7 +99,7 @@ QIcon qSlicerWorkspaceGenerationModule::icon() const
 //-----------------------------------------------------------------------------
 QStringList qSlicerWorkspaceGenerationModule::categories() const
 {
-  return QStringList() << "MRIRobot";
+  return QStringList() << "AIM MRIRobot";
 }
 
 //-----------------------------------------------------------------------------
@@ -95,17 +112,38 @@ QStringList qSlicerWorkspaceGenerationModule::dependencies() const
 void qSlicerWorkspaceGenerationModule::setup()
 {
   this->Superclass::setup();
+
+  qSlicerAbstractCoreModule *volumeRenderingModule =
+      qSlicerCoreApplication::application()->moduleManager()->module("VolumeRendering");
+  vtkSlicerVolumeRenderingLogic *volumeRenderingLogic =
+      volumeRenderingModule ? vtkSlicerVolumeRenderingLogic::SafeDownCast(volumeRenderingModule->logic()) : 0;
+
+  if (mrmlScene())
+  {
+    cout << "Entered if statement in setup" << endl;
+    vtkMRMLVolumeNode *volumeNode = static_cast<vtkMRMLVolumeNode *>(mrmlScene()->GetNodeByID(0)); // ('vtkMRMLScalarVolumeNode1');
+  }
+
+  if (volumeRenderingLogic)
+  {
+    vtkSmartPointer<vtkMRMLVolumeRenderingDisplayNode> displayNode =
+        vtkSmartPointer<vtkMRMLVolumeRenderingDisplayNode>::Take(volumeRenderingLogic->CreateVolumeRenderingDisplayNode());
+    // mrmlScene()->AddNode(displayNode);
+    //   volumeNode->AddAndObserveDisplayNodeID(displayNode->GetID());
+    //   volumeRenderingLogic->UpdateDisplayNodeFromVolumeNode(displayNode, volumeNode);
+  }
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractModuleRepresentation* qSlicerWorkspaceGenerationModule
-::createWidgetRepresentation()
+qSlicerAbstractModuleRepresentation *qSlicerWorkspaceGenerationModule ::createWidgetRepresentation()
 {
   return new qSlicerWorkspaceGenerationModuleWidget;
 }
 
 //-----------------------------------------------------------------------------
-vtkMRMLAbstractLogic* qSlicerWorkspaceGenerationModule::createLogic()
+vtkMRMLAbstractLogic *qSlicerWorkspaceGenerationModule::createLogic()
 {
-  return vtkSlicerWorkspaceGenerationLogic::New();
+  static vtkSlicerWorkspaceGenerationLogic *workspaceGenerationLogicInstance =
+      vtkSlicerWorkspaceGenerationLogic::New();
+  return workspaceGenerationLogicInstance;
 }
