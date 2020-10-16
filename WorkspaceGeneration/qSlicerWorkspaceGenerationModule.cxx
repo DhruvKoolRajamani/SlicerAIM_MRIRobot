@@ -15,6 +15,24 @@
 
 ==============================================================================*/
 
+#include <QDebug>
+
+// vtk includes
+#include <vtkSmartPointer.h>
+
+// Slicer Module includes
+#include <qSlicerCoreApplication.h>
+#include <qSlicerModuleManager.h>
+
+// VolumeRendering Logic includes
+#include <vtkSlicerVolumeRenderingLogic.h>
+#include <vtkSlicerVolumeRenderingModuleLogicExport.h>
+
+// VolumeRendering MRML includes
+#include <vtkMRMLScene.h>
+#include <vtkMRMLVolumeNode.h>
+#include <vtkMRMLVolumeRenderingDisplayNode.h>
+
 // WorkspaceGeneration Logic includes
 #include <vtkSlicerWorkspaceGenerationLogic.h>
 
@@ -42,9 +60,8 @@ qSlicerWorkspaceGenerationModulePrivate::qSlicerWorkspaceGenerationModulePrivate
 // qSlicerWorkspaceGenerationModule methods
 
 //-----------------------------------------------------------------------------
-qSlicerWorkspaceGenerationModule::qSlicerWorkspaceGenerationModule(QObject* _parent)
-  : Superclass(_parent)
-  , d_ptr(new qSlicerWorkspaceGenerationModulePrivate)
+qSlicerWorkspaceGenerationModule::qSlicerWorkspaceGenerationModule(QObject *_parent)
+    : Superclass(_parent), d_ptr(new qSlicerWorkspaceGenerationModulePrivate)
 {
 }
 
@@ -69,7 +86,7 @@ QString qSlicerWorkspaceGenerationModule::acknowledgementText() const
 QStringList qSlicerWorkspaceGenerationModule::contributors() const
 {
   QStringList moduleContributors;
-  moduleContributors << QString("John Doe (AnyWare Corp.)");
+  moduleContributors << QString("Dhruv Kool Rajamani (AIM Lab WPI)");
   return moduleContributors;
 }
 
@@ -88,24 +105,51 @@ QStringList qSlicerWorkspaceGenerationModule::categories() const
 //-----------------------------------------------------------------------------
 QStringList qSlicerWorkspaceGenerationModule::dependencies() const
 {
-  return QStringList();
+  return QStringList() << "Volumes";
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModule::setup()
 {
   this->Superclass::setup();
+
+  // vtkSlicerWorkspaceGenerationLogic *moduleLogic =
+  //     vtkSlicerWorkspaceGenerationLogic::SafeDownCast(this->logic());
+
+  // qSlicerAbstractCoreModule *volumesModule =
+  //     qSlicerCoreApplication::application()->moduleManager()->module("Volumes");
+  // if (volumesModule)
+  // {
+  //   vtkSlicerVolumesLogic *volumesLogic =
+  //       vtkSlicerVolumesLogic::SafeDownCast(volumesModule->logic());
+  //   moduleLogic->SetVolumesLogic(volumesLogic);
+  // }
+
+  qSlicerAbstractCoreModule *volumeRenderingModule =
+      qSlicerCoreApplication::application()->moduleManager()->module("VolumeRendering");
+  vtkSlicerVolumeRenderingLogic *volumeRenderingLogic =
+      volumeRenderingModule ? vtkSlicerVolumeRenderingLogic::SafeDownCast(volumeRenderingModule->logic()) : 0;
+
+  vtkMRMLVolumeNode *volumeNode = static_cast<vtkMRMLVolumeNode *>(mrmlScene()->GetNodeByID(0)); // ('vtkMRMLScalarVolumeNode1');
+
+  if (volumeRenderingLogic)
+  {
+    // vtkSmartPointer<vtkMRMLVolumeRenderingDisplayNode> displayNode =
+    //     vtkSmartPointer<vtkMRMLVolumeRenderingDisplayNode>::Take(volumeRenderingLogic->CreateVolumeRenderingDisplayNode());
+    // mrmlScene()->AddNode(displayNode);
+    // volumeNode->AddAndObserveDisplayNodeID(displayNode->GetID());
+    // volumeRenderingLogic->UpdateDisplayNodeFromVolumeNode(displayNode, volumeNode);
+  }
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractModuleRepresentation* qSlicerWorkspaceGenerationModule
-::createWidgetRepresentation()
+qSlicerAbstractModuleRepresentation *qSlicerWorkspaceGenerationModule ::createWidgetRepresentation()
 {
   return new qSlicerWorkspaceGenerationModuleWidget;
 }
 
 //-----------------------------------------------------------------------------
-vtkMRMLAbstractLogic* qSlicerWorkspaceGenerationModule::createLogic()
+vtkMRMLAbstractLogic *qSlicerWorkspaceGenerationModule::createLogic()
 {
   return vtkSlicerWorkspaceGenerationLogic::New();
 }

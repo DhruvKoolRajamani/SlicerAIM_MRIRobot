@@ -22,6 +22,7 @@
 #include "qSlicerAbstractModuleWidget.h"
 
 #include "qSlicerWorkspaceGenerationModuleExport.h"
+#include "vtkMRMLVolumeNode.h"
 
 class qSlicerWorkspaceGenerationModuleWidgetPrivate;
 class vtkMRMLNode;
@@ -39,12 +40,27 @@ public:
   virtual ~qSlicerWorkspaceGenerationModuleWidget();
 
 public slots:
+  void setMRMLScene( vtkMRMLScene* scene );
 
+protected slots:
+  void onInputDataSelectionChanged();
+  void onWorkspaceOFDButtonClick();
+  void onWorkspaceLoadButtonClick();
+  void onSaveSceneButtonClick();
+  void onSceneImportedEvent();
+  void updateGUIFromMRML();
+
+  void blockAllSignals(bool block);
+  void enableAllWidgets(bool enable);
 
 protected:
   QScopedPointer<qSlicerWorkspaceGenerationModuleWidgetPrivate> d_ptr;
 
+  vtkMRMLVolumeNode *inputVolumeNode;
+
   virtual void setup();
+  virtual void enter();
+  virtual void exit();
 
 private:
   Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationModuleWidget);

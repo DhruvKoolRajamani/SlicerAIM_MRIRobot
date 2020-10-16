@@ -69,6 +69,9 @@ public:
   virtual void ReadXMLAttributes( const char** atts ) VTK_OVERRIDE;
   virtual void WriteXML( ostream& of, int indent ) VTK_OVERRIDE;
   virtual void Copy( vtkMRMLNode *node ) VTK_OVERRIDE;
+  
+  vtkGetMacro( AutoUpdateOutput, bool );
+  vtkSetMacro( AutoUpdateOutput, bool );
 
 protected:
 
@@ -94,6 +97,8 @@ public:
   void SetAndObserveModelNodeID( const char* id );
 
 private:
+
+  bool   AutoUpdateOutput;
 };
 
 

@@ -34,6 +34,8 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
   this->AddNodeReferenceRole( INPUT_ROLE, NULL, events.GetPointer() );
   this->AddNodeReferenceRole( OUTPUT_MODEL_ROLE );
 
+  this->AutoUpdateOutput = true;
+
   vtkInfoMacro("Entered Workspace Generation MRML Constructor");
 }
 
@@ -45,37 +47,41 @@ vtkMRMLWorkspaceGenerationNode::~vtkMRMLWorkspaceGenerationNode()
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::WriteXML( ostream& of, int nIndent )
 {
-  // Superclass::WriteXML(of, nIndent); // This will take care of referenced nodes
-  // vtkMRMLWriteXMLBeginMacro(of);
-  // vtkMRMLWriteXMLEndMacro();
+  Superclass::WriteXML(of, nIndent); // This will take care of referenced nodes
+  vtkMRMLWriteXMLBeginMacro(of);
+  vtkMRMLWriteXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
+  vtkMRMLWriteXMLEndMacro();
 }
 
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::ReadXMLAttributes( const char** atts )
 {
-  // int disabledModify = this->StartModify();
-  // Superclass::ReadXMLAttributes(atts); // This will take care of referenced nodes
-  // vtkMRMLReadXMLBeginMacro(atts);
-  // vtkMRMLReadXMLEndMacro();
-  // this->EndModify( disabledModify );
+  int disabledModify = this->StartModify();
+  Superclass::ReadXMLAttributes(atts); // This will take care of referenced nodes
+  vtkMRMLReadXMLBeginMacro(atts);
+  vtkMRMLReadXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
+  vtkMRMLReadXMLEndMacro();
+  this->EndModify( disabledModify );
 }
 
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::Copy( vtkMRMLNode *anode )
 {
-  // int disabledModify = this->StartModify();
-  // Superclass::Copy( anode ); // This will take care of referenced nodes
-  // vtkMRMLCopyBeginMacro(anode);
-  // vtkMRMLCopyEndMacro();
-  // this->EndModify(disabledModify);
+  int disabledModify = this->StartModify();
+  Superclass::Copy( anode ); // This will take care of referenced nodes
+  vtkMRMLCopyBeginMacro(anode);
+  vtkMRMLCopyBooleanMacro(AutoUpdateOutput);
+  vtkMRMLCopyEndMacro();
+  this->EndModify(disabledModify);
 }
 
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::PrintSelf( ostream& os, vtkIndent indent )
 {
-  // Superclass::PrintSelf(os,indent); // This will take care of referenced nodes
-  // vtkMRMLPrintBeginMacro(os, indent);
-  // vtkMRMLPrintEndMacro();
+  Superclass::PrintSelf(os,indent); // This will take care of referenced nodes
+  vtkMRMLPrintBeginMacro(os, indent);
+  vtkMRMLPrintBooleanMacro(AutoUpdateOutput);
+  vtkMRMLPrintEndMacro();
 }
 
 //-----------------------------------------------------------------

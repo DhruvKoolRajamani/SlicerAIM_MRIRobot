@@ -4,6 +4,7 @@ project(SlicerAIM_MRIRobot)
 
 #-----------------------------------------------------------------------------
 # Extension meta-information
+set(EXTENSION_NAME SlicerAIM_MRIRobot)
 set(EXTENSION_HOMEPAGE "https://www.slicer.org/wiki/Documentation/Nightly/Extensions/AIM_MRIRobot")
 set(EXTENSION_CATEGORY "/home/dhruv/SlicerExtensions/SlicerAIM_MRIRobot/WorkspaceGeneration/Resources/home/dhruv/SlicerExtensions/SlicerAIM_MRIRobot/WorkspaceGeneration/Resources")
 set(EXTENSION_CONTRIBUTORS "Dhruv Kool Rajamani (Automated and Interventional Medicine Lab)")

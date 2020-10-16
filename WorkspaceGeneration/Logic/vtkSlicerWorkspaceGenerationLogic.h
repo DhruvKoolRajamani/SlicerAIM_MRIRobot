@@ -28,6 +28,7 @@
 #include "vtkSlicerModuleLogic.h"
 
 // MRML includes
+#include "vtkMRMLWorkspaceGenerationNode.h"
 
 // STD includes
 #include <cstdlib>
@@ -44,6 +45,11 @@ public:
   static vtkSlicerWorkspaceGenerationLogic *New();
   vtkTypeMacro(vtkSlicerWorkspaceGenerationLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent);
+
+  void ProcessMRMLNodesEvents( vtkObject* caller, unsigned long event, void* callData ) VTK_OVERRIDE;
+
+  // Updates the mouse selection type to create markups or to navigate the scene.
+  void UpdateSelectionNode(vtkMRMLWorkspaceGenerationNode *workspaceGenerationModuleNode);
 
 protected:
   vtkSlicerWorkspaceGenerationLogic();

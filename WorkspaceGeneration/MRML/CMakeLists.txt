@@ -12,8 +12,8 @@ set(${KIT}_INCLUDE_DIRECTORIES
 # Sources
 
 set(${KIT}_SRCS
-	vtkMRMLWorkspaceGenerationNode.cxx
-	vtkMRMLWorkspaceGenerationNode.h
+	vtkMRML${MODULE_NAME}Node.cxx
+	vtkMRML${MODULE_NAME}Node.h
   )
 
 SET (${KIT}_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "" FORCE)
@@ -25,7 +25,6 @@ set(${KIT}_TARGET_LIBRARIES
   ${ITK_LIBRARIES}
   ${MRML_LIBRARIES}
   SlicerBaseLogic
-  # vtkSlicerVolumeGenerationModuleMRML
   )
 
 SlicerMacroBuildModuleMRML(
