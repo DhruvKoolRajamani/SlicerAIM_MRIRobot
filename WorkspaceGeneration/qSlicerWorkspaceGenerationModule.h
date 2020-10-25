@@ -27,48 +27,51 @@ class qSlicerWorkspaceGenerationModulePrivate;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class Q_SLICER_QTMODULES_WORKSPACEGENERATION_EXPORT
-qSlicerWorkspaceGenerationModule
-  : public qSlicerLoadableModule
+  qSlicerWorkspaceGenerationModule : public qSlicerLoadableModule
 {
   Q_OBJECT
-  Q_PLUGIN_METADATA(IID "org.slicer.modules.loadable.qSlicerLoadableModule/1.0");
+  Q_PLUGIN_METADATA(IID
+                    "org.slicer.modules.loadable.qSlicerLoadableModule/"
+                    "1.0");
   Q_INTERFACES(qSlicerLoadableModule);
 
 public:
-
   typedef qSlicerLoadableModule Superclass;
-  explicit qSlicerWorkspaceGenerationModule(QObject *parent=0);
+  explicit qSlicerWorkspaceGenerationModule(QObject* parent = 0);
   virtual ~qSlicerWorkspaceGenerationModule();
 
   qSlicerGetTitleMacro(QTMODULE_TITLE);
 
-  virtual QString helpText()const;
-  virtual QString acknowledgementText()const;
-  virtual QStringList contributors()const;
+  virtual QString helpText() const;
+  virtual QString acknowledgementText() const;
+  virtual QStringList contributors() const;
 
-  virtual QIcon icon()const;
+  virtual QIcon icon() const;
 
-  virtual QStringList categories()const;
+  virtual QStringList categories() const;
   virtual QStringList dependencies() const;
 
 protected:
-
   /// Initialize the module. Register the volumes reader/writer
   virtual void setup();
 
   /// Create and return the widget representation associated to this module
-  virtual qSlicerAbstractModuleRepresentation * createWidgetRepresentation();
+  virtual qSlicerAbstractModuleRepresentation* createWidgetRepresentation();
 
   /// Create and return the logic associated to this module
   virtual vtkMRMLAbstractLogic* createLogic();
 
 protected:
-  QScopedPointer<qSlicerWorkspaceGenerationModulePrivate> d_ptr;
+  QScopedPointer< qSlicerWorkspaceGenerationModulePrivate > d_ptr;
 
 private:
   Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationModule);
   Q_DISABLE_COPY(qSlicerWorkspaceGenerationModule);
 
+  std::string GetClassName()
+  {
+    return "qSlicerWorkspaceGenerationModule";
+  }
 };
 
 #endif
