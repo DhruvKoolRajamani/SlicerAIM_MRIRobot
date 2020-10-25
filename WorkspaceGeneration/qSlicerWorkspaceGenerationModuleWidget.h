@@ -22,29 +22,61 @@
 #include "qSlicerAbstractModuleWidget.h"
 
 #include "qSlicerWorkspaceGenerationModuleExport.h"
+#include "vtkMRMLModelDisplayNode.h"
+#include "vtkMRMLModelNode.h"
+#include "vtkMRMLVolumeNode.h"
 
 class qSlicerWorkspaceGenerationModuleWidgetPrivate;
 class vtkMRMLNode;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class Q_SLICER_QTMODULES_WORKSPACEGENERATION_EXPORT qSlicerWorkspaceGenerationModuleWidget :
-  public qSlicerAbstractModuleWidget
+class Q_SLICER_QTMODULES_WORKSPACEGENERATION_EXPORT
+  qSlicerWorkspaceGenerationModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
 
 public:
-
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerWorkspaceGenerationModuleWidget(QWidget *parent=0);
+  qSlicerWorkspaceGenerationModuleWidget(QWidget* parent = 0);
   virtual ~qSlicerWorkspaceGenerationModuleWidget();
 
 public slots:
+  void setMRMLScene(vtkMRMLScene* scene);
+  std::string GetClassName()
+  {
+    return "WorkspaceGenerationModuleWidget";
+  }
 
+protected slots:
+  void onParameterNodeSelectionChanged();
+  void onInputNodeSelectionChanged(vtkMRMLNode*);
+  void onInputNodeNodeAdded(vtkMRMLNode*);
+  void onOutputModelNodeAdded(vtkMRMLNode*);
+  void onOutputModelSelectionChanged(vtkMRMLNode*);
+  void onWorkspaceOFDButtonClick();
+  void onWorkspaceLoadButtonClick();
+  void onSaveSceneButtonClick();
+  void onSceneImportedEvent();
+
+  void updateGUIFromMRML();
+
+  void blockAllSignals(bool block);
+  void enableAllWidgets(bool enable);
+
+  void UpdateOutputModel();
 
 protected:
-  QScopedPointer<qSlicerWorkspaceGenerationModuleWidgetPrivate> d_ptr;
+  QScopedPointer< qSlicerWorkspaceGenerationModuleWidgetPrivate > d_ptr;
+
+  vtkMRMLModelNode* GetOutputModelNode();
+  vtkMRMLNode* GetInputNode();
+  vtkMRMLVolumeNode* inputVolumeNode;
+
+  QString workspaceMeshFilePath;
 
   virtual void setup();
+  virtual void enter();
+  virtual void exit();
 
 private:
   Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationModuleWidget);

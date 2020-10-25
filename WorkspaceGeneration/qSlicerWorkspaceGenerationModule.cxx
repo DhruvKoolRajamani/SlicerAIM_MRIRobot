@@ -15,6 +15,24 @@
 
 ==============================================================================*/
 
+#include <QDebug>
+
+// vtk includes
+#include <vtkSmartPointer.h>
+
+// Slicer Module includes
+#include <qSlicerCoreApplication.h>
+#include <qSlicerModuleManager.h>
+
+// VolumeRendering Logic includes
+#include <vtkSlicerVolumeRenderingLogic.h>
+#include <vtkSlicerVolumeRenderingModuleLogicExport.h>
+
+// VolumeRendering MRML includes
+#include <vtkMRMLScene.h>
+#include <vtkMRMLVolumeNode.h>
+#include <vtkMRMLVolumeRenderingDisplayNode.h>
+
 // WorkspaceGeneration Logic includes
 #include <vtkSlicerWorkspaceGenerationLogic.h>
 
@@ -34,7 +52,8 @@ public:
 // qSlicerWorkspaceGenerationModulePrivate methods
 
 //-----------------------------------------------------------------------------
-qSlicerWorkspaceGenerationModulePrivate::qSlicerWorkspaceGenerationModulePrivate()
+qSlicerWorkspaceGenerationModulePrivate::
+  qSlicerWorkspaceGenerationModulePrivate()
 {
 }
 
@@ -42,9 +61,9 @@ qSlicerWorkspaceGenerationModulePrivate::qSlicerWorkspaceGenerationModulePrivate
 // qSlicerWorkspaceGenerationModule methods
 
 //-----------------------------------------------------------------------------
-qSlicerWorkspaceGenerationModule::qSlicerWorkspaceGenerationModule(QObject* _parent)
-  : Superclass(_parent)
-  , d_ptr(new qSlicerWorkspaceGenerationModulePrivate)
+qSlicerWorkspaceGenerationModule::qSlicerWorkspaceGenerationModule(
+  QObject* _parent)
+  : Superclass(_parent), d_ptr(new qSlicerWorkspaceGenerationModulePrivate)
 {
 }
 
@@ -69,7 +88,7 @@ QString qSlicerWorkspaceGenerationModule::acknowledgementText() const
 QStringList qSlicerWorkspaceGenerationModule::contributors() const
 {
   QStringList moduleContributors;
-  moduleContributors << QString("John Doe (AnyWare Corp.)");
+  moduleContributors << QString("Dhruv Kool Rajamani (AIM Lab WPI)");
   return moduleContributors;
 }
 
@@ -82,13 +101,13 @@ QIcon qSlicerWorkspaceGenerationModule::icon() const
 //-----------------------------------------------------------------------------
 QStringList qSlicerWorkspaceGenerationModule::categories() const
 {
-  return QStringList() << "Examples";
+  return QStringList() << "MRIRobot";
 }
 
 //-----------------------------------------------------------------------------
 QStringList qSlicerWorkspaceGenerationModule::dependencies() const
 {
-  return QStringList();
+  return QStringList() << "Volumes";
 }
 
 //-----------------------------------------------------------------------------
@@ -98,9 +117,10 @@ void qSlicerWorkspaceGenerationModule::setup()
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractModuleRepresentation* qSlicerWorkspaceGenerationModule
-::createWidgetRepresentation()
+qSlicerAbstractModuleRepresentation*
+  qSlicerWorkspaceGenerationModule ::createWidgetRepresentation()
 {
+  vtkInfoMacro("Creating new Workspace Generation Module Widget");
   return new qSlicerWorkspaceGenerationModuleWidget;
 }
 
