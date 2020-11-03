@@ -442,14 +442,14 @@ void vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
   qInfo() << Q_FUNC_INFO;
 
   qSlicerAbstractCoreModule* modelsModule =
-    qSlicerCoreApplication::application()->moduleManager()->module("Modules");
+    qSlicerCoreApplication::application()->moduleManager()->module("Models");
   vtkSlicerModelsLogic* modelsLogic =
     modelsModule ? vtkSlicerModelsLogic::SafeDownCast(modelsModule->logic()) :
                    0;
 
   if (modelsLogic)
   {
-    qDebug() << Q_FUNC_INFO << ": Modules Logic is available.";
+    qDebug() << Q_FUNC_INFO << ": Models Logic is available.";
 
     modelsLogic->SetMRMLScene(this->GetMRMLScene());
     vtkMRMLModelNode* outputModelNode =

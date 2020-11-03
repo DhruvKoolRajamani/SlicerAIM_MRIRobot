@@ -111,7 +111,8 @@ QStringList qSlicerWorkspaceGenerationModule::categories() const
 //-----------------------------------------------------------------------------
 QStringList qSlicerWorkspaceGenerationModule::dependencies() const
 {
-  return QStringList() << "Volumes";
+  return QStringList() << "Volumes"
+                       << "Models";
 }
 
 //-----------------------------------------------------------------------------
