@@ -155,7 +155,7 @@ void vtkSlicerWorkspaceGenerationLogic::ProcessMRMLNodesEvents(
 
   if (event == vtkCommand::ModifiedEvent)
   {
-    qDebug() << Q_FUNC_INFO << "vtkCommand::ModifiedEvent";
+    qInfo() << Q_FUNC_INFO << ": vtkCommand::ModifiedEvent";
     this->UpdateOutputModel(workspaceGenerationModuleNode);
   }
 }
@@ -239,8 +239,19 @@ void vtkSlicerWorkspaceGenerationLogic::AssignPolyDataToOutput(
 {
   qInfo() << Q_FUNC_INFO;
 
+  vtkMRMLModelNode* inputModelNode =
+    vtkMRMLModelNode::SafeDownCast(workspaceGenerationNode->GetInputNode());
+
+  if (!inputModelNode)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Cannot assign polydata as input model is NULL";
+    return;
+  }
+
   vtkMRMLModelNode* outputModelNode =
     workspaceGenerationNode->GetOutputModelNode();
+
   if (outputModelNode == NULL)
   {
     qWarning() << Q_FUNC_INFO
@@ -248,7 +259,15 @@ void vtkSlicerWorkspaceGenerationLogic::AssignPolyDataToOutput(
                   "performed.";
     return;
   }
-  outputModelNode->SetAndObservePolyData(outputPolyData);
+
+  if (outputPolyData == NULL)
+  {
+    outputModelNode->CopyContent(inputModelNode, true);
+  }
+  else
+  {
+    outputModelNode->SetAndObservePolyData(outputPolyData);
+  }
 
   // Attach a display node if needed
   vtkMRMLModelDisplayNode* displayNode =
@@ -260,20 +279,13 @@ void vtkSlicerWorkspaceGenerationLogic::AssignPolyDataToOutput(
     outputModelNode->CreateDefaultDisplayNodes();
     displayNode =
       vtkMRMLModelDisplayNode::SafeDownCast(outputModelNode->GetDisplayNode());
-    std::string name =
-      std::string(outputModelNode->GetName()).append("ModelDisplay");
-    displayNode->SetName(name.c_str());
-    displayNode->SetColor(1, 1, 0);
   }
-  else
-  {
-    displayNode =
-      vtkMRMLModelDisplayNode::SafeDownCast(outputModelNode->GetDisplayNode());
-    std::string name =
-      std::string(outputModelNode->GetName()).append("ModelDisplay");
-    displayNode->SetName(name.c_str());
-    displayNode->SetColor(1, 1, 0);
-  }
+
+  std::string name =
+    std::string(outputModelNode->GetName()).append("ModelDisplay");
+  displayNode->SetName(name.c_str());
+  displayNode->SetColor(1, 1, 0);
+  displayNode->Visibility3DOn();
 }
 
 //------------------------------------------------------------------------------
@@ -315,6 +327,12 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateOutputModel(
 {
   qDebug() << Q_FUNC_INFO;
 
+  if (this->WorkspaceGenerationNode == NULL ||
+      this->WorkspaceGenerationNode != workspaceGenerationNode)
+  {
+    this->WorkspaceGenerationNode = workspaceGenerationNode;
+  }
+
   if (workspaceGenerationNode == NULL)
   {
     qCritical() << Q_FUNC_INFO
@@ -331,48 +349,30 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateOutputModel(
     return;
   }
 
-  if (workspaceGenerationNode->GetOutputModelNode() == NULL)
+  vtkMRMLModelNode* outputModelNode =
+    workspaceGenerationNode->GetOutputModelNode();
+  if (outputModelNode == NULL)
   {
-    qCritical() << Q_FUNC_INFO
-                << ": No output model node provided to UpdateOutputModel. No "
-                   "operation performed.";
+    qWarning() << Q_FUNC_INFO
+               << ": No output model node provided to UpdateOutputModel."
+               << " Will render volume if input node is Volume node.";
+
+    vtkMRMLVolumeNode* inputVolumeNode =
+      vtkMRMLVolumeNode::SafeDownCast(inputNode);
+
+    if (inputVolumeNode != NULL)
+    {
+      qInfo() << Q_FUNC_INFO << ": Rendering Volume.";
+
+      inputVolumeNode = RenderVolume(inputVolumeNode);
+    }
+
     return;
   }
-
-  // extract the input points from the MRML node, according to its type
-  vtkSmartPointer< vtkPoints > controlPoints =
-    vtkSmartPointer< vtkPoints >::New();
 
   vtkMRMLModelNode* modelNode = vtkMRMLModelNode::SafeDownCast(inputNode);
 
-  if (!modelNode)
-  {
-    qWarning() << Q_FUNC_INFO << ": Input is not a model node, checking volume";
-
-    vtkMRMLVolumeNode* volumeNode = vtkMRMLVolumeNode::SafeDownCast(inputNode);
-    if (!volumeNode)
-    {
-      qCritical() << Q_FUNC_INFO << ": Input is not a volume node either";
-      return;
-    }
-
-    qCritical() << Q_FUNC_INFO << ": Logic has not been generated yet";
-    // Convert Volume to Model
-
-    return;
-
-    // Create the model from the points
-    vtkSmartPointer< vtkPolyData > outputPolyData =
-      vtkSmartPointer< vtkPolyData >::New();
-
-    volumeNode = RenderVolume(volumeNode);
-
-    // outputPolyData->DeepCopy(volumeNode->GetPolyData());
-
-    // vtkSlicerWorkspaceGenerationLogic::AssignPolyDataToOutput(
-    //   workspaceGenerationNode, outputPolyData);
-  }
-  else
+  if (modelNode)
   {
     // Create the model from the points
     vtkSmartPointer< vtkPolyData > outputPolyData =
@@ -399,20 +399,38 @@ vtkMRMLVolumeNode*
                               volumeRenderingModule->logic()) :
                             0;
 
-  if (volumeRenderingLogic)
-  {
-    qDebug() << Q_FUNC_INFO << ": Volume Rendering Logic is available.";
+  vtkMRMLVolumeRenderingDisplayNode* volumeRenderingNodes =
+    volumeRenderingLogic->GetFirstVolumeRenderingDisplayNode(volumeNode);
 
-    volumeRenderingLogic->SetMRMLScene(this->GetMRMLScene());
-    volumeRenderingLogic->CreateDefaultVolumeRenderingNodes(volumeNode);
-    vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode > displayNode =
-      vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode >::Take(
-        volumeRenderingLogic->CreateVolumeRenderingDisplayNode());
-    this->GetMRMLScene()->AddNode(displayNode);
-    volumeNode->AddAndObserveDisplayNodeID(displayNode->GetID());
-    volumeRenderingLogic->UpdateDisplayNodeFromVolumeNode(displayNode,
-                                                          volumeNode);
+  if (volumeRenderingLogic && volumeRenderingNodes == NULL)
+  {
+    qDebug() << Q_FUNC_INFO
+             << ": Volume Rendering will take place in new node.";
+    volumeRenderingNodes =
+      volumeRenderingLogic->CreateDefaultVolumeRenderingNodes(volumeNode);
   }
+  else if (!volumeRenderingLogic)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Volume Rendering Logic not found, returning.";
+
+    return volumeNode;
+  }
+
+  volumeRenderingLogic->SetMRMLScene(this->GetMRMLScene());
+  vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode > displayNode =
+    vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode >::Take(
+      volumeRenderingNodes);
+  this->GetMRMLScene()->AddNode(displayNode);
+  volumeNode->AddAndObserveDisplayNodeID(displayNode->GetID());
+  volumeRenderingLogic->UpdateDisplayNodeFromVolumeNode(displayNode,
+                                                        volumeNode);
+
+  this->WorkspaceGenerationNode->SetAndObserveOutputModelNodeID(
+    volumeRenderingNodes->GetROINodeID());
+  // }
+
+  displayNode->Visibility3DOn();
 
   return volumeNode;
 }
@@ -434,7 +452,17 @@ void vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
     qDebug() << Q_FUNC_INFO << ": Modules Logic is available.";
 
     modelsLogic->SetMRMLScene(this->GetMRMLScene());
-    modelsLogic->AddModel(workspaceMeshFilePath.toLocal8Bit().data(), 1);
+    vtkMRMLModelNode* outputModelNode =
+      modelsLogic->AddModel(workspaceMeshFilePath.toLocal8Bit().data(), 1);
+
+    // Create the model from the points
+    vtkSmartPointer< vtkPolyData > outputPolyData =
+      vtkSmartPointer< vtkPolyData >::New();
+
+    outputPolyData = outputModelNode->GetPolyData();
+
+    vtkSlicerWorkspaceGenerationLogic::AssignPolyDataToOutput(
+      this->WorkspaceGenerationNode, outputPolyData);
   }
 }
 
@@ -469,7 +497,7 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSelectionNode(
   else
   {
     isModelNode = true;
-    this->inputModelNode = modelNode;
+    this->InputModelNode = modelNode;
   }
 
   if (!isModelNode)
@@ -482,7 +510,7 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSelectionNode(
       qCritical() << Q_FUNC_INFO << ": No input node available selected";
       return;
     }
-    this->inputVolumeNode = volumeNode;
+    this->InputVolumeNode = volumeNode;
   }
 
   *(this->isInputModelNode) = isModelNode;

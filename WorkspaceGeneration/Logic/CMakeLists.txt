@@ -9,6 +9,7 @@ set(${KIT}_INCLUDE_DIRECTORIES
   ${qSlicerVolumesModuleWidgets_BINARY_DIR}
   ${vtkVolumeRenderingModuleLogic_INCLUDE_DIRECTORIES}
   ${vtkVolumeRenderingModuleLogic_SRCS}
+  ${utilities_INCLUDE_DIRS}
   )
 
 set(${KIT}_SRCS
@@ -23,6 +24,7 @@ set(${KIT}_TARGET_LIBRARIES
   vtkSlicerVolumesModuleLogic
   vtkSlicerModelsModuleLogic
   vtkSlicerVolumeRenderingModuleLogic
+  # utilities
   )
 
 #-----------------------------------------------------------------------------

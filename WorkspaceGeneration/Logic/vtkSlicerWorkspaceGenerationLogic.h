@@ -92,8 +92,11 @@ protected:
   virtual void OnMRMLSceneNodeRemoved(vtkMRMLNode* node) VTK_OVERRIDE;
 
   bool* isInputModelNode;
-  vtkWeakPointer< vtkMRMLModelNode > inputModelNode;
-  vtkWeakPointer< vtkMRMLVolumeNode > inputVolumeNode;
+  vtkWeakPointer< vtkMRMLWorkspaceGenerationNode > WorkspaceGenerationNode;
+  vtkWeakPointer< vtkMRMLModelNode > InputModelNode;
+  vtkWeakPointer< vtkMRMLVolumeNode > InputVolumeNode;
+  vtkWeakPointer< vtkMRMLModelNode > OutputModelNode;
+  vtkWeakPointer< vtkMRMLDisplayNode > DisplayNode;
 
 private:
   static void AssignPolyDataToOutput(vtkMRMLWorkspaceGenerationNode* moduleNode,

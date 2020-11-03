@@ -61,14 +61,17 @@
        </property>
        <property name="nodeTypes">
         <stringlist>
-         <string>vtkMRMLModelNode</string>
          <string>vtkMRMLVolumeNode</string>
+         <string>vtkMRMLAnnotationROINode</string>
         </stringlist>
        </property>
        <property name="removeEnabled">
         <bool>false</bool>
        </property>
        <property name="renameEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="selectNodeUponCreation">
         <bool>true</bool>
        </property>
       </widget>
@@ -95,6 +98,9 @@
         <bool>true</bool>
        </property>
        <property name="renameEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="selectNodeUponCreation">
         <bool>true</bool>
        </property>
       </widget>
