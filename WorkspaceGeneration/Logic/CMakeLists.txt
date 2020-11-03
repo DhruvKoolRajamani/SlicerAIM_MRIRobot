@@ -9,6 +9,9 @@ set(${KIT}_INCLUDE_DIRECTORIES
   ${qSlicerVolumesModuleWidgets_BINARY_DIR}
   ${vtkVolumeRenderingModuleLogic_INCLUDE_DIRECTORIES}
   ${vtkVolumeRenderingModuleLogic_SRCS}
+  ${vtkSlicerModelsModuleLogic_INCLUDE_DIRECTORIES}
+  ${vtkSlicerModelsModuleLogic_SRCS}
+  ${utilities_INCLUDE_DIRS}
   )
 
 set(${KIT}_SRCS
@@ -19,10 +22,11 @@ set(${KIT}_SRCS
 set(${KIT}_TARGET_LIBRARIES
   ${ITK_LIBRARIES}
   vtkSlicer${MODULE_NAME}ModuleMRML
-  # vtkSlicerMarkupsModuleMRML
+  # vtkSlicerModelsModuleMRML
   vtkSlicerVolumesModuleLogic
   vtkSlicerModelsModuleLogic
   vtkSlicerVolumeRenderingModuleLogic
+  # utilities
   )
 
 #-----------------------------------------------------------------------------

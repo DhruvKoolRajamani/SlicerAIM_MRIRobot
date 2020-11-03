@@ -62,6 +62,8 @@ protected slots:
 
   void blockAllSignals(bool block);
   void enableAllWidgets(bool enable);
+  void disableWidgetsAfter(QWidget* widget);
+  void enableWidgets(QWidget* widget, bool enable);
 
   void UpdateOutputModel();
 

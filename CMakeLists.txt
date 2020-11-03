@@ -20,6 +20,7 @@ include(${Slicer_USE_FILE})
 
 #-----------------------------------------------------------------------------
 # Extension modules
+add_subdirectory(Utilities)
 add_subdirectory(WorkspaceGeneration)
 ## NEXT_MODULE
 

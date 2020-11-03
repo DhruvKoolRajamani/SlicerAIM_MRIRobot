@@ -16,6 +16,10 @@
 ==============================================================================*/
 
 #include <QDebug>
+#include <QtGlobal>
+
+// errorHandler include
+#include "../Utilities/include/debug/errorhandler.hpp"
 
 // vtk includes
 #include <vtkSmartPointer.h>
@@ -107,12 +111,14 @@ QStringList qSlicerWorkspaceGenerationModule::categories() const
 //-----------------------------------------------------------------------------
 QStringList qSlicerWorkspaceGenerationModule::dependencies() const
 {
-  return QStringList() << "Volumes";
+  return QStringList() << "Volumes"
+                       << "Models";
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModule::setup()
 {
+  qInstallMessageHandler(errorHandler);
   this->Superclass::setup();
 }
 
