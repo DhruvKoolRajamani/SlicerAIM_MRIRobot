@@ -155,7 +155,7 @@ void vtkSlicerWorkspaceGenerationLogic::ProcessMRMLNodesEvents(
 
   if (event == vtkCommand::ModifiedEvent)
   {
-    qInfo() << Q_FUNC_INFO << ": vtkCommand::ModifiedEvent";
+    qDebug() << Q_FUNC_INFO << ": vtkCommand::ModifiedEvent";
     this->UpdateOutputModel(workspaceGenerationModuleNode);
   }
 }
@@ -260,18 +260,30 @@ void vtkSlicerWorkspaceGenerationLogic::AssignPolyDataToOutput(
     return;
   }
 
+  qWarning() << Q_FUNC_INFO << ": Output polydata is "
+             << ((outputPolyData) ? "not null, assigning to it." :
+                                    "NULL, copying input");
   if (outputPolyData == NULL)
   {
     outputModelNode->CopyContent(inputModelNode, true);
   }
   else
   {
-    outputModelNode->SetAndObservePolyData(outputPolyData);
+    outputModelNode->CopyContent(inputModelNode, true);
+    if (outputPolyData)
+    {
+      outputModelNode->SetAndObserveMesh(outputPolyData);
+    }
+    else
+    {
+      outputModelNode->SetAndObserveMesh(inputModelNode->GetMesh());
+    }
+    // outputModelNode->SetAndObservePolyData(outputPolyData);
   }
 
   // Attach a display node if needed
   vtkMRMLModelDisplayNode* displayNode =
-    vtkMRMLModelDisplayNode::SafeDownCast(outputModelNode->GetDisplayNode());
+    vtkMRMLModelDisplayNode::SafeDownCast(inputModelNode->GetDisplayNode());
   if (displayNode == NULL)
   {
     qWarning() << Q_FUNC_INFO << ": Display node is null, creating a new one";
@@ -374,14 +386,48 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateOutputModel(
 
   if (modelNode)
   {
-    // Create the model from the points
-    vtkSmartPointer< vtkPolyData > outputPolyData =
-      vtkSmartPointer< vtkPolyData >::New();
+    qDebug() << Q_FUNC_INFO << "==============================================";
 
-    outputPolyData = modelNode->GetPolyData();
+    qSlicerAbstractCoreModule* modelsModule =
+      qSlicerCoreApplication::application()->moduleManager()->module("Models");
+    vtkSlicerModelsLogic* modelsLogic =
+      modelsModule ? vtkSlicerModelsLogic::SafeDownCast(modelsModule->logic()) :
+                     0;
 
-    vtkSlicerWorkspaceGenerationLogic::AssignPolyDataToOutput(
-      workspaceGenerationNode, outputPolyData);
+    if (modelsLogic)
+    {
+      qDebug() << Q_FUNC_INFO << ": Models Logic is available.";
+
+      modelsLogic->SetMRMLScene(this->GetMRMLScene());
+      vtkSmartPointer< vtkMRMLModelNode > outputModelNode =
+        this->WorkspaceGenerationNode->GetOutputModelNode();
+
+      if (outputModelNode == NULL)
+      {
+        qWarning() << Q_FUNC_INFO << ": Creating new Output Model Node";
+        // outputModelNode = vtkMRMLModelNode::New();
+      }
+
+      qWarning() << Q_FUNC_INFO << ": Adding Model from models logic";
+      outputModelNode = modelsLogic->AddModel(modelNode->GetPolyData());
+
+      qWarning() << Q_FUNC_INFO << ": Setting observable display node";
+      this->WorkspaceGenerationNode->GetOutputModelNode()
+        ->SetAndObserveDisplayNodeID(outputModelNode->GetDisplayNodeID());
+
+      qDebug() << Q_FUNC_INFO << ": Models Logic has added model";
+    }
+
+    // // Create the model from the points
+    // vtkSmartPointer< vtkPolyData > outputPolyData =
+    //   vtkSmartPointer< vtkPolyData >::New();
+
+    // outputPolyData = modelNode->GetPolyData();
+
+    // qDebug() << Q_FUNC_INFO << ": Assigned polydata";
+
+    // vtkSlicerWorkspaceGenerationLogic::AssignPolyDataToOutput(
+    //   workspaceGenerationNode, outputPolyData);
   }
 }
 
@@ -452,17 +498,8 @@ void vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
     qDebug() << Q_FUNC_INFO << ": Models Logic is available.";
 
     modelsLogic->SetMRMLScene(this->GetMRMLScene());
-    vtkMRMLModelNode* outputModelNode =
-      modelsLogic->AddModel(workspaceMeshFilePath.toLocal8Bit().data(), 1);
-
-    // Create the model from the points
-    vtkSmartPointer< vtkPolyData > outputPolyData =
-      vtkSmartPointer< vtkPolyData >::New();
-
-    outputPolyData = outputModelNode->GetPolyData();
-
-    vtkSlicerWorkspaceGenerationLogic::AssignPolyDataToOutput(
-      this->WorkspaceGenerationNode, outputPolyData);
+    vtkMRMLModelNode* outputModelNode = modelsLogic->AddModel(
+      workspaceMeshFilePath.toLocal8Bit().data(), vtkMRMLStorageNode::RAS);
   }
 }
 

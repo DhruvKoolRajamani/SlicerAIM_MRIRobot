@@ -1,0 +1,29 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/build/**",
+                "${workspaceFolder}/build/WorkspaceGeneration/**",
+                "${HOME}/Slicer/build/Slicer-build/**",
+                "${HOME}/Slicer/build/**",
+                "${HOME}/Slicer/build/Slicer-build/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c11",
+            "intelliSenseMode": "${default}",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "cppStandard": "c++11",
+            "browse": {
+                "path": [
+                    "${HOME}/Slicer/",
+                    "${workspaceFolder}/"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}

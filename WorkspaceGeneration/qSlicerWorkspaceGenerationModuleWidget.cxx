@@ -177,6 +177,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputNodeSelectionChanged(
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
       d->ParameterNodeSelector->currentNode());
+
   if (workspaceGenerationNode == NULL)
   {
     qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
@@ -186,11 +187,17 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputNodeSelectionChanged(
   if (newNode == NULL)
   {
     workspaceGenerationNode->SetAndObserveInputNodeID(NULL);
-    qWarning() << Q_FUNC_INFO << ": New node is NONE";
+    qCritical() << Q_FUNC_INFO << ": New node is NONE";
+
+    return;
   }
 
   vtkMRMLVolumeNode* inputVolumeNode = vtkMRMLVolumeNode::SafeDownCast(newNode);
   vtkMRMLModelNode* inputModelNode = vtkMRMLModelNode::SafeDownCast(newNode);
+
+  qDebug() << Q_FUNC_INFO << ": Input is a - "
+           << ((inputVolumeNode != NULL) ? "Volume Node" : "Model Node");
+
   if (inputVolumeNode != NULL || inputModelNode != NULL)
   {
     if (inputVolumeNode != NULL)
@@ -198,16 +205,24 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputNodeSelectionChanged(
       qInfo() << Q_FUNC_INFO << ": Input Volume Node selected.";
 
       workspaceGenerationNode->SetAndObserveInputNodeID(
-        inputVolumeNode->GetID());
+        inputVolumeNode->GetID(), vtkMRMLWorkspaceGenerationNode::VOLUME_NODE);
 
       // Observe display node so that we can make sure the module GUI always
       // shows up-to-date information (applies specifically to markups)
-      inputVolumeNode->CreateDefaultDisplayNodes();
       vtkMRMLVolumeDisplayNode* inputVolumeDisplayNode =
         vtkMRMLVolumeDisplayNode::SafeDownCast(
           inputVolumeNode->GetDisplayNode());
+
+      if (inputVolumeDisplayNode == NULL)
+      {
+        inputVolumeNode->CreateDefaultDisplayNodes();
+        inputVolumeDisplayNode = vtkMRMLVolumeDisplayNode::SafeDownCast(
+          inputVolumeNode->GetDisplayNode());
+      }
+
       qvtkReconnect(d->InputVolumeDisplayNode, inputVolumeDisplayNode,
                     vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
+
       d->InputVolumeDisplayNode = inputVolumeDisplayNode;
     }
     else if (inputModelNode != NULL)
@@ -215,14 +230,23 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputNodeSelectionChanged(
       qInfo() << Q_FUNC_INFO << ": Input Model Node selected.";
 
       workspaceGenerationNode->SetAndObserveInputNodeID(
-        inputModelNode->GetID());
+        inputModelNode->GetID(), vtkMRMLWorkspaceGenerationNode::MODEL_NODE);
+
       // Observe display node so that we can make sure the module GUI always
       // shows up-to-date information (applies specifically to markups)
-      inputModelNode->CreateDefaultDisplayNodes();
       vtkMRMLModelDisplayNode* inputModelDisplayNode =
         vtkMRMLModelDisplayNode::SafeDownCast(inputModelNode->GetDisplayNode());
+
+      if (inputModelDisplayNode == NULL)
+      {
+        inputModelNode->CreateDefaultDisplayNodes();
+        inputModelDisplayNode = vtkMRMLModelDisplayNode::SafeDownCast(
+          inputModelNode->GetDisplayNode());
+      }
+
       qvtkReconnect(d->InputModelDisplayNode, inputModelDisplayNode,
                     vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
+
       d->InputModelDisplayNode = inputModelDisplayNode;
     }
 
@@ -232,6 +256,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputNodeSelectionChanged(
   {
     workspaceGenerationNode->SetAndObserveInputNodeID(NULL);
     qCritical() << Q_FUNC_INFO << ": unexpected input node type";
+
     return;
   }
 
@@ -248,29 +273,29 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputNodeNodeAdded(
 
   qInfo() << Q_FUNC_INFO;
 
-  vtkMRMLVolumeNode* inputVolumeNode =
-    vtkMRMLVolumeNode::SafeDownCast(addedNode);
-  vtkMRMLModelNode* inputModelNode = vtkMRMLModelNode::SafeDownCast(addedNode);
-  if (inputVolumeNode != NULL)
-  {
-    inputVolumeNode->CreateDefaultDisplayNodes();
-    vtkMRMLVolumeDisplayNode* inputVolumeDisplayNode =
-      vtkMRMLVolumeDisplayNode::SafeDownCast(inputVolumeNode->GetDisplayNode());
-    if (inputVolumeDisplayNode)
-    {
-      // inputVolumeDisplayNode->SetTextScale(0.0);
-    }
-  }
-  else if (inputModelNode != NULL)
-  {
-    inputModelNode->CreateDefaultDisplayNodes();
-    vtkMRMLModelDisplayNode* inputModelDisplayNode =
-      vtkMRMLModelDisplayNode::SafeDownCast(inputModelNode->GetDisplayNode());
-    if (inputModelDisplayNode)
-    {
-      // inputVolumeDisplayNode->SetTextScale(0.0);
-    }
-  }
+  // vtkMRMLVolumeNode* inputVolumeNode =
+  //   vtkMRMLVolumeNode::SafeDownCast(addedNode);
+  // vtkMRMLModelNode* inputModelNode =
+  // vtkMRMLModelNode::SafeDownCast(addedNode); if (inputVolumeNode != NULL)
+  // {
+  //   inputVolumeNode->CreateDefaultDisplayNodes();
+  //   vtkMRMLVolumeDisplayNode* inputVolumeDisplayNode =
+  //     vtkMRMLVolumeDisplayNode::SafeDownCast(inputVolumeNode->GetDisplayNode());
+  //   if (inputVolumeDisplayNode)
+  //   {
+  //     // inputVolumeDisplayNode->SetTextScale(0.0);
+  //   }
+  // }
+  // else if (inputModelNode != NULL)
+  // {
+  //   inputModelNode->CreateDefaultDisplayNodes();
+  //   vtkMRMLModelDisplayNode* inputModelDisplayNode =
+  //     vtkMRMLModelDisplayNode::SafeDownCast(inputModelNode->GetDisplayNode());
+  //   if (inputModelDisplayNode)
+  //   {
+  //     // inputVolumeDisplayNode->SetTextScale(0.0);
+  //   }
+  // }
 }
 
 //-----------------------------------------------------------------------------
@@ -344,16 +369,6 @@ void qSlicerWorkspaceGenerationModuleWidget::onOutputModelNodeAdded(
     qCritical() << Q_FUNC_INFO << "failed: invalid node";
     return;
   }
-
-  // modelNode->CreateDefaultDisplayNodes();
-  // vtkMRMLModelDisplayNode* displayNode =
-  //   vtkMRMLModelDisplayNode::SafeDownCast(modelNode->GetDisplayNode());
-  // if (displayNode)
-  // {
-  //   displayNode->SetColor(1, 1, 0);
-  //   displayNode->SliceIntersectionVisibilityOn();
-  //   displayNode->SetSliceIntersectionThickness(2);
-  // }
 }
 
 //-----------------------------------------------------------------------------
@@ -483,49 +498,6 @@ void qSlicerWorkspaceGenerationModuleWidget::UpdateOutputModel()
     return;
   }
 
-  // set up the output model node if needed
-  vtkMRMLModelNode* outputModelNode =
-    workspaceGenerationNode->GetOutputModelNode();
-  if (outputModelNode == NULL)
-  {
-    if (workspaceGenerationNode->GetScene() == NULL)
-    {
-      qCritical() << Q_FUNC_INFO
-                  << ": Output model node is not specified and "
-                     "workspaceGenerationNode is not associated with any "
-                     "scene. No operation performed.";
-      return;
-    }
-
-    vtkMRMLVolumeNode* inputVolumeNode =
-      vtkMRMLVolumeNode::SafeDownCast(workspaceGenerationNode->GetInputNode());
-
-    if (inputVolumeNode == NULL)
-    {
-      qWarning() << Q_FUNC_INFO
-                 << ": Input node is not a volume node. Creating a new model "
-                    "instead.";
-
-      outputModelNode = vtkMRMLModelNode::SafeDownCast(
-        workspaceGenerationNode->GetScene()->AddNewNodeByClass("vtkMRMLModelNod"
-                                                               "e"));
-      if (workspaceGenerationNode->GetName())
-      {
-        std::string outputModelNodeName =
-          std::string(workspaceGenerationNode->GetName()).append("Model");
-        outputModelNode->SetName(outputModelNodeName.c_str());
-      }
-      workspaceGenerationNode->SetAndObserveOutputModelNodeID(
-        outputModelNode->GetID());
-    }
-    else
-    {
-      qWarning() << Q_FUNC_INFO
-                 << ": Input node is a volume node, rendering the volume "
-                    "directly.";
-    }
-  }
-
   d->logic()->UpdateOutputModel(workspaceGenerationNode);
 }
 
@@ -539,7 +511,7 @@ vtkMRMLModelNode* qSlicerWorkspaceGenerationModuleWidget::GetOutputModelNode()
       d->ParameterNodeSelector->currentNode());
   if (workspaceGenerationNode == NULL)
   {
-    qCritical("Selected node not a valid module node");
+    qCritical() << Q_FUNC_INFO << ": Selected node not a valid module node";
     return NULL;
   }
   return workspaceGenerationNode->GetOutputModelNode();

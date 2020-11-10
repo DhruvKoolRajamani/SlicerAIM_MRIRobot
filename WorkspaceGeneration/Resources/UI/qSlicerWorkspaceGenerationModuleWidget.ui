@@ -62,6 +62,7 @@
        <property name="nodeTypes">
         <stringlist>
          <string>vtkMRMLVolumeNode</string>
+         <!-- <string>vtkMRMLModelNode</string> -->
          <string>vtkMRMLAnnotationROINode</string>
         </stringlist>
        </property>

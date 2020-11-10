@@ -74,6 +74,9 @@ public:
   vtkGetMacro(AutoUpdateOutput, bool);
   vtkSetMacro(AutoUpdateOutput, bool);
 
+  vtkGetMacro(InputNodeType, int);
+  vtkSetMacro(InputNodeType, int);
+
 protected:
   // Constructor/destructor methods
   vtkMRMLWorkspaceGenerationNode();
@@ -82,7 +85,16 @@ protected:
   void operator=(const vtkMRMLWorkspaceGenerationNode&);
 
 public:
-  void SetAndObserveInputNodeID(const char* inputNodeId);
+  enum
+  {
+    NONE = 0,
+    VOLUME_NODE = 1,
+    ANNOTATIONROI_NODE = 2,
+    MODEL_NODE = 3
+  };
+
+  void SetAndObserveInputNodeID(const char* inputNodeId,
+                                int input_node_type = NONE);
   void SetAndObserveOutputModelNodeID(const char* outputModelNodeId);
   // void ProcessMRMLEvents(vtkObject* caller, unsigned long event,
   //                        void* callData) VTK_OVERRIDE;
@@ -90,14 +102,10 @@ public:
   vtkMRMLNode* GetInputNode();
   vtkMRMLModelNode* GetOutputModelNode();
 
-  // DEPRECATED - Get the output node
-  vtkMRMLModelNode* GetModelNode();
-
-  // DEPRECATED - Set the output node
-  void SetAndObserveModelNodeID(const char* id);
-
 private:
   bool AutoUpdateOutput;
+
+  int InputNodeType;
 };
 
 #endif  // __vtkMRMLWorkspaceGenerationNode_h
