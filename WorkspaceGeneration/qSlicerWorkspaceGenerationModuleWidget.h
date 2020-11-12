@@ -21,6 +21,19 @@
 // Slicer includes
 #include "qSlicerAbstractModuleWidget.h"
 
+// Volume Rendering includes
+#include <qSlicerVolumeRenderingModuleWidget.h>
+#include <qSlicerVolumeRenderingPresetComboBox.h>
+
+// Volume Rendering Logic includes
+#include <vtkSlicerVolumeRenderingLogic.h>
+#include <vtkSlicerVolumeRenderingModuleLogicExport.h>
+
+// Slicer Module includes
+#include <qSlicerAbstractModule.h>
+#include <qSlicerCoreApplication.h>
+#include <qSlicerModuleManager.h>
+
 #include "qSlicerWorkspaceGenerationModuleExport.h"
 #include "vtkMRMLModelDisplayNode.h"
 #include "vtkMRMLModelNode.h"
@@ -53,9 +66,8 @@ protected slots:
   void onInputNodeNodeAdded(vtkMRMLNode*);
   void onOutputModelNodeAdded(vtkMRMLNode*);
   void onOutputModelSelectionChanged(vtkMRMLNode*);
-  void onWorkspaceOFDButtonClick();
   void onWorkspaceLoadButtonClick();
-  void onSaveSceneButtonClick();
+  void onApplyTransformClick();
   void onSceneImportedEvent();
 
   void updateGUIFromMRML();
@@ -64,6 +76,9 @@ protected slots:
   void enableAllWidgets(bool enable);
   void disableWidgetsAfter(QWidget* widget);
   void enableWidgets(QWidget* widget, bool enable);
+
+  void onOutputModelVisibilityChanged(bool visible);
+  void onWorkspaceMeshVisibilityChanged(bool visible);
 
   void UpdateOutputModel();
 
@@ -75,6 +90,9 @@ protected:
   vtkMRMLVolumeNode* inputVolumeNode;
 
   QString workspaceMeshFilePath;
+
+  vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
+  qSlicerAbstractCoreModule* VolumeRenderingModule;
 
   virtual void setup();
   virtual void enter();

@@ -28,6 +28,15 @@
 // Slicer includes
 #include "vtkSlicerModuleLogic.h"
 
+// Volume Rendering Logic includes
+#include <vtkSlicerVolumeRenderingLogic.h>
+#include <vtkSlicerVolumeRenderingModuleLogicExport.h>
+
+// Slicer Module includes
+#include <qSlicerAbstractModule.h>
+#include <qSlicerCoreApplication.h>
+#include <qSlicerModuleManager.h>
+
 // vtk includes
 #include "vtkSmartPointer.h"
 #include "vtkWeakPointer.h"
@@ -77,6 +86,9 @@ public:
   static void ModelToPoints(vtkMRMLModelNode* modelNode,
                             vtkPoints* outputPoints);
 
+  vtkSlicerVolumeRenderingLogic* getVolumeRenderingLogic();
+  qSlicerAbstractCoreModule* getVolumeRenderingModule();
+
 protected:
   vtkSlicerWorkspaceGenerationLogic();
   virtual ~vtkSlicerWorkspaceGenerationLogic();
@@ -97,6 +109,9 @@ protected:
   vtkWeakPointer< vtkMRMLVolumeNode > InputVolumeNode;
   vtkWeakPointer< vtkMRMLModelNode > OutputModelNode;
   vtkWeakPointer< vtkMRMLDisplayNode > DisplayNode;
+
+  vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
+  qSlicerAbstractCoreModule* VolumeRenderingModule;
 
 private:
   static void AssignPolyDataToOutput(vtkMRMLWorkspaceGenerationNode* moduleNode,

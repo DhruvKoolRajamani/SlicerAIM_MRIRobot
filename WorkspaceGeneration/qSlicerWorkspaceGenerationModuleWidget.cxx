@@ -114,14 +114,11 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
 
   // Connect buttons in UI
   this->setMRMLScene(d->logic()->GetMRMLScene());
+  this->VolumeRenderingModule = d->logic()->getVolumeRenderingModule();
+  this->VolumeRenderingLogic = d->logic()->getVolumeRenderingLogic();
 
-  connect(d->WorkspaceOFDBtn, SIGNAL(released()), this,
-          SLOT(onWorkspaceOFDButtonClick()));
-  connect(d->WorkspaceLoadBtn, SIGNAL(released()), this,
+  connect(d->WorkspaceMeshLoadBtn, SIGNAL(released()), this,
           SLOT(onWorkspaceLoadButtonClick()));
-  connect(d->SaveSceneBtn, SIGNAL(released()), this,
-          SLOT(onSaveSceneButtonClick()));
-
   connect(d->ParameterNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
           this, SLOT(onParameterNodeSelectionChanged()));
   connect(d->InputNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
@@ -132,10 +129,50 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
           this, SLOT(onOutputModelSelectionChanged(vtkMRMLNode*)));
   connect(d->OutputModelNodeSelector, SIGNAL(nodeAddedByUser(vtkMRMLNode*)),
           this, SLOT(onOutputModelNodeAdded(vtkMRMLNode*)));
+  connect(d->OutputModelSetVisibilityCheckBox, SIGNAL(toggled(bool)), this,
+          SLOT(onOutputModelVisibilityChanged(bool)));
+  connect(d->WorkspaceMeshSetVisibilityCheckBox, SIGNAL(toggled(bool)), this,
+          SLOT(onWorkspaceMeshVisibilityChanged(bool)));
+  connect(d->WorkspaceMeshPushButton, SIGNAL(released()), this,
+          SLOT(onApplyTransformClick()));
 
   qDebug() << Q_FUNC_INFO << "OutputModelSelector is "
            << (d->OutputModelNodeSelector->isEnabled() ? "Enabled" :
                                                          "Disabled");
+
+  // d->InputVolumeRenderingPresetComboBox->
+}
+
+// --------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onApplyTransformClick()
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+}
+
+// --------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshVisibilityChanged(
+  bool visible)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+}
+
+// --------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onOutputModelVisibilityChanged(
+  bool visible)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+
+  // Get volume rendering display node for volume. Create if absent.
+  if (!d->InputVolumeDisplayNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No volume rendering display node";
+    return;
+  }
+
+  d->InputVolumeDisplayNode->SetVisibility(visible);
+
+  // Update widget from display node of the volume node
+  this->updateGUIFromMRML();
 }
 
 //-----------------------------------------------------------------------------
@@ -272,30 +309,6 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputNodeNodeAdded(
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
 
   qInfo() << Q_FUNC_INFO;
-
-  // vtkMRMLVolumeNode* inputVolumeNode =
-  //   vtkMRMLVolumeNode::SafeDownCast(addedNode);
-  // vtkMRMLModelNode* inputModelNode =
-  // vtkMRMLModelNode::SafeDownCast(addedNode); if (inputVolumeNode != NULL)
-  // {
-  //   inputVolumeNode->CreateDefaultDisplayNodes();
-  //   vtkMRMLVolumeDisplayNode* inputVolumeDisplayNode =
-  //     vtkMRMLVolumeDisplayNode::SafeDownCast(inputVolumeNode->GetDisplayNode());
-  //   if (inputVolumeDisplayNode)
-  //   {
-  //     // inputVolumeDisplayNode->SetTextScale(0.0);
-  //   }
-  // }
-  // else if (inputModelNode != NULL)
-  // {
-  //   inputModelNode->CreateDefaultDisplayNodes();
-  //   vtkMRMLModelDisplayNode* inputModelDisplayNode =
-  //     vtkMRMLModelDisplayNode::SafeDownCast(inputModelNode->GetDisplayNode());
-  //   if (inputModelDisplayNode)
-  //   {
-  //     // inputVolumeDisplayNode->SetTextScale(0.0);
-  //   }
-  // }
 }
 
 //-----------------------------------------------------------------------------
@@ -309,6 +322,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onOutputModelSelectionChanged(
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
       d->ParameterNodeSelector->currentNode());
+
   if (workspaceGenerationNode == NULL)
   {
     qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
@@ -324,8 +338,6 @@ void qSlicerWorkspaceGenerationModuleWidget::onOutputModelSelectionChanged(
   }
 
   vtkMRMLModelNode* outputModelNode = vtkMRMLModelNode::SafeDownCast(newNode);
-  workspaceGenerationNode->SetAndObserveOutputModelNodeID(
-    outputModelNode ? outputModelNode->GetID() : NULL);
 
   // Observe display node so that we can make sure the module GUI always shows
   // up-to-date information
@@ -353,6 +365,37 @@ void qSlicerWorkspaceGenerationModuleWidget::onOutputModelSelectionChanged(
   d->OutputModelDisplayNode = outputModelDisplayNode;
 
   this->updateGUIFromMRML();
+
+  // workspaceGenerationNode->SetAndObserveOutputModelNodeID(
+  //   outputModelNode ? outputModelNode->GetID() : NULL);
+
+  // // Observe display node so that we can make sure the module GUI always
+  // shows
+  // // up-to-date information
+  // vtkMRMLDisplayNode* outputDisplayNode = NULL;
+  // // outputModelNode->GetModelDisplayNode();
+  // if (outputModelNode != NULL)  // && outputModelDisplayNode == NULL)
+  // {
+  //   qDebug() << Q_FUNC_INFO << ": Output Model already exists!";
+
+  //   outputDisplayNode = outputModelNode->GetDisplayNode();
+
+  //   if (outputDisplayNode == NULL)
+  //   {
+  //     qWarning() << Q_FUNC_INFO
+  //                << ": Output Model Display Node Does Not exist!";
+  //     // outputModelNode->CreateDefaultDisplayNodes();
+  //     outputDisplayNode =
+  //       vtkMRMLDisplayNode::SafeDownCast(outputModelNode->GetDisplayNode());
+  //   }
+  // }
+
+  // qvtkReconnect(d->OutputModelDisplayNode, outputDisplayNode,
+  //               vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
+
+  // d->OutputModelDisplayNode = outputDisplayNode;
+
+  // this->updateGUIFromMRML();
 }
 
 //-----------------------------------------------------------------------------
@@ -372,7 +415,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onOutputModelNodeAdded(
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceOFDButtonClick()
+void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceLoadButtonClick()
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
 
@@ -381,19 +424,9 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceOFDButtonClick()
   auto fileName = QFileDialog::getOpenFileName(this, tr("Open Workspace Mesh"),
                                                QDir::currentPath(),
                                                tr("Polymesh File (*.ply)"));
-  d->WorkspacePathInputLineEdit->setText(fileName);
-
-  qDebug() << Q_FUNC_INFO << ": Workspace path is " << fileName;
 
   workspaceMeshFilePath = fileName;
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceLoadButtonClick()
-{
-  Q_D(qSlicerWorkspaceGenerationModuleWidget);
-
-  qInfo() << Q_FUNC_INFO;
+  qDebug() << Q_FUNC_INFO << ": Workspace path is " << workspaceMeshFilePath;
 
   if (workspaceMeshFilePath.isEmpty())
   {
@@ -403,25 +436,6 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceLoadButtonClick()
   }
 
   d->logic()->LoadWorkspace(workspaceMeshFilePath);
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onSaveSceneButtonClick()
-{
-  Q_D(qSlicerWorkspaceGenerationModuleWidget);
-
-  qInfo() << Q_FUNC_INFO;
-
-  if (inputVolumeNode != NULL)
-  {
-    vtkSmartPointer< vtkXMLImageDataWriter > writer =
-      vtkSmartPointer< vtkXMLImageDataWriter >::New();
-    vtkSmartPointer< vtkImageData > imageData = inputVolumeNode->GetImageData();
-    writer->SetInputData(imageData);
-    writer->SetFileName("testvolume.vti");
-    writer->Write();
-    writer->Delete();
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -551,9 +565,6 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
     return;
   }
 
-  // if (!d->SaveSceneBtn->isEnabled())
-  //   d->SaveSceneBtn->setEnabled(true);
-
   this->enableAllWidgets(true);  // unless otherwise specified, everything is
                                  // enabled
 
@@ -565,7 +576,6 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
   d->InputNodeSelector->setCurrentNode(inputNode);
 
   d->OutputModelNodeSelector->setMRMLScene(this->mrmlScene());
-
   qDebug() << Q_FUNC_INFO << ": Set OutputNodeSelector";
   d->OutputModelNodeSelector->setCurrentNode(
     workspaceGenerationNode->GetOutputModelNode());
@@ -581,6 +591,7 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
       this->GetOutputModelNode() ?
         this->GetOutputModelNode()->GetDisplayNode() :
         NULL);
+
   if (modelDisplayNode != NULL)
   {
     // d->ModelVisiblityButton->setChecked(modelDisplayNode->GetVisibility());
@@ -605,16 +616,32 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
   this->blockAllSignals(false);
 }
 
+// //
+// ----------------------------------------------------------------------------
+// void qSlicerVolumeRenderingModuleWidget::updateWidgetFromMRML()
+// {
+//   Q_D(qSlicerVolumeRenderingModuleWidget);
+
+//   // Get display node
+//   vtkMRMLVolumeRenderingDisplayNode* displayNode = this->mrmlDisplayNode();
+
+//   // Get first view node
+//   vtkMRMLViewNode* firstViewNode = nullptr;
+//   if (displayNode && displayNode->GetScene())
+//   {
+//     firstViewNode = displayNode->GetFirstViewNode();
+//   }
+// }
+
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::blockAllSignals(bool block)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
 
   d->ParameterNodeSelector->blockSignals(block);
-  // d->InputNodeSelector->blockSignals(block);
-  // d->OutputModelNodeSelector->blockSignals(block);
-  // d->SaveSceneBtn->blockSignals(block);
-  // d->WorkspaceLoadBtn->blockSignals(block);
+  d->InputNodeSelector->blockSignals(block);
+  d->OutputModelNodeSelector->blockSignals(block);
+  d->WorkspaceMeshLoadBtn->blockSignals(block);
 }
 
 //-----------------------------------------------------------------------------
@@ -625,8 +652,7 @@ void qSlicerWorkspaceGenerationModuleWidget::enableAllWidgets(bool enable)
   d->ParameterNodeSelector->setEnabled(enable);
   d->InputNodeSelector->setEnabled(enable);
   d->OutputModelNodeSelector->setEnabled(enable);
-  d->SaveSceneBtn->setEnabled(enable);
-  d->WorkspaceLoadBtn->setEnabled(enable);
+  d->WorkspaceMeshLoadBtn->setEnabled(enable);
 }
 
 //-----------------------------------------------------------------------------
@@ -651,8 +677,7 @@ void qSlicerWorkspaceGenerationModuleWidget::disableWidgetsAfter(
       d->ParameterNodeSelector->setEnabled(enable);
       d->InputNodeSelector->setEnabled(!enable);
       d->OutputModelNodeSelector->setEnabled(!enable);
-      d->WorkspaceLoadBtn->setEnabled(!enable);
-      d->SaveSceneBtn->setEnabled(!enable);
+      d->WorkspaceMeshLoadBtn->setEnabled(!enable);
     }
 
     if (QString::compare(widget->objectName(),
@@ -662,8 +687,7 @@ void qSlicerWorkspaceGenerationModuleWidget::disableWidgetsAfter(
       d->ParameterNodeSelector->setEnabled(enable);
       d->InputNodeSelector->setEnabled(enable);
       d->OutputModelNodeSelector->setEnabled(!enable);
-      d->WorkspaceLoadBtn->setEnabled(!enable);
-      d->SaveSceneBtn->setEnabled(!enable);
+      d->WorkspaceMeshLoadBtn->setEnabled(!enable);
     }
 
     if (QString::compare(widget->objectName(),
@@ -673,29 +697,17 @@ void qSlicerWorkspaceGenerationModuleWidget::disableWidgetsAfter(
       d->ParameterNodeSelector->setEnabled(enable);
       d->InputNodeSelector->setEnabled(enable);
       d->OutputModelNodeSelector->setEnabled(enable);
-      d->WorkspaceLoadBtn->setEnabled(!enable);
-      d->SaveSceneBtn->setEnabled(!enable);
+      d->WorkspaceMeshLoadBtn->setEnabled(!enable);
     }
 
     if (QString::compare(widget->objectName(),
-                         d->WorkspaceLoadBtn->objectName(),
+                         d->WorkspaceMeshLoadBtn->objectName(),
                          Qt::CaseInsensitive))
     {
       d->ParameterNodeSelector->setEnabled(enable);
       d->InputNodeSelector->setEnabled(enable);
       d->OutputModelNodeSelector->setEnabled(enable);
-      d->WorkspaceLoadBtn->setEnabled(enable);
-      d->SaveSceneBtn->setEnabled(!enable);
-    }
-
-    if (QString::compare(widget->objectName(), d->SaveSceneBtn->objectName(),
-                         Qt::CaseInsensitive))
-    {
-      d->ParameterNodeSelector->setEnabled(enable);
-      d->InputNodeSelector->setEnabled(enable);
-      d->OutputModelNodeSelector->setEnabled(enable);
-      d->WorkspaceLoadBtn->setEnabled(enable);
-      d->SaveSceneBtn->setEnabled(enable);
+      d->WorkspaceMeshLoadBtn->setEnabled(enable);
     }
   }
 }

@@ -33,10 +33,6 @@
 #include <vtkMRMLModelNode.h>
 #include <vtkMRMLScene.h>
 
-// Volume Rendering Logic includes
-#include <vtkSlicerVolumeRenderingLogic.h>
-#include <vtkSlicerVolumeRenderingModuleLogicExport.h>
-
 // Models logic includes
 #include <vtkSlicerModelsLogic.h>
 #include <vtkSlicerModelsModuleLogicExport.h>
@@ -72,11 +68,33 @@ vtkStandardNewMacro(vtkSlicerWorkspaceGenerationLogic);
 vtkSlicerWorkspaceGenerationLogic::vtkSlicerWorkspaceGenerationLogic()
 {
   this->isInputModelNode = NULL;
+
+  this->VolumeRenderingModule =
+    qSlicerCoreApplication::application()->moduleManager()->module(
+      "VolumeRendering");
+  this->VolumeRenderingLogic = this->VolumeRenderingModule ?
+                                 vtkSlicerVolumeRenderingLogic::SafeDownCast(
+                                   VolumeRenderingModule->logic()) :
+                                 0;
 }
 
 //----------------------------------------------------------------------------
 vtkSlicerWorkspaceGenerationLogic::~vtkSlicerWorkspaceGenerationLogic()
 {
+}
+
+//----------------------------------------------------------------------------
+vtkSlicerVolumeRenderingLogic*
+  vtkSlicerWorkspaceGenerationLogic::getVolumeRenderingLogic()
+{
+  return this->VolumeRenderingLogic;
+}
+
+//----------------------------------------------------------------------------
+qSlicerAbstractCoreModule*
+  vtkSlicerWorkspaceGenerationLogic::getVolumeRenderingModule()
+{
+  return this->VolumeRenderingModule;
 }
 
 //----------------------------------------------------------------------------
@@ -437,25 +455,17 @@ vtkMRMLVolumeNode*
 {
   qInfo() << Q_FUNC_INFO;
 
-  qSlicerAbstractCoreModule* volumeRenderingModule =
-    qSlicerCoreApplication::application()->moduleManager()->module(
-      "VolumeRendering");
-  vtkSlicerVolumeRenderingLogic* volumeRenderingLogic =
-    volumeRenderingModule ? vtkSlicerVolumeRenderingLogic::SafeDownCast(
-                              volumeRenderingModule->logic()) :
-                            0;
-
   vtkMRMLVolumeRenderingDisplayNode* volumeRenderingNodes =
-    volumeRenderingLogic->GetFirstVolumeRenderingDisplayNode(volumeNode);
+    VolumeRenderingLogic->GetFirstVolumeRenderingDisplayNode(volumeNode);
 
-  if (volumeRenderingLogic && volumeRenderingNodes == NULL)
+  if (VolumeRenderingLogic && volumeRenderingNodes == NULL)
   {
     qDebug() << Q_FUNC_INFO
              << ": Volume Rendering will take place in new node.";
     volumeRenderingNodes =
-      volumeRenderingLogic->CreateDefaultVolumeRenderingNodes(volumeNode);
+      VolumeRenderingLogic->CreateDefaultVolumeRenderingNodes(volumeNode);
   }
-  else if (!volumeRenderingLogic)
+  else if (!VolumeRenderingLogic)
   {
     qCritical() << Q_FUNC_INFO
                 << ": Volume Rendering Logic not found, returning.";
@@ -463,13 +473,13 @@ vtkMRMLVolumeNode*
     return volumeNode;
   }
 
-  volumeRenderingLogic->SetMRMLScene(this->GetMRMLScene());
+  VolumeRenderingLogic->SetMRMLScene(this->GetMRMLScene());
   vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode > displayNode =
     vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode >::Take(
       volumeRenderingNodes);
   this->GetMRMLScene()->AddNode(displayNode);
   volumeNode->AddAndObserveDisplayNodeID(displayNode->GetID());
-  volumeRenderingLogic->UpdateDisplayNodeFromVolumeNode(displayNode,
+  VolumeRenderingLogic->UpdateDisplayNodeFromVolumeNode(displayNode,
                                                         volumeNode);
 
   this->WorkspaceGenerationNode->SetAndObserveOutputModelNodeID(

@@ -27,7 +27,8 @@ set(MODULE_INCLUDE_DIRECTORIES
   ${qSlicerVolumesModuleWidgets_BINARY_DIR}
   ${vtkSlicerModelsModuleLogic_SOURCE_DIR}
   ${vtkSlicerModelsModuleLogic_BINARY_DIR}
-  # ${qSlicerMarkupsModuleWidgets_INCLUDE_DIRS}
+  ${qSlicerVolumeRenderingModuleWidgets_INCLUDE_DIRS}
+  ${qSlicerVolumeRenderingModuleWidgets_SRCS}
   ${utilities_INCLUDE_DIRS}
   )
 
@@ -54,7 +55,7 @@ set(MODULE_TARGET_LIBRARIES
   vtkSlicerVolumesModuleLogic
   vtkSlicerModelsModuleLogic
   # vtkSlicerMarkupsModuleMRML
-  # qSlicerMarkupsModuleWidgets
+  qSlicerVolumeRenderingModuleWidgets
   utilities
   )
 
