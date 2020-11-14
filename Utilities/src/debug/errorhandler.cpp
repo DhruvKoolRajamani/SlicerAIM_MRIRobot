@@ -5,10 +5,10 @@ void errorHandler(QtMsgType type, const QMessageLogContext&, const QString& msg)
   switch (type)
   {
     case QtInfoMsg:
-      fprintf(stderr, "\033[37mInfo: %s\033[0m\n", msg.toLocal8Bit().data());
+      fprintf(stderr, "\033[1;37mInfo: %s\033[0m\n", msg.toLocal8Bit().data());
       break;
     case QtDebugMsg:
-      fprintf(stderr, "\033[1;37mDebug: %s\033[0m\n", msg.toLocal8Bit().data());
+      fprintf(stderr, "\033[1;32mDebug: %s\033[0m\n", msg.toLocal8Bit().data());
       break;
     case QtWarningMsg:
       fprintf(stderr, "\033[1;33mWarning: %s\033[0m\n",

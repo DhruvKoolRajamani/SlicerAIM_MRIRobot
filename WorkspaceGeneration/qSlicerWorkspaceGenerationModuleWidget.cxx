@@ -61,10 +61,14 @@ public:
   vtkSlicerWorkspaceGenerationLogic* logic() const;
 
   // Observed nodes (to keep GUI up-to-date)
-  vtkWeakPointer< vtkMRMLWorkspaceGenerationNode > WorkspaceGenerationNode;
-  vtkWeakPointer< vtkMRMLModelDisplayNode > InputModelDisplayNode;
-  vtkWeakPointer< vtkMRMLModelDisplayNode > OutputModelDisplayNode;
-  vtkWeakPointer< vtkMRMLVolumeDisplayNode > InputVolumeDisplayNode;
+  vtkMRMLWorkspaceGenerationNode* WorkspaceGenerationNode;
+
+  vtkMRMLVolumeNode* InputVolumeNode;
+  vtkMRMLAnnotationROINode* AnnotationROINode;
+
+  vtkWeakPointer< vtkMRMLVolumeRenderingDisplayNode >
+    InputVolumeRenderingDisplayNode;
+  vtkWeakPointer< vtkMRMLModelDisplayNode > WorkspaceMeshModelDisplayNode;
 };
 
 //-----------------------------------------------------------------------------
@@ -117,30 +121,24 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
   this->VolumeRenderingModule = d->logic()->getVolumeRenderingModule();
   this->VolumeRenderingLogic = d->logic()->getVolumeRenderingLogic();
 
-  connect(d->WorkspaceMeshLoadBtn, SIGNAL(released()), this,
-          SLOT(onWorkspaceLoadButtonClick()));
   connect(d->ParameterNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
           this, SLOT(onParameterNodeSelectionChanged()));
-  connect(d->InputNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
-          SLOT(onInputNodeSelectionChanged(vtkMRMLNode*)));
-  connect(d->InputNodeSelector, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
-          SLOT(onInputNodeNodeAdded(vtkMRMLNode*)));
-  connect(d->OutputModelNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-          this, SLOT(onOutputModelSelectionChanged(vtkMRMLNode*)));
-  connect(d->OutputModelNodeSelector, SIGNAL(nodeAddedByUser(vtkMRMLNode*)),
-          this, SLOT(onOutputModelNodeAdded(vtkMRMLNode*)));
-  connect(d->OutputModelSetVisibilityCheckBox, SIGNAL(toggled(bool)), this,
-          SLOT(onOutputModelVisibilityChanged(bool)));
+  connect(d->InputVolumeNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
+          this, SLOT(onInputVolumeNodeSelectionChanged(vtkMRMLNode*)));
+  connect(d->InputVolumeNodeSelector, SIGNAL(nodeAddedByUser(vtkMRMLNode*)),
+          this, SLOT(onInputVolumeNodeAdded(vtkMRMLNode*)));
+  connect(d->ROINodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
+          SLOT(onAnnotationROISelectionChanged(vtkMRMLNode*)));
+  connect(d->ROINodeSelector, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
+          SLOT(onAnnotationROINodeAdded(vtkMRMLNode*)));
+  connect(d->InputVolumeSetVisibilityCheckBox, SIGNAL(toggled(bool)), this,
+          SLOT(onInputVolumeVisibilityChanged(bool)));
+  connect(d->WorkspaceMeshLoadBtn, SIGNAL(released()), this,
+          SLOT(onWorkspaceLoadButtonClick()));
   connect(d->WorkspaceMeshSetVisibilityCheckBox, SIGNAL(toggled(bool)), this,
           SLOT(onWorkspaceMeshVisibilityChanged(bool)));
   connect(d->WorkspaceMeshPushButton, SIGNAL(released()), this,
           SLOT(onApplyTransformClick()));
-
-  qDebug() << Q_FUNC_INFO << "OutputModelSelector is "
-           << (d->OutputModelNodeSelector->isEnabled() ? "Enabled" :
-                                                         "Disabled");
-
-  // d->InputVolumeRenderingPresetComboBox->
 }
 
 // --------------------------------------------------------------------------
@@ -154,22 +152,57 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshVisibilityChanged(
   bool visible)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
+
+  // Get volume rendering display node for volume. Create if absent.
+  if (!d->WorkspaceMeshModelDisplayNode.GetPointer())
+  {
+    qCritical() << Q_FUNC_INFO << ": No workspace mess model display node";
+    return;
+  }
+
+  qDebug() << Q_FUNC_INFO << ": Setting visibility to "
+           << ((visible) ? "ON" : "OFF");
+
+  auto currentWorkspaceMeshModelDisplayNode =
+    d->logic()->getCurrentWorkspaceMeshModelDisplayNode();
+
+  if (d->WorkspaceMeshModelDisplayNode != currentWorkspaceMeshModelDisplayNode)
+  {
+    d->WorkspaceMeshModelDisplayNode = currentWorkspaceMeshModelDisplayNode;
+  }
+
+  d->WorkspaceMeshModelDisplayNode->SetVisibility(visible);
+
+  // Update widget from display node of the volume node
+  this->updateGUIFromMRML();
 }
 
 // --------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onOutputModelVisibilityChanged(
+void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeVisibilityChanged(
   bool visible)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
 
   // Get volume rendering display node for volume. Create if absent.
-  if (!d->InputVolumeDisplayNode)
+  if (!d->InputVolumeRenderingDisplayNode.GetPointer())
   {
     qCritical() << Q_FUNC_INFO << ": No volume rendering display node";
     return;
   }
 
-  d->InputVolumeDisplayNode->SetVisibility(visible);
+  qDebug() << Q_FUNC_INFO << ": Setting visibility to "
+           << ((visible) ? "ON" : "OFF");
+
+  auto currentInputVolumeRenderingDisplayNode =
+    d->logic()->getCurrentInputVolumeRenderingDisplayNode();
+
+  if (d->InputVolumeRenderingDisplayNode.GetPointer() !=
+      currentInputVolumeRenderingDisplayNode)
+  {
+    d->InputVolumeRenderingDisplayNode = currentInputVolumeRenderingDisplayNode;
+  }
+
+  d->InputVolumeRenderingDisplayNode->SetVisibility(visible);
 
   // Update widget from display node of the volume node
   this->updateGUIFromMRML();
@@ -182,6 +215,7 @@ void qSlicerWorkspaceGenerationModuleWidget::setMRMLScene(vtkMRMLScene* scene)
 
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
   this->Superclass::setMRMLScene(scene);
+
   qvtkReconnect(d->logic(), scene, vtkMRMLScene::EndImportEvent, this,
                 SLOT(onSceneImportedEvent()));
 }
@@ -196,16 +230,19 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
   vtkMRMLWorkspaceGenerationNode* selectedWorkspaceGenerationNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
       d->ParameterNodeSelector->currentNode());
+
   qvtkReconnect(d->WorkspaceGenerationNode, selectedWorkspaceGenerationNode,
                 vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
+
   d->WorkspaceGenerationNode = selectedWorkspaceGenerationNode;
-  d->logic()->UpdateSelectionNode(d->WorkspaceGenerationNode);
+  d->logic()->UpdateSelectionNode(selectedWorkspaceGenerationNode);
+
   this->updateGUIFromMRML();
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onInputNodeSelectionChanged(
-  vtkMRMLNode* newNode)
+void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeNodeSelectionChanged(
+  vtkMRMLNode* nodeSelected)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
 
@@ -221,89 +258,35 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputNodeSelectionChanged(
     return;
   }
 
-  if (newNode == NULL)
+  if (nodeSelected == NULL)
   {
-    workspaceGenerationNode->SetAndObserveInputNodeID(NULL);
-    qCritical() << Q_FUNC_INFO << ": New node is NONE";
-
-    return;
-  }
-
-  vtkMRMLVolumeNode* inputVolumeNode = vtkMRMLVolumeNode::SafeDownCast(newNode);
-  vtkMRMLModelNode* inputModelNode = vtkMRMLModelNode::SafeDownCast(newNode);
-
-  qDebug() << Q_FUNC_INFO << ": Input is a - "
-           << ((inputVolumeNode != NULL) ? "Volume Node" : "Model Node");
-
-  if (inputVolumeNode != NULL || inputModelNode != NULL)
-  {
-    if (inputVolumeNode != NULL)
-    {
-      qInfo() << Q_FUNC_INFO << ": Input Volume Node selected.";
-
-      workspaceGenerationNode->SetAndObserveInputNodeID(
-        inputVolumeNode->GetID(), vtkMRMLWorkspaceGenerationNode::VOLUME_NODE);
-
-      // Observe display node so that we can make sure the module GUI always
-      // shows up-to-date information (applies specifically to markups)
-      vtkMRMLVolumeDisplayNode* inputVolumeDisplayNode =
-        vtkMRMLVolumeDisplayNode::SafeDownCast(
-          inputVolumeNode->GetDisplayNode());
-
-      if (inputVolumeDisplayNode == NULL)
-      {
-        inputVolumeNode->CreateDefaultDisplayNodes();
-        inputVolumeDisplayNode = vtkMRMLVolumeDisplayNode::SafeDownCast(
-          inputVolumeNode->GetDisplayNode());
-      }
-
-      qvtkReconnect(d->InputVolumeDisplayNode, inputVolumeDisplayNode,
-                    vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
-
-      d->InputVolumeDisplayNode = inputVolumeDisplayNode;
-    }
-    else if (inputModelNode != NULL)
-    {
-      qInfo() << Q_FUNC_INFO << ": Input Model Node selected.";
-
-      workspaceGenerationNode->SetAndObserveInputNodeID(
-        inputModelNode->GetID(), vtkMRMLWorkspaceGenerationNode::MODEL_NODE);
-
-      // Observe display node so that we can make sure the module GUI always
-      // shows up-to-date information (applies specifically to markups)
-      vtkMRMLModelDisplayNode* inputModelDisplayNode =
-        vtkMRMLModelDisplayNode::SafeDownCast(inputModelNode->GetDisplayNode());
-
-      if (inputModelDisplayNode == NULL)
-      {
-        inputModelNode->CreateDefaultDisplayNodes();
-        inputModelDisplayNode = vtkMRMLModelDisplayNode::SafeDownCast(
-          inputModelNode->GetDisplayNode());
-      }
-
-      qvtkReconnect(d->InputModelDisplayNode, inputModelDisplayNode,
-                    vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
-
-      d->InputModelDisplayNode = inputModelDisplayNode;
-    }
-
-    this->disableWidgetsAfter(d->OutputModelNodeSelector);
-  }
-  else
-  {
-    workspaceGenerationNode->SetAndObserveInputNodeID(NULL);
+    workspaceGenerationNode->SetAndObserveInputVolumeNodeID(NULL);
     qCritical() << Q_FUNC_INFO << ": unexpected input node type";
 
     return;
   }
 
-  this->disableWidgetsAfter(d->InputNodeSelector);
+  vtkMRMLVolumeNode* inputVolumeNode =
+    vtkMRMLVolumeNode::SafeDownCast(nodeSelected);
+
+  if (inputVolumeNode != NULL)
+  {
+
+    qInfo() << Q_FUNC_INFO << ": Input Volume Node selected.";
+
+    workspaceGenerationNode->SetAndObserveInputVolumeNodeID(
+      inputVolumeNode->GetID());
+
+    d->InputVolumeNode = inputVolumeNode;
+
+    qDebug() << Q_FUNC_INFO << ": Standard call complete";
+  }
 
   this->updateGUIFromMRML();
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onInputNodeNodeAdded(
+void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeNodeAdded(
   vtkMRMLNode* addedNode)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
@@ -312,8 +295,8 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputNodeNodeAdded(
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onOutputModelSelectionChanged(
-  vtkMRMLNode* newNode)
+void qSlicerWorkspaceGenerationModuleWidget::onAnnotationROISelectionChanged(
+  vtkMRMLNode* selectedNode)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
 
@@ -329,85 +312,47 @@ void qSlicerWorkspaceGenerationModuleWidget::onOutputModelSelectionChanged(
     return;
   }
 
-  vtkMRMLNode* inputNode = workspaceGenerationNode->GetInputNode();
-  if (!inputNode)
+  vtkMRMLVolumeNode* inputVolumeNode =
+    workspaceGenerationNode->GetInputVolumeNode();
+  if (!inputVolumeNode)
   {
     qCritical() << Q_FUNC_INFO << ": input Node has not been added yet.";
-    // this->disableWidgetsAfter(d->InputNodeSelector);
     return;
   }
 
-  vtkMRMLModelNode* outputModelNode = vtkMRMLModelNode::SafeDownCast(newNode);
+  vtkMRMLAnnotationROINode* annotationROINode =
+    vtkMRMLAnnotationROINode::SafeDownCast(selectedNode);
 
-  // Observe display node so that we can make sure the module GUI always shows
-  // up-to-date information
-  vtkMRMLModelDisplayNode* outputModelDisplayNode = NULL;
-  // outputModelNode->GetModelDisplayNode();
-  if (outputModelNode != NULL)  // && outputModelDisplayNode == NULL)
+  if (annotationROINode == NULL)
   {
-    qDebug() << Q_FUNC_INFO << ": Output Model already exists!";
-
-    outputModelDisplayNode = outputModelNode->GetModelDisplayNode();
-
-    if (outputModelDisplayNode == NULL)
-    {
-      qWarning() << Q_FUNC_INFO
-                 << ": Output Model Display Node Does Not exist!";
-      outputModelNode->CreateDefaultDisplayNodes();
-      outputModelDisplayNode = vtkMRMLModelDisplayNode::SafeDownCast(
-        outputModelNode->GetDisplayNode());
-    }
+    qCritical() << Q_FUNC_INFO << ": No AnnotationROI node selected";
+    return;
   }
 
-  qvtkReconnect(d->OutputModelDisplayNode, outputModelDisplayNode,
-                vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
-
-  d->OutputModelDisplayNode = outputModelDisplayNode;
-
-  this->updateGUIFromMRML();
-
-  // workspaceGenerationNode->SetAndObserveOutputModelNodeID(
-  //   outputModelNode ? outputModelNode->GetID() : NULL);
-
-  // // Observe display node so that we can make sure the module GUI always
-  // shows
-  // // up-to-date information
-  // vtkMRMLDisplayNode* outputDisplayNode = NULL;
-  // // outputModelNode->GetModelDisplayNode();
-  // if (outputModelNode != NULL)  // && outputModelDisplayNode == NULL)
-  // {
-  //   qDebug() << Q_FUNC_INFO << ": Output Model already exists!";
-
-  //   outputDisplayNode = outputModelNode->GetDisplayNode();
-
-  //   if (outputDisplayNode == NULL)
-  //   {
-  //     qWarning() << Q_FUNC_INFO
-  //                << ": Output Model Display Node Does Not exist!";
-  //     // outputModelNode->CreateDefaultDisplayNodes();
-  //     outputDisplayNode =
-  //       vtkMRMLDisplayNode::SafeDownCast(outputModelNode->GetDisplayNode());
-  //   }
-  // }
-
-  // qvtkReconnect(d->OutputModelDisplayNode, outputDisplayNode,
+  // qvtkReconnect(d->AnnotationROINode, annotationROINode,
   //               vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
 
-  // d->OutputModelDisplayNode = outputDisplayNode;
+  d->AnnotationROINode = annotationROINode;
+  // workspaceGenerationNode->SetAndObserveAnnotationROINodeID(
+  //   annotationROINode->GetID());
 
-  // this->updateGUIFromMRML();
+  // d->ROINodeSelector->setCurrentNode(annotationROINode);
+
+  // Create logic to accommodate creating a new annotation ROI node.
+  // Should you transfer the data to the new node? Reset all visibility params?
+
+  this->updateGUIFromMRML();
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onOutputModelNodeAdded(
+void qSlicerWorkspaceGenerationModuleWidget::onAnnotationROINodeAdded(
   vtkMRMLNode* addedNode)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
 
   qInfo() << Q_FUNC_INFO;
 
-  vtkMRMLModelNode* modelNode = vtkMRMLModelNode::SafeDownCast(addedNode);
-  if (modelNode == NULL)
+  if (addedNode == NULL)
   {
     qCritical() << Q_FUNC_INFO << "failed: invalid node";
     return;
@@ -425,17 +370,16 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceLoadButtonClick()
                                                QDir::currentPath(),
                                                tr("Polymesh File (*.ply)"));
 
-  workspaceMeshFilePath = fileName;
-  qDebug() << Q_FUNC_INFO << ": Workspace path is " << workspaceMeshFilePath;
+  qDebug() << Q_FUNC_INFO << ": Workspace path is " << fileName;
 
-  if (workspaceMeshFilePath.isEmpty())
+  if (fileName.isEmpty())
   {
     // Return if no path is specified
     qCritical() << Q_FUNC_INFO << ": No filepath specified";
     return;
   }
 
-  d->logic()->LoadWorkspace(workspaceMeshFilePath);
+  d->logic()->LoadWorkspace(fileName);
 }
 
 //-----------------------------------------------------------------------------
@@ -497,141 +441,172 @@ void qSlicerWorkspaceGenerationModuleWidget::exit()
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::UpdateOutputModel()
+void qSlicerWorkspaceGenerationModuleWidget::UpdateVolumeRendering()
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
   qInfo() << Q_FUNC_INFO;
 
-  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
-    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
-      d->ParameterNodeSelector->currentNode());
-  if (workspaceGenerationNode == NULL)
+  if (d->WorkspaceGenerationNode == NULL)
   {
     qCritical() << Q_FUNC_INFO
                 << ": Model node changed with no module node selection";
     return;
   }
 
-  d->logic()->UpdateOutputModel(workspaceGenerationNode);
+  d->logic()->UpdateVolumeRendering();
 }
 
 //-----------------------------------------------------------------------------
-vtkMRMLModelNode* qSlicerWorkspaceGenerationModuleWidget::GetOutputModelNode()
+vtkMRMLAnnotationROINode*
+  qSlicerWorkspaceGenerationModuleWidget::GetAnnotationROINode()
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
   qInfo() << Q_FUNC_INFO;
+
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
       d->ParameterNodeSelector->currentNode());
-  if (workspaceGenerationNode == NULL)
+
+  if (d->WorkspaceGenerationNode == NULL)
   {
     qCritical() << Q_FUNC_INFO << ": Selected node not a valid module node";
     return NULL;
   }
-  return workspaceGenerationNode->GetOutputModelNode();
+
+  return workspaceGenerationNode->GetAnnotationROINode();
 }
 
 //-----------------------------------------------------------------------------
-vtkMRMLNode* qSlicerWorkspaceGenerationModuleWidget::GetInputNode()
+vtkMRMLVolumeNode* qSlicerWorkspaceGenerationModuleWidget::GetInputVolumeNode()
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
   qInfo() << Q_FUNC_INFO;
-  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
-    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
-      d->ParameterNodeSelector->currentNode());
-  if (workspaceGenerationNode == NULL)
+
+  if (d->WorkspaceGenerationNode == NULL)
   {
     qCritical("Selected node not a valid module node");
     return NULL;
   }
-  return workspaceGenerationNode->GetInputNode();
+
+  return d->WorkspaceGenerationNode->GetInputVolumeNode();
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  qDebug() << Q_FUNC_INFO << ": Enter";
+  qInfo() << Q_FUNC_INFO;
 
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
       d->ParameterNodeSelector->currentNode());
 
-  qDebug() << Q_FUNC_INFO << ": WorkspaceGenerationNode Check";
-  if (workspaceGenerationNode == NULL)
+  d->WorkspaceGenerationNode = workspaceGenerationNode;
+
+  if (!d->WorkspaceGenerationNode)
   {
-    qCritical("Selected node not a valid module node");
+    qCritical() << Q_FUNC_INFO << ": Selected node not a valid module node";
     this->enableAllWidgets(false);
     return;
   }
 
-  this->enableAllWidgets(true);  // unless otherwise specified, everything is
-                                 // enabled
+  this->enableAllWidgets(true);
 
-  d->InputNodeSelector->setMRMLScene(this->mrmlScene());
+  d->logic()->setWorkspaceGenerationNode(d->WorkspaceGenerationNode);
+  d->InputVolumeNodeSelector->setMRMLScene(this->mrmlScene());
+
+  qDebug() << Q_FUNC_INFO << ": Input Selector set mrml scene";
+
   // Node selectors
-  vtkMRMLNode* inputNode = workspaceGenerationNode->GetInputNode();
+  vtkMRMLVolumeNode* inputVolumeNode =
+    d->WorkspaceGenerationNode->GetInputVolumeNode();
 
-  qDebug() << Q_FUNC_INFO << ": Set InputNodeSelector";
-  d->InputNodeSelector->setCurrentNode(inputNode);
+  if (!inputVolumeNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No input volume node selected.";
+    return;
+  }
 
-  d->OutputModelNodeSelector->setMRMLScene(this->mrmlScene());
-  qDebug() << Q_FUNC_INFO << ": Set OutputNodeSelector";
-  d->OutputModelNodeSelector->setCurrentNode(
-    workspaceGenerationNode->GetOutputModelNode());
+  d->InputVolumeNode = inputVolumeNode;
+  d->InputVolumeNodeSelector->setCurrentNode(d->InputVolumeNode);
+
+  // this->UpdateVolumeRendering();
+
+  d->ROINodeSelector->setMRMLScene(this->mrmlScene());
+
+  vtkMRMLAnnotationROINode* annotationROINode =
+    d->WorkspaceGenerationNode->GetAnnotationROINode();
+
+  if (!annotationROINode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No Annotation ROI Node was selected.";
+    return;
+  }
+
+  d->AnnotationROINode = annotationROINode;
+  d->ROINodeSelector->setCurrentNode(d->AnnotationROINode);
 
   // block ALL signals until the function returns
   // if a return is called after this line, then unblockAllSignals should also
   // be called.
   this->blockAllSignals(true);
 
-  // Model display options
-  vtkMRMLModelDisplayNode* modelDisplayNode =
-    vtkMRMLModelDisplayNode::SafeDownCast(
-      this->GetOutputModelNode() ?
-        this->GetOutputModelNode()->GetDisplayNode() :
-        NULL);
+  // Volume Rendering display options
+  vtkMRMLVolumeRenderingDisplayNode* volRenderingDispNode =
+    d->logic()->getCurrentInputVolumeRenderingDisplayNode();
+  d->InputVolumeRenderingDisplayNode = volRenderingDispNode;
 
-  if (modelDisplayNode != NULL)
+  if (d->InputVolumeRenderingDisplayNode != NULL)
   {
-    // d->ModelVisiblityButton->setChecked(modelDisplayNode->GetVisibility());
+    d->InputVolumeSetVisibilityCheckBox->setChecked(
+      d->InputVolumeRenderingDisplayNode->GetVisibility());
     // d->ModelOpacitySlider->setValue(modelDisplayNode->GetOpacity());
-    double* outputColor = modelDisplayNode->GetColor();
+
+    // Should be a color picker instead of InputVolumeRenderingDisplayNode
+    double* outputColor = d->InputVolumeRenderingDisplayNode->GetColor();
     QColor nodeOutputColor;
     nodeOutputColor.setRgbF(outputColor[0], outputColor[1], outputColor[2]);
-    // d->ModelColorSelector->setColor(nodeOutputColor);
-    // d->ModelSliceIntersectionCheckbox->setChecked(
-    //   modelDisplayNode->GetSliceIntersectionVisibility());
+    d->InputVolumeRenderingDisplayNode->SetColor(
+      nodeOutputColor.red(), nodeOutputColor.green(), nodeOutputColor.blue());
   }
   else
   {
-    // d->ModelVisiblityButton->setChecked(false);
-    // d->ModelOpacitySlider->setValue(1.0);
-    // QColor nodeOutputColor;
-    // nodeOutputColor.setRgbF(0, 0, 0);
-    // d->ModelColorSelector->setColor(nodeOutputColor);
-    // d->ModelSliceIntersectionCheckbox->setChecked(false);
+    d->InputVolumeSetVisibilityCheckBox->setChecked(false);
+    QColor nodeOutputColor;
+    nodeOutputColor.setRgbF(0, 0, 0);
+    d->InputVolumeRenderingDisplayNode->SetColor(
+      nodeOutputColor.red(), nodeOutputColor.green(), nodeOutputColor.blue());
+  }
+
+  // Workspace Generation display options
+  vtkMRMLModelDisplayNode* modelDispNode =
+    d->logic()->getCurrentWorkspaceMeshModelDisplayNode();
+  d->WorkspaceMeshModelDisplayNode = modelDispNode;
+
+  if (d->WorkspaceMeshModelDisplayNode != NULL)
+  {
+    d->WorkspaceMeshSetVisibilityCheckBox->setChecked(
+      d->WorkspaceMeshModelDisplayNode->GetVisibility());
+    // d->ModelOpacitySlider->setValue(modelDisplayNode->GetOpacity());
+
+    // Should be a color picker instead of InputVolumeRenderingDisplayNode
+    double* outputColor = d->WorkspaceMeshModelDisplayNode->GetColor();
+    QColor nodeOutputColor;
+    nodeOutputColor.setRgbF(outputColor[0], outputColor[1], outputColor[2]);
+    d->WorkspaceMeshModelDisplayNode->SetColor(
+      nodeOutputColor.red(), nodeOutputColor.green(), nodeOutputColor.blue());
+  }
+  else
+  {
+    d->WorkspaceMeshSetVisibilityCheckBox->setChecked(false);
+    QColor nodeOutputColor;
+    nodeOutputColor.setRgbF(0, 0, 0);
+    d->WorkspaceMeshModelDisplayNode->SetColor(
+      nodeOutputColor.red(), nodeOutputColor.green(), nodeOutputColor.blue());
   }
 
   this->blockAllSignals(false);
 }
-
-// //
-// ----------------------------------------------------------------------------
-// void qSlicerVolumeRenderingModuleWidget::updateWidgetFromMRML()
-// {
-//   Q_D(qSlicerVolumeRenderingModuleWidget);
-
-//   // Get display node
-//   vtkMRMLVolumeRenderingDisplayNode* displayNode = this->mrmlDisplayNode();
-
-//   // Get first view node
-//   vtkMRMLViewNode* firstViewNode = nullptr;
-//   if (displayNode && displayNode->GetScene())
-//   {
-//     firstViewNode = displayNode->GetFirstViewNode();
-//   }
-// }
 
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::blockAllSignals(bool block)
@@ -639,8 +614,8 @@ void qSlicerWorkspaceGenerationModuleWidget::blockAllSignals(bool block)
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
 
   d->ParameterNodeSelector->blockSignals(block);
-  d->InputNodeSelector->blockSignals(block);
-  d->OutputModelNodeSelector->blockSignals(block);
+  d->InputVolumeNodeSelector->blockSignals(block);
+  d->ROINodeSelector->blockSignals(block);
   d->WorkspaceMeshLoadBtn->blockSignals(block);
 }
 
@@ -650,8 +625,8 @@ void qSlicerWorkspaceGenerationModuleWidget::enableAllWidgets(bool enable)
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
   qInfo() << Q_FUNC_INFO;
   d->ParameterNodeSelector->setEnabled(enable);
-  d->InputNodeSelector->setEnabled(enable);
-  d->OutputModelNodeSelector->setEnabled(enable);
+  d->InputVolumeNodeSelector->setEnabled(enable);
+  d->ROINodeSelector->setEnabled(enable);
   d->WorkspaceMeshLoadBtn->setEnabled(enable);
 }
 
@@ -675,28 +650,27 @@ void qSlicerWorkspaceGenerationModuleWidget::disableWidgetsAfter(
                          Qt::CaseInsensitive))
     {
       d->ParameterNodeSelector->setEnabled(enable);
-      d->InputNodeSelector->setEnabled(!enable);
-      d->OutputModelNodeSelector->setEnabled(!enable);
+      d->InputVolumeNodeSelector->setEnabled(!enable);
+      d->ROINodeSelector->setEnabled(!enable);
       d->WorkspaceMeshLoadBtn->setEnabled(!enable);
     }
 
     if (QString::compare(widget->objectName(),
-                         d->InputNodeSelector->objectName(),
+                         d->InputVolumeNodeSelector->objectName(),
                          Qt::CaseInsensitive))
     {
       d->ParameterNodeSelector->setEnabled(enable);
-      d->InputNodeSelector->setEnabled(enable);
-      d->OutputModelNodeSelector->setEnabled(!enable);
+      d->InputVolumeNodeSelector->setEnabled(enable);
+      d->ROINodeSelector->setEnabled(!enable);
       d->WorkspaceMeshLoadBtn->setEnabled(!enable);
     }
 
-    if (QString::compare(widget->objectName(),
-                         d->OutputModelNodeSelector->objectName(),
+    if (QString::compare(widget->objectName(), d->ROINodeSelector->objectName(),
                          Qt::CaseInsensitive))
     {
       d->ParameterNodeSelector->setEnabled(enable);
-      d->InputNodeSelector->setEnabled(enable);
-      d->OutputModelNodeSelector->setEnabled(enable);
+      d->InputVolumeNodeSelector->setEnabled(enable);
+      d->ROINodeSelector->setEnabled(enable);
       d->WorkspaceMeshLoadBtn->setEnabled(!enable);
     }
 
@@ -705,8 +679,8 @@ void qSlicerWorkspaceGenerationModuleWidget::disableWidgetsAfter(
                          Qt::CaseInsensitive))
     {
       d->ParameterNodeSelector->setEnabled(enable);
-      d->InputNodeSelector->setEnabled(enable);
-      d->OutputModelNodeSelector->setEnabled(enable);
+      d->InputVolumeNodeSelector->setEnabled(enable);
+      d->ROINodeSelector->setEnabled(enable);
       d->WorkspaceMeshLoadBtn->setEnabled(enable);
     }
   }

@@ -1,3 +1,5 @@
+#include <QDebug>
+
 // WorkspaceGeneration includes
 #include "vtkMRMLWorkspaceGenerationNode.h"
 
@@ -18,14 +20,16 @@
 #include <sstream>
 #include <string.h>
 
-static const char* INPUT_ROLE = "InputNode";
-static const char* OUTPUT_MODEL_ROLE = "OutputModel";
+static const char* INPUT_ROLE = "InputVolume";
+static const char* ROI_ROLE = "AnnotationROI";
 
 vtkMRMLNodeNewMacro(vtkMRMLWorkspaceGenerationNode);
 
 //-----------------------------------------------------------------
 vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
 {
+  qInfo() << Q_FUNC_INFO;
+
   this->HideFromEditorsOff();
   this->SetSaveWithScene(true);
 
@@ -34,10 +38,10 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
   events->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
 
   this->AddNodeReferenceRole(INPUT_ROLE, NULL, events.GetPointer());
-  this->AddNodeReferenceRole(OUTPUT_MODEL_ROLE);
+  this->AddNodeReferenceRole(ROI_ROLE);
 
-  this->AutoUpdateOutput = true;
-  this->InputNodeType = NONE;
+  // this->AutoUpdateOutput = true;
+  // this->InputNodeType = NONE;
 }
 
 //-----------------------------------------------------------------
@@ -48,22 +52,26 @@ vtkMRMLWorkspaceGenerationNode::~vtkMRMLWorkspaceGenerationNode()
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::WriteXML(ostream& of, int nIndent)
 {
+  qInfo() << Q_FUNC_INFO;
+
   Superclass::WriteXML(of, nIndent);  // This will take care of referenced nodes
   vtkMRMLWriteXMLBeginMacro(of);
-  vtkMRMLWriteXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
-  vtkMRMLWriteXMLIntMacro(InputNodeType, InputNodeType);
+  // vtkMRMLWriteXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
+  // vtkMRMLWriteXMLIntMacro(InputNodeType, InputNodeType);
   vtkMRMLWriteXMLEndMacro();
 }
 
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::ReadXMLAttributes(const char** atts)
 {
+  qInfo() << Q_FUNC_INFO;
+
   int disabledModify = this->StartModify();
   Superclass::ReadXMLAttributes(atts);  // This will take care of referenced
                                         // nodes
   vtkMRMLReadXMLBeginMacro(atts);
-  vtkMRMLReadXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
-  vtkMRMLReadXMLBooleanMacro(InputNodeType, InputNodeType);
+  // vtkMRMLReadXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
+  // vtkMRMLReadXMLBooleanMacro(InputNodeType, InputNodeType);
   vtkMRMLReadXMLEndMacro();
   this->EndModify(disabledModify);
 }
@@ -71,11 +79,13 @@ void vtkMRMLWorkspaceGenerationNode::ReadXMLAttributes(const char** atts)
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::Copy(vtkMRMLNode* anode)
 {
+  qInfo() << Q_FUNC_INFO;
+
   int disabledModify = this->StartModify();
   Superclass::Copy(anode);  // This will take care of referenced nodes
   vtkMRMLCopyBeginMacro(anode);
-  vtkMRMLCopyBooleanMacro(AutoUpdateOutput);
-  vtkMRMLCopyBooleanMacro(InputNodeType);
+  // vtkMRMLCopyBooleanMacro(AutoUpdateOutput);
+  // vtkMRMLCopyBooleanMacro(InputNodeType);
   vtkMRMLCopyEndMacro();
   this->EndModify(disabledModify);
 }
@@ -83,73 +93,66 @@ void vtkMRMLWorkspaceGenerationNode::Copy(vtkMRMLNode* anode)
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::PrintSelf(ostream& os, vtkIndent indent)
 {
+  qInfo() << Q_FUNC_INFO;
+
   Superclass::PrintSelf(os, indent);  // This will take care of referenced nodes
   vtkMRMLPrintBeginMacro(os, indent);
-  vtkMRMLPrintBooleanMacro(AutoUpdateOutput);
-  vtkMRMLPrintBooleanMacro(InputNodeType);
+  // vtkMRMLPrintBooleanMacro(AutoUpdateOutput);
+  // vtkMRMLPrintBooleanMacro(InputNodeType);
   vtkMRMLPrintEndMacro();
 }
 
 //-----------------------------------------------------------------
-vtkMRMLNode* vtkMRMLWorkspaceGenerationNode::GetInputNode()
+vtkMRMLVolumeNode* vtkMRMLWorkspaceGenerationNode::GetInputVolumeNode()
 {
-  vtkMRMLNode* inputNode = this->GetNodeReference(INPUT_ROLE);
-  return inputNode;
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLVolumeNode* inputVolumeNode =
+    vtkMRMLVolumeNode::SafeDownCast(this->GetNodeReference(INPUT_ROLE));
+  return inputVolumeNode;
 }
 
 //-----------------------------------------------------------------
-vtkMRMLModelNode* vtkMRMLWorkspaceGenerationNode::GetOutputModelNode()
+vtkMRMLAnnotationROINode* vtkMRMLWorkspaceGenerationNode::GetAnnotationROINode()
 {
-  vtkMRMLModelNode* modelNode =
-    vtkMRMLModelNode::SafeDownCast(this->GetNodeReference(OUTPUT_MODEL_ROLE));
-  return modelNode;
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLAnnotationROINode* annotationROINode =
+    vtkMRMLAnnotationROINode::SafeDownCast(this->GetNodeReference(ROI_ROLE));
+  return annotationROINode;
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetAndObserveInputNodeID(
-  const char* inputId, int input_node_type)
+void vtkMRMLWorkspaceGenerationNode::SetAndObserveInputVolumeNodeID(
+  const char* inputId)
 {
+  qInfo() << Q_FUNC_INFO;
+
   // error check
-  const char* outputId = this->GetNodeReferenceID(OUTPUT_MODEL_ROLE);
-  if (inputId != NULL && outputId != NULL && strcmp(inputId, outputId) == 0)
+  const char* roiId = this->GetNodeReferenceID(ROI_ROLE);
+  if (inputId != NULL && roiId != NULL && strcmp(inputId, roiId) == 0)
   {
-    vtkErrorMacro("Input node and output node cannot be the same.");
+    vtkErrorMacro("Input node cannot be null.");
     return;
   }
-
-  this->InputNodeType = input_node_type;
 
   this->SetAndObserveNodeReferenceID(INPUT_ROLE, inputId);
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetAndObserveOutputModelNodeID(
-  const char* outputId)
+void vtkMRMLWorkspaceGenerationNode::SetAndObserveAnnotationROINodeID(
+  const char* annotationROIId)
 {
+  qInfo() << Q_FUNC_INFO;
+
   // error check
   const char* inputId = this->GetNodeReferenceID(INPUT_ROLE);
-  if (inputId != NULL && outputId != NULL && strcmp(inputId, outputId) == 0)
+  if (inputId != NULL && annotationROIId != NULL &&
+      strcmp(annotationROIId, inputId) == 0)
   {
-    vtkErrorMacro("Input node and output node cannot be the same.");
+    vtkErrorMacro("Input node and annotation node cannot be null.");
     return;
   }
 
-  this->SetAndObserveNodeReferenceID(OUTPUT_MODEL_ROLE, outputId);
+  this->SetAndObserveNodeReferenceID(ROI_ROLE, annotationROIId);
 }
-
-//-----------------------------------------------------------------
-// void vtkMRMLWorkspaceGenerationNode::ProcessMRMLEvents(vtkObject* caller,
-//                                                        unsigned long
-//                                                        /*event*/, void*
-//                                                        /*callData*/)
-// {
-//   vtkInfoMacro("Entered ProcessMRML Events Callback");
-//   vtkMRMLNode* callerNode = vtkMRMLNode::SafeDownCast(caller);
-//   if (callerNode == NULL)
-//     return;
-
-//   if (this->GetInputNode() && this->GetInputNode() == caller)
-//   {
-//     // this->InvokeCustomModifiedEvent(MarkupsPositionModifiedEvent);
-//   }
-// }

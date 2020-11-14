@@ -32,6 +32,12 @@
 #include <vtkSlicerVolumeRenderingLogic.h>
 #include <vtkSlicerVolumeRenderingModuleLogicExport.h>
 
+// Volume Rendering Display Node
+#include <vtkMRMLVolumeRenderingDisplayNode.h>
+
+// Annotation ROI Node
+#include <vtkMRMLAnnotationROINode.h>
+
 // Slicer Module includes
 #include <qSlicerAbstractModule.h>
 #include <qSlicerCoreApplication.h>
@@ -77,17 +83,19 @@ public:
   void UpdateSelectionNode(vtkMRMLWorkspaceGenerationNode* moduleNode);
 
   // Updates output model from file?
-  void UpdateOutputModel(vtkMRMLWorkspaceGenerationNode* moduleNode);
+  void UpdateVolumeRendering();
 
   // Load workspace mesh
   void LoadWorkspace(QString workspaceMeshFilePath);
 
-  // Get the points store in a vtkMRMLModelNode
-  static void ModelToPoints(vtkMRMLModelNode* modelNode,
-                            vtkPoints* outputPoints);
-
   vtkSlicerVolumeRenderingLogic* getVolumeRenderingLogic();
   qSlicerAbstractCoreModule* getVolumeRenderingModule();
+
+  void setWorkspaceGenerationNode(vtkMRMLWorkspaceGenerationNode* wgn);
+
+  vtkMRMLVolumeRenderingDisplayNode*
+    getCurrentInputVolumeRenderingDisplayNode();
+  vtkMRMLModelDisplayNode* getCurrentWorkspaceMeshModelDisplayNode();
 
 protected:
   vtkSlicerWorkspaceGenerationLogic();
@@ -103,20 +111,24 @@ protected:
   virtual void OnMRMLSceneNodeAdded(vtkMRMLNode* node) VTK_OVERRIDE;
   virtual void OnMRMLSceneNodeRemoved(vtkMRMLNode* node) VTK_OVERRIDE;
 
-  bool* isInputModelNode;
-  vtkWeakPointer< vtkMRMLWorkspaceGenerationNode > WorkspaceGenerationNode;
-  vtkWeakPointer< vtkMRMLModelNode > InputModelNode;
-  vtkWeakPointer< vtkMRMLVolumeNode > InputVolumeNode;
-  vtkWeakPointer< vtkMRMLModelNode > OutputModelNode;
-  vtkWeakPointer< vtkMRMLDisplayNode > DisplayNode;
+  // Parameter Nodes
+  vtkMRMLWorkspaceGenerationNode* WorkspaceGenerationNode;
+
+  // Input Nodes
+  vtkMRMLVolumeNode* InputVolumeNode;
+  vtkMRMLAnnotationROINode* AnnotationROINode;
+
+  // Robot Workspace Nodes
+  vtkMRMLModelNode* WorkspaceMeshModelNode;
+
+  // Display Nodes
+  vtkMRMLVolumeRenderingDisplayNode* InputVolumeRenderingDisplayNode;
+  vtkMRMLModelDisplayNode* WorkspaceMeshModelDisplayNode;
 
   vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
   qSlicerAbstractCoreModule* VolumeRenderingModule;
 
 private:
-  static void AssignPolyDataToOutput(vtkMRMLWorkspaceGenerationNode* moduleNode,
-                                     vtkPolyData* polyData);
-
   vtkSlicerWorkspaceGenerationLogic(
     const vtkSlicerWorkspaceGenerationLogic&);               // Not implemented
   void operator=(const vtkSlicerWorkspaceGenerationLogic&);  // Not implemented

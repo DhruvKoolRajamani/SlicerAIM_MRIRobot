@@ -29,6 +29,30 @@
       "additionalSOLibSearchPath": "${workspaceFolder}/build/lib/Slicer-4.11/qt-loadable-modules;/home/dhruv/Slicer/build/Slicer-build/lib/Slicer-4.11/qt-loadable-modules"
     },
     {
+      "name": "(Linux) Launch Extension with debugger",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/SlicerWithSlicerAIM_MRIRobot",
+      "args": [
+        "--attach-process"
+      ],
+      "preLaunchTask": "(Linux) build",
+      "stopAtEntry": true,
+      "cwd": "${workspaceFolder}",
+      "launchCompleteCommand": "exec-run",
+      "linux": {
+        "MIMode": "gdb",
+        "miDebuggerPath": "/usr/bin/gdb"
+      },
+      "symbolLoadInfo": {
+        "loadAll": true,
+        "exceptionList": ""
+      },
+      "environment": [],
+      "externalConsole": true,
+      "additionalSOLibSearchPath": "${workspaceFolder}/build/lib/Slicer-4.11/qt-loadable-modules;/home/dhruv/Slicer/build/Slicer-build/lib/Slicer-4.11/qt-loadable-modules"
+    },
+    {
       "name": "(Linux) Attach",
       "type": "cppdbg",
       "request": "attach",

@@ -29,15 +29,18 @@
 #include <vtkSlicerVolumeRenderingLogic.h>
 #include <vtkSlicerVolumeRenderingModuleLogicExport.h>
 
+// Annotation ROI Node
+#include <vtkMRMLAnnotationROINode.h>
+
 // Slicer Module includes
 #include <qSlicerAbstractModule.h>
 #include <qSlicerCoreApplication.h>
 #include <qSlicerModuleManager.h>
 
 #include "qSlicerWorkspaceGenerationModuleExport.h"
-#include "vtkMRMLModelDisplayNode.h"
-#include "vtkMRMLModelNode.h"
-#include "vtkMRMLVolumeNode.h"
+#include <vtkMRMLModelDisplayNode.h>
+#include <vtkMRMLModelNode.h>
+#include <vtkMRMLVolumeNode.h>
 
 class qSlicerWorkspaceGenerationModuleWidgetPrivate;
 class vtkMRMLNode;
@@ -62,10 +65,10 @@ public slots:
 
 protected slots:
   void onParameterNodeSelectionChanged();
-  void onInputNodeSelectionChanged(vtkMRMLNode*);
-  void onInputNodeNodeAdded(vtkMRMLNode*);
-  void onOutputModelNodeAdded(vtkMRMLNode*);
-  void onOutputModelSelectionChanged(vtkMRMLNode*);
+  void onInputVolumeNodeSelectionChanged(vtkMRMLNode*);
+  void onInputVolumeNodeAdded(vtkMRMLNode*);
+  void onAnnotationROINodeAdded(vtkMRMLNode*);
+  void onAnnotationROISelectionChanged(vtkMRMLNode*);
   void onWorkspaceLoadButtonClick();
   void onApplyTransformClick();
   void onSceneImportedEvent();
@@ -77,19 +80,16 @@ protected slots:
   void disableWidgetsAfter(QWidget* widget);
   void enableWidgets(QWidget* widget, bool enable);
 
-  void onOutputModelVisibilityChanged(bool visible);
+  void onInputVolumeVisibilityChanged(bool visible);
   void onWorkspaceMeshVisibilityChanged(bool visible);
 
-  void UpdateOutputModel();
+  void UpdateVolumeRendering();
 
 protected:
   QScopedPointer< qSlicerWorkspaceGenerationModuleWidgetPrivate > d_ptr;
 
-  vtkMRMLModelNode* GetOutputModelNode();
-  vtkMRMLNode* GetInputNode();
-  vtkMRMLVolumeNode* inputVolumeNode;
-
-  QString workspaceMeshFilePath;
+  vtkMRMLAnnotationROINode* GetAnnotationROINode();
+  vtkMRMLVolumeNode* GetInputVolumeNode();
 
   vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
   qSlicerAbstractCoreModule* VolumeRenderingModule;
