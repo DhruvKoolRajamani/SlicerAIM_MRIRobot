@@ -60,6 +60,27 @@
      <property name="horizontalSpacing">
       <number>7</number>
      </property>
+     <item row="2" column="1">
+      <widget class="qMRMLNodeComboBox" name="ROINodeSelector">
+       <property name="toolTip">
+        <string extracomment="Select an annotation ROI node to store the output">Select an annotation ROI node to store the output</string>
+       </property>
+       <property name="nodeTypes">
+        <stringlist>
+         <string>vtkMRMLAnnotationROINode</string>
+        </stringlist>
+       </property>
+       <property name="noneEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="renameEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="selectNodeUponCreation">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="0" colspan="3">
       <widget class="QLabel" name="InputSettingsLabel">
        <property name="font">
@@ -90,12 +111,31 @@
        </property>
       </widget>
      </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="AnnotationROINodeLabel">
+       <property name="text">
+        <string>ROI</string>
+       </property>
+       <property name="margin">
+        <number>5</number>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="InputVolumeNodeLabel">
+       <property name="text">
+        <string>Input Volume</string>
+       </property>
+       <property name="margin">
+        <number>5</number>
+       </property>
+      </widget>
+     </item>
      <item row="1" column="1" colspan="2">
-      <widget class="qMRMLNodeComboBox" name="InputNodeSelector">
+      <widget class="qMRMLNodeComboBox" name="InputVolumeNodeSelector">
        <property name="nodeTypes">
         <stringlist>
          <string>vtkMRMLVolumeNode</string>
-         <!-- <string>vtkMRMLAnnotationROINode</string> -->
         </stringlist>
        </property>
        <property name="noneEnabled">
@@ -112,17 +152,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="InputNodeLabel">
-       <property name="text">
-        <string>Input Data Node</string>
-       </property>
-       <property name="margin">
-        <number>5</number>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0" colspan="3">
+     <item row="4" column="0" colspan="3">
       <widget class="qSlicerVolumeRenderingPresetComboBox" name="InputVolumeRenderingPresetComboBox">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -135,56 +165,21 @@
        </property>
       </widget>
      </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QGridLayout" name="OutputLayout">
-     <property name="leftMargin">
-      <number>5</number>
-     </property>
-     <property name="horizontalSpacing">
-      <number>7</number>
-     </property>
-     <item row="1" column="0">
-      <widget class="QLabel" name="ModelNodeLabel">
-       <property name="text">
-        <string>Output Data Node</string>
-       </property>
-       <property name="margin">
-        <number>5</number>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="3">
-      <widget class="ctkCheckablePushButton" name="OutputModelSetVisibilityCheckBox">
+     <item row="2" column="2">
+      <widget class="ctkPushButton" name="InputVolumeSetVisibilityCheckBox">
        <property name="text">
         <string>Visibility</string>
        </property>
-      </widget>
-     </item>
-     <item row="1" column="1" colspan="2">
-      <widget class="qMRMLNodeComboBox" name="OutputModelNodeSelector">
-       <property name="toolTip">
-        <string extracomment="Select a model node to store the output">Select a model node to store the output</string>
-       </property>
-       <property name="nodeTypes">
-        <stringlist>
-         <string>vtkMRMLModelNode</string>
-        </stringlist>
-       </property>
-       <property name="noneEnabled">
+       <property name="checkable">
         <bool>true</bool>
        </property>
-       <property name="renameEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="selectNodeUponCreation">
+       <property name="checked">
         <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="0" column="0" colspan="4">
-      <widget class="QLabel" name="OutputModelSettingsLabel">
+     <item row="3" column="0" colspan="3">
+      <widget class="QLabel" name="InputVolumePropertiesLabel">
        <property name="font">
         <font>
          <family>DejaVu Sans</family>
@@ -197,7 +192,7 @@
         <number>1</number>
        </property>
        <property name="text">
-        <string>Output Settings</string>
+        <string>Volume Properties</string>
        </property>
        <property name="scaledContents">
         <bool>false</bool>
@@ -223,10 +218,20 @@
      <property name="horizontalSpacing">
       <number>7</number>
      </property>
-     <item row="1" column="3">
-      <widget class="ctkCheckablePushButton" name="WorkspaceMeshSetVisibilityCheckBox">
+     <item row="2" column="0" colspan="3">
+      <widget class="qMRMLMatrixWidget" name="WorkspaceMeshMRMLMatrixWidget">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>100</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="3">
+      <widget class="QPushButton" name="WorkspaceMeshPushButton">
        <property name="text">
-        <string>Visibility</string>
+        <string>Apply Transform</string>
        </property>
       </widget>
      </item>
@@ -270,20 +275,16 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="3">
-      <widget class="QPushButton" name="WorkspaceMeshPushButton">
+     <item row="1" column="3">
+      <widget class="ctkPushButton" name="WorkspaceMeshSetVisibilityCheckBox">
        <property name="text">
-        <string>Apply Transform</string>
+        <string>Visibility</string>
        </property>
-      </widget>
-     </item>
-     <item row="2" column="0" colspan="3">
-      <widget class="qMRMLMatrixWidget" name="WorkspaceMeshMRMLMatrixWidget">
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>100</height>
-        </size>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

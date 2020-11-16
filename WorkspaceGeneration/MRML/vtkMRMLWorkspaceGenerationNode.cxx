@@ -1,3 +1,5 @@
+#include <QDebug>
+
 // WorkspaceGeneration includes
 #include "vtkMRMLWorkspaceGenerationNode.h"
 
@@ -18,26 +20,31 @@
 #include <sstream>
 #include <string.h>
 
-static const char* INPUT_ROLE = "InputNode";
-static const char* OUTPUT_MODEL_ROLE = "OutputModel";
+static const char* INPUT_ROLE = "InputVolume";
+static const char* ROI_ROLE = "ROI";
+static const char* WORKSPACEMESH_MODEL_ROLE = "WorkspaceMeshModel";
 
 vtkMRMLNodeNewMacro(vtkMRMLWorkspaceGenerationNode);
 
 //-----------------------------------------------------------------
 vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
 {
+  qInfo() << Q_FUNC_INFO;
+
   this->HideFromEditorsOff();
   this->SetSaveWithScene(true);
 
-  vtkNew< vtkIntArray > events;
-  events->InsertNextValue(vtkCommand::ModifiedEvent);
-  events->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
+  vtkNew< vtkIntArray > inputVolumeEvents;
+  inputVolumeEvents->InsertNextValue(vtkCommand::ModifiedEvent);
 
-  this->AddNodeReferenceRole(INPUT_ROLE, NULL, events.GetPointer());
-  this->AddNodeReferenceRole(OUTPUT_MODEL_ROLE);
+  // inputVolumeEvents->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
+
+  this->AddNodeReferenceRole(INPUT_ROLE, NULL, inputVolumeEvents.GetPointer());
+  this->AddNodeReferenceRole(ROI_ROLE);
+  this->AddNodeReferenceRole(WORKSPACEMESH_MODEL_ROLE);
 
   this->AutoUpdateOutput = true;
-  this->InputNodeType = NONE;
+  // this->InputNodeType = NONE;
 }
 
 //-----------------------------------------------------------------
@@ -48,22 +55,26 @@ vtkMRMLWorkspaceGenerationNode::~vtkMRMLWorkspaceGenerationNode()
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::WriteXML(ostream& of, int nIndent)
 {
+  qInfo() << Q_FUNC_INFO;
+
   Superclass::WriteXML(of, nIndent);  // This will take care of referenced nodes
   vtkMRMLWriteXMLBeginMacro(of);
   vtkMRMLWriteXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
-  vtkMRMLWriteXMLIntMacro(InputNodeType, InputNodeType);
+  // vtkMRMLWriteXMLIntMacro(InputNodeType, InputNodeType);
   vtkMRMLWriteXMLEndMacro();
 }
 
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::ReadXMLAttributes(const char** atts)
 {
+  qInfo() << Q_FUNC_INFO;
+
   int disabledModify = this->StartModify();
   Superclass::ReadXMLAttributes(atts);  // This will take care of referenced
                                         // nodes
   vtkMRMLReadXMLBeginMacro(atts);
   vtkMRMLReadXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
-  vtkMRMLReadXMLBooleanMacro(InputNodeType, InputNodeType);
+  // vtkMRMLReadXMLBooleanMacro(InputNodeType, InputNodeType);
   vtkMRMLReadXMLEndMacro();
   this->EndModify(disabledModify);
 }
@@ -71,11 +82,13 @@ void vtkMRMLWorkspaceGenerationNode::ReadXMLAttributes(const char** atts)
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::Copy(vtkMRMLNode* anode)
 {
+  qInfo() << Q_FUNC_INFO;
+
   int disabledModify = this->StartModify();
   Superclass::Copy(anode);  // This will take care of referenced nodes
   vtkMRMLCopyBeginMacro(anode);
   vtkMRMLCopyBooleanMacro(AutoUpdateOutput);
-  vtkMRMLCopyBooleanMacro(InputNodeType);
+  // vtkMRMLCopyBooleanMacro(InputNodeType);
   vtkMRMLCopyEndMacro();
   this->EndModify(disabledModify);
 }
@@ -83,73 +96,115 @@ void vtkMRMLWorkspaceGenerationNode::Copy(vtkMRMLNode* anode)
 //-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::PrintSelf(ostream& os, vtkIndent indent)
 {
+  qInfo() << Q_FUNC_INFO;
+
   Superclass::PrintSelf(os, indent);  // This will take care of referenced nodes
   vtkMRMLPrintBeginMacro(os, indent);
   vtkMRMLPrintBooleanMacro(AutoUpdateOutput);
-  vtkMRMLPrintBooleanMacro(InputNodeType);
+  // vtkMRMLPrintBooleanMacro(InputNodeType);
   vtkMRMLPrintEndMacro();
 }
 
 //-----------------------------------------------------------------
-vtkMRMLNode* vtkMRMLWorkspaceGenerationNode::GetInputNode()
+vtkMRMLVolumeNode* vtkMRMLWorkspaceGenerationNode::GetInputVolumeNode()
 {
-  vtkMRMLNode* inputNode = this->GetNodeReference(INPUT_ROLE);
-  return inputNode;
-}
+  qInfo() << Q_FUNC_INFO;
 
-//-----------------------------------------------------------------
-vtkMRMLModelNode* vtkMRMLWorkspaceGenerationNode::GetOutputModelNode()
-{
-  vtkMRMLModelNode* modelNode =
-    vtkMRMLModelNode::SafeDownCast(this->GetNodeReference(OUTPUT_MODEL_ROLE));
-  return modelNode;
-}
+  vtkMRMLVolumeNode* inputVolumeNode =
+    vtkMRMLVolumeNode::SafeDownCast(this->GetNodeReference(INPUT_ROLE));
 
-//-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetAndObserveInputNodeID(
-  const char* inputId, int input_node_type)
-{
-  // error check
-  const char* outputId = this->GetNodeReferenceID(OUTPUT_MODEL_ROLE);
-  if (inputId != NULL && outputId != NULL && strcmp(inputId, outputId) == 0)
+  if (!inputVolumeNode)
   {
-    vtkErrorMacro("Input node and output node cannot be the same.");
-    return;
+    qWarning() << Q_FUNC_INFO << ": input volume node is null";
   }
 
-  this->InputNodeType = input_node_type;
+  return inputVolumeNode;
+}
+
+//-----------------------------------------------------------------
+vtkMRMLAnnotationROINode* vtkMRMLWorkspaceGenerationNode::GetAnnotationROINode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLAnnotationROINode* annotationROINode =
+    vtkMRMLAnnotationROINode::SafeDownCast(this->GetNodeReference(ROI_ROLE));
+
+  if (!annotationROINode)
+  {
+    qWarning() << Q_FUNC_INFO << ": annotationROI node is null";
+    return NULL;
+  }
+
+  return annotationROINode;
+}
+
+//-----------------------------------------------------------------
+vtkMRMLModelNode* vtkMRMLWorkspaceGenerationNode::GetWorkspaceMeshModelNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLModelNode* workspaceMeshModelNode = vtkMRMLModelNode::SafeDownCast(
+    this->GetNodeReference(WORKSPACEMESH_MODEL_ROLE));
+
+  if (!workspaceMeshModelNode)
+  {
+    qWarning() << Q_FUNC_INFO << ": workspaceMeshModelNode node is null";
+    return NULL;
+  }
+
+  return workspaceMeshModelNode;
+}
+
+//-----------------------------------------------------------------
+void vtkMRMLWorkspaceGenerationNode::SetAndObserveInputVolumeNodeID(
+  const char* inputId)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (inputId == NULL)
+  {
+    vtkErrorMacro("Input node cannot be null.");
+    return;
+  }
 
   this->SetAndObserveNodeReferenceID(INPUT_ROLE, inputId);
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetAndObserveOutputModelNodeID(
-  const char* outputId)
+void vtkMRMLWorkspaceGenerationNode::SetAndObserveWorkspaceMeshModelNodeID(
+  const char* workspaceMeshModelNodeId)
 {
+  qInfo() << Q_FUNC_INFO;
+
   // error check
-  const char* inputId = this->GetNodeReferenceID(INPUT_ROLE);
-  if (inputId != NULL && outputId != NULL && strcmp(inputId, outputId) == 0)
+  const char* roiId = this->GetNodeReferenceID(ROI_ROLE);
+  if (workspaceMeshModelNodeId != NULL && roiId != NULL &&
+      strcmp(workspaceMeshModelNodeId, roiId) == 0)
   {
-    vtkErrorMacro("Input node and output node cannot be the same.");
+    vtkErrorMacro(
+      "Workspace Mesh node and Annotation ROI Node cannot be same.");
     return;
   }
 
-  this->SetAndObserveNodeReferenceID(OUTPUT_MODEL_ROLE, outputId);
+  this->SetAndObserveNodeReferenceID(WORKSPACEMESH_MODEL_ROLE,
+                                     workspaceMeshModelNodeId);
 }
 
 //-----------------------------------------------------------------
-// void vtkMRMLWorkspaceGenerationNode::ProcessMRMLEvents(vtkObject* caller,
-//                                                        unsigned long
-//                                                        /*event*/, void*
-//                                                        /*callData*/)
-// {
-//   vtkInfoMacro("Entered ProcessMRML Events Callback");
-//   vtkMRMLNode* callerNode = vtkMRMLNode::SafeDownCast(caller);
-//   if (callerNode == NULL)
-//     return;
+void vtkMRMLWorkspaceGenerationNode::SetAndObserveAnnotationROINodeID(
+  const char* annotationROIId)
+{
+  qInfo() << Q_FUNC_INFO;
 
-//   if (this->GetInputNode() && this->GetInputNode() == caller)
-//   {
-//     // this->InvokeCustomModifiedEvent(MarkupsPositionModifiedEvent);
-//   }
-// }
+  // error check
+  const char* workspaceMeshModelNodeId =
+    this->GetNodeReferenceID(WORKSPACEMESH_MODEL_ROLE);
+  if (workspaceMeshModelNodeId != NULL && annotationROIId != NULL &&
+      strcmp(annotationROIId, workspaceMeshModelNodeId) == 0)
+  {
+    vtkErrorMacro("Workspace Mesh node and annotation node cannot be null.");
+    return;
+  }
+
+  this->SetAndObserveNodeReferenceID(ROI_ROLE, annotationROIId);
+}

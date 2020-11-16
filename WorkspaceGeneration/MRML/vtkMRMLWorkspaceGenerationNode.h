@@ -33,6 +33,12 @@
 #include <vtkObjectBase.h>
 #include <vtkObjectFactory.h>
 
+// Volume MRML Node
+#include <vtkMRMLVolumeNode.h>
+
+// Annotation ROI Node
+#include <vtkMRMLAnnotationROINode.h>
+
 // Slicer includes
 #include "vtkMRMLNode.h"
 #include "vtkMRMLScene.h"
@@ -46,16 +52,6 @@ class VTK_SLICER_WORKSPACEGENERATION_MODULE_MRML_EXPORT
   vtkMRMLWorkspaceGenerationNode : public vtkMRMLNode
 {
 public:
-  enum Events
-  {
-    /// MarkupsPositionModifiedEvent is called when markup point positions are
-    /// modified. This make it easier for logic or other classes to observe any
-    /// changes in input data.
-    // vtkCommand::UserEvent + 777 is just a random value that is very unlikely
-    // to be used for anything else in this class
-    MarkupsPositionModifiedEvent = vtkCommand::UserEvent + 777
-  };
-
   vtkTypeMacro(vtkMRMLWorkspaceGenerationNode, vtkMRMLNode);
 
   // Standard MRML node methods
@@ -74,9 +70,6 @@ public:
   vtkGetMacro(AutoUpdateOutput, bool);
   vtkSetMacro(AutoUpdateOutput, bool);
 
-  vtkGetMacro(InputNodeType, int);
-  vtkSetMacro(InputNodeType, int);
-
 protected:
   // Constructor/destructor methods
   vtkMRMLWorkspaceGenerationNode();
@@ -85,27 +78,18 @@ protected:
   void operator=(const vtkMRMLWorkspaceGenerationNode&);
 
 public:
-  enum
-  {
-    NONE = 0,
-    VOLUME_NODE = 1,
-    ANNOTATIONROI_NODE = 2,
-    MODEL_NODE = 3
-  };
+  void SetAndObserveInputVolumeNodeID(const char* inputNodeId);
+  void SetAndObserveAnnotationROINodeID(const char* annotationROINodeId);
+  void SetAndObserveWorkspaceMeshModelNodeID(const char* workspaceMeshModelNodeId);
 
-  void SetAndObserveInputNodeID(const char* inputNodeId,
-                                int input_node_type = NONE);
-  void SetAndObserveOutputModelNodeID(const char* outputModelNodeId);
-  // void ProcessMRMLEvents(vtkObject* caller, unsigned long event,
-  //                        void* callData) VTK_OVERRIDE;
-
-  vtkMRMLNode* GetInputNode();
-  vtkMRMLModelNode* GetOutputModelNode();
+  vtkMRMLVolumeNode* GetInputVolumeNode();
+  vtkMRMLAnnotationROINode* GetAnnotationROINode();
+  vtkMRMLModelNode* GetWorkspaceMeshModelNode();
 
 private:
   bool AutoUpdateOutput;
 
-  int InputNodeType;
+  // int InputNodeType;
 };
 
 #endif  // __vtkMRMLWorkspaceGenerationNode_h
