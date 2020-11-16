@@ -21,7 +21,8 @@
 #include <string.h>
 
 static const char* INPUT_ROLE = "InputVolume";
-static const char* ROI_ROLE = "AnnotationROI";
+static const char* ROI_ROLE = "ROI";
+static const char* WORKSPACEMESH_MODEL_ROLE = "WorkspaceMeshModel";
 
 vtkMRMLNodeNewMacro(vtkMRMLWorkspaceGenerationNode);
 
@@ -33,14 +34,16 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
   this->HideFromEditorsOff();
   this->SetSaveWithScene(true);
 
-  vtkNew< vtkIntArray > events;
-  events->InsertNextValue(vtkCommand::ModifiedEvent);
-  events->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
+  vtkNew< vtkIntArray > inputVolumeEvents;
+  inputVolumeEvents->InsertNextValue(vtkCommand::ModifiedEvent);
 
-  this->AddNodeReferenceRole(INPUT_ROLE, NULL, events.GetPointer());
+  // inputVolumeEvents->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
+
+  this->AddNodeReferenceRole(INPUT_ROLE, NULL, inputVolumeEvents.GetPointer());
   this->AddNodeReferenceRole(ROI_ROLE);
+  this->AddNodeReferenceRole(WORKSPACEMESH_MODEL_ROLE);
 
-  // this->AutoUpdateOutput = true;
+  this->AutoUpdateOutput = true;
   // this->InputNodeType = NONE;
 }
 
@@ -56,7 +59,7 @@ void vtkMRMLWorkspaceGenerationNode::WriteXML(ostream& of, int nIndent)
 
   Superclass::WriteXML(of, nIndent);  // This will take care of referenced nodes
   vtkMRMLWriteXMLBeginMacro(of);
-  // vtkMRMLWriteXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
+  vtkMRMLWriteXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
   // vtkMRMLWriteXMLIntMacro(InputNodeType, InputNodeType);
   vtkMRMLWriteXMLEndMacro();
 }
@@ -70,7 +73,7 @@ void vtkMRMLWorkspaceGenerationNode::ReadXMLAttributes(const char** atts)
   Superclass::ReadXMLAttributes(atts);  // This will take care of referenced
                                         // nodes
   vtkMRMLReadXMLBeginMacro(atts);
-  // vtkMRMLReadXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
+  vtkMRMLReadXMLBooleanMacro(AutoUpdateOutput, AutoUpdateOutput);
   // vtkMRMLReadXMLBooleanMacro(InputNodeType, InputNodeType);
   vtkMRMLReadXMLEndMacro();
   this->EndModify(disabledModify);
@@ -84,7 +87,7 @@ void vtkMRMLWorkspaceGenerationNode::Copy(vtkMRMLNode* anode)
   int disabledModify = this->StartModify();
   Superclass::Copy(anode);  // This will take care of referenced nodes
   vtkMRMLCopyBeginMacro(anode);
-  // vtkMRMLCopyBooleanMacro(AutoUpdateOutput);
+  vtkMRMLCopyBooleanMacro(AutoUpdateOutput);
   // vtkMRMLCopyBooleanMacro(InputNodeType);
   vtkMRMLCopyEndMacro();
   this->EndModify(disabledModify);
@@ -97,7 +100,7 @@ void vtkMRMLWorkspaceGenerationNode::PrintSelf(ostream& os, vtkIndent indent)
 
   Superclass::PrintSelf(os, indent);  // This will take care of referenced nodes
   vtkMRMLPrintBeginMacro(os, indent);
-  // vtkMRMLPrintBooleanMacro(AutoUpdateOutput);
+  vtkMRMLPrintBooleanMacro(AutoUpdateOutput);
   // vtkMRMLPrintBooleanMacro(InputNodeType);
   vtkMRMLPrintEndMacro();
 }
@@ -109,6 +112,12 @@ vtkMRMLVolumeNode* vtkMRMLWorkspaceGenerationNode::GetInputVolumeNode()
 
   vtkMRMLVolumeNode* inputVolumeNode =
     vtkMRMLVolumeNode::SafeDownCast(this->GetNodeReference(INPUT_ROLE));
+
+  if (!inputVolumeNode)
+  {
+    qWarning() << Q_FUNC_INFO << ": input volume node is null";
+  }
+
   return inputVolumeNode;
 }
 
@@ -119,7 +128,31 @@ vtkMRMLAnnotationROINode* vtkMRMLWorkspaceGenerationNode::GetAnnotationROINode()
 
   vtkMRMLAnnotationROINode* annotationROINode =
     vtkMRMLAnnotationROINode::SafeDownCast(this->GetNodeReference(ROI_ROLE));
+
+  if (!annotationROINode)
+  {
+    qWarning() << Q_FUNC_INFO << ": annotationROI node is null";
+    return NULL;
+  }
+
   return annotationROINode;
+}
+
+//-----------------------------------------------------------------
+vtkMRMLModelNode* vtkMRMLWorkspaceGenerationNode::GetWorkspaceMeshModelNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLModelNode* workspaceMeshModelNode = vtkMRMLModelNode::SafeDownCast(
+    this->GetNodeReference(WORKSPACEMESH_MODEL_ROLE));
+
+  if (!workspaceMeshModelNode)
+  {
+    qWarning() << Q_FUNC_INFO << ": workspaceMeshModelNode node is null";
+    return NULL;
+  }
+
+  return workspaceMeshModelNode;
 }
 
 //-----------------------------------------------------------------
@@ -128,9 +161,7 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveInputVolumeNodeID(
 {
   qInfo() << Q_FUNC_INFO;
 
-  // error check
-  const char* roiId = this->GetNodeReferenceID(ROI_ROLE);
-  if (inputId != NULL && roiId != NULL && strcmp(inputId, roiId) == 0)
+  if (inputId == NULL)
   {
     vtkErrorMacro("Input node cannot be null.");
     return;
@@ -140,17 +171,38 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveInputVolumeNodeID(
 }
 
 //-----------------------------------------------------------------
+void vtkMRMLWorkspaceGenerationNode::SetAndObserveWorkspaceMeshModelNodeID(
+  const char* workspaceMeshModelNodeId)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  // error check
+  const char* roiId = this->GetNodeReferenceID(ROI_ROLE);
+  if (workspaceMeshModelNodeId != NULL && roiId != NULL &&
+      strcmp(workspaceMeshModelNodeId, roiId) == 0)
+  {
+    vtkErrorMacro(
+      "Workspace Mesh node and Annotation ROI Node cannot be same.");
+    return;
+  }
+
+  this->SetAndObserveNodeReferenceID(WORKSPACEMESH_MODEL_ROLE,
+                                     workspaceMeshModelNodeId);
+}
+
+//-----------------------------------------------------------------
 void vtkMRMLWorkspaceGenerationNode::SetAndObserveAnnotationROINodeID(
   const char* annotationROIId)
 {
   qInfo() << Q_FUNC_INFO;
 
   // error check
-  const char* inputId = this->GetNodeReferenceID(INPUT_ROLE);
-  if (inputId != NULL && annotationROIId != NULL &&
-      strcmp(annotationROIId, inputId) == 0)
+  const char* workspaceMeshModelNodeId =
+    this->GetNodeReferenceID(WORKSPACEMESH_MODEL_ROLE);
+  if (workspaceMeshModelNodeId != NULL && annotationROIId != NULL &&
+      strcmp(annotationROIId, workspaceMeshModelNodeId) == 0)
   {
-    vtkErrorMacro("Input node and annotation node cannot be null.");
+    vtkErrorMacro("Workspace Mesh node and annotation node cannot be null.");
     return;
   }
 

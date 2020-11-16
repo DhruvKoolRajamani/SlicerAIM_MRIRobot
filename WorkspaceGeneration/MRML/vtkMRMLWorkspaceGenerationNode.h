@@ -67,11 +67,8 @@ public:
   virtual void WriteXML(ostream& of, int indent) VTK_OVERRIDE;
   virtual void Copy(vtkMRMLNode* node) VTK_OVERRIDE;
 
-  // vtkGetMacro(AutoUpdateOutput, bool);
-  // vtkSetMacro(AutoUpdateOutput, bool);
-
-  // vtkGetMacro(InputNodeType, int);
-  // vtkSetMacro(InputNodeType, int);
+  vtkGetMacro(AutoUpdateOutput, bool);
+  vtkSetMacro(AutoUpdateOutput, bool);
 
 protected:
   // Constructor/destructor methods
@@ -83,12 +80,14 @@ protected:
 public:
   void SetAndObserveInputVolumeNodeID(const char* inputNodeId);
   void SetAndObserveAnnotationROINodeID(const char* annotationROINodeId);
+  void SetAndObserveWorkspaceMeshModelNodeID(const char* workspaceMeshModelNodeId);
 
   vtkMRMLVolumeNode* GetInputVolumeNode();
   vtkMRMLAnnotationROINode* GetAnnotationROINode();
+  vtkMRMLModelNode* GetWorkspaceMeshModelNode();
 
 private:
-  // bool AutoUpdateOutput;
+  bool AutoUpdateOutput;
 
   // int InputNodeType;
 };

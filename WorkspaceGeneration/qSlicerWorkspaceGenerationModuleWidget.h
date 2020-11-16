@@ -37,6 +37,8 @@
 #include <qSlicerCoreApplication.h>
 #include <qSlicerModuleManager.h>
 
+#include "ctkPushButton.h"
+
 #include "qSlicerWorkspaceGenerationModuleExport.h"
 #include <vtkMRMLModelDisplayNode.h>
 #include <vtkMRMLModelNode.h>
@@ -97,6 +99,8 @@ protected:
   virtual void setup();
   virtual void enter();
   virtual void exit();
+
+  void setCheckState(ctkPushButton* btn, bool state);
 
 private:
   Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationModuleWidget);

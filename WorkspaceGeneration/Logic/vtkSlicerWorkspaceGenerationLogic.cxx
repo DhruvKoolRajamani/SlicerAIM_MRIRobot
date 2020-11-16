@@ -169,7 +169,8 @@ void vtkSlicerWorkspaceGenerationLogic::ProcessMRMLNodesEvents(
 
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationModuleNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(callerNode);
-  if (workspaceGenerationModuleNode == NULL)
+  if (workspaceGenerationModuleNode == NULL ||
+      !workspaceGenerationModuleNode->GetAutoUpdateOutput())
   {
     return;
   }
@@ -357,7 +358,31 @@ void vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
       workspaceMeshFilePath.toLocal8Bit().data(), vtkMRMLStorageNode::RAS);
     WorkspaceMeshModelDisplayNode =
       WorkspaceMeshModelNode->GetModelDisplayNode();
+    this->WorkspaceGenerationNode->SetAndObserveWorkspaceMeshModelNodeID(
+      WorkspaceMeshModelNode->GetID());
   }
+}
+
+//------------------------------------------------------------------------------
+vtkMRMLModelNode* vtkSlicerWorkspaceGenerationLogic::getWorkspaceMeshModelNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (!this->WorkspaceMeshModelNode &&
+      !WorkspaceGenerationNode->GetWorkspaceMeshModelNode())
+  {
+    qCritical() << Q_FUNC_INFO << ": No workspace mesh model node available";
+    return NULL;
+  }
+
+  if (this->WorkspaceMeshModelNode !=
+      this->WorkspaceGenerationNode->GetWorkspaceMeshModelNode())
+  {
+    this->WorkspaceMeshModelNode =
+      this->WorkspaceGenerationNode->GetWorkspaceMeshModelNode();
+  }
+
+  return this->WorkspaceMeshModelNode;
 }
 
 //------------------------------------------------------------------------------

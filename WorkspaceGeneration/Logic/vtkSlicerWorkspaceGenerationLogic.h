@@ -88,14 +88,16 @@ public:
   // Load workspace mesh
   void LoadWorkspace(QString workspaceMeshFilePath);
 
+  // Getters
   vtkSlicerVolumeRenderingLogic* getVolumeRenderingLogic();
   qSlicerAbstractCoreModule* getVolumeRenderingModule();
-
-  void setWorkspaceGenerationNode(vtkMRMLWorkspaceGenerationNode* wgn);
-
+  vtkMRMLModelNode* getWorkspaceMeshModelNode();
   vtkMRMLVolumeRenderingDisplayNode*
     getCurrentInputVolumeRenderingDisplayNode();
   vtkMRMLModelDisplayNode* getCurrentWorkspaceMeshModelDisplayNode();
+
+  // Setters
+  void setWorkspaceGenerationNode(vtkMRMLWorkspaceGenerationNode* wgn);
 
 protected:
   vtkSlicerWorkspaceGenerationLogic();
