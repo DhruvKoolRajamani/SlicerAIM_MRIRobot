@@ -5,6 +5,52 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "(Linux) Launch Extension Without prebuild",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/SlicerWithSlicerAIM_MRIRobot",
+      "args": [
+        // "--attach-process"
+      ],
+      "stopAtEntry": true,
+      "cwd": "${workspaceFolder}",
+      "launchCompleteCommand": "exec-run",
+      "linux": {
+        "MIMode": "gdb",
+        "miDebuggerPath": "/usr/bin/gdb"
+      },
+      "symbolLoadInfo": {
+        "loadAll": true,
+        "exceptionList": ""
+      },
+      "environment": [],
+      "externalConsole": true,
+      "additionalSOLibSearchPath": "${workspaceFolder}/build/lib/Slicer-4.11/qt-loadable-modules;/home/dhruv/Slicer/build/Slicer-build/lib/Slicer-4.11/qt-loadable-modules"
+    },
+    {
+      "name": "(Linux) Launch Extension Without Pre Build with debugger",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/SlicerWithSlicerAIM_MRIRobot",
+      "args": [
+        "--attach-process"
+      ],
+      "stopAtEntry": true,
+      "cwd": "${workspaceFolder}",
+      "launchCompleteCommand": "exec-run",
+      "linux": {
+        "MIMode": "gdb",
+        "miDebuggerPath": "/usr/bin/gdb"
+      },
+      "symbolLoadInfo": {
+        "loadAll": true,
+        "exceptionList": ""
+      },
+      "environment": [],
+      "externalConsole": true,
+      "additionalSOLibSearchPath": "${workspaceFolder}/build/lib/Slicer-4.11/qt-loadable-modules;/home/dhruv/Slicer/build/Slicer-build/lib/Slicer-4.11/qt-loadable-modules"
+    },
+    {
       "name": "(Linux) Launch Extension",
       "type": "cppdbg",
       "request": "launch",

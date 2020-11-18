@@ -80,7 +80,8 @@ protected:
 public:
   void SetAndObserveInputVolumeNodeID(const char* inputNodeId);
   void SetAndObserveAnnotationROINodeID(const char* annotationROINodeId);
-  void SetAndObserveWorkspaceMeshModelNodeID(const char* workspaceMeshModelNodeId);
+  void
+    SetAndObserveWorkspaceMeshModelNodeID(const char* workspaceMeshModelNodeId);
 
   vtkMRMLVolumeNode* GetInputVolumeNode();
   vtkMRMLAnnotationROINode* GetAnnotationROINode();

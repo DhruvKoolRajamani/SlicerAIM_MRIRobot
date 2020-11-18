@@ -71,7 +71,11 @@ protected slots:
   void onInputVolumeNodeAdded(vtkMRMLNode*);
   void onAnnotationROINodeAdded(vtkMRMLNode*);
   void onAnnotationROISelectionChanged(vtkMRMLNode*);
+  void onPresetComboBoxNodeChanged(vtkMRMLNode*);
+  void onPresetOffsetChanged(double, double, bool);
   void onWorkspaceLoadButtonClick();
+  void onWorkspaceMeshModelNodeChanged(vtkMRMLNode* currentNode);
+  void onWorkspaceMeshModelNodeAdded(vtkMRMLNode* nodeAdded);
   void onApplyTransformClick();
   void onSceneImportedEvent();
 
@@ -79,7 +83,12 @@ protected slots:
 
   void blockAllSignals(bool block);
   void enableAllWidgets(bool enable);
-  void disableWidgetsAfter(QWidget* widget);
+  void disableWidgetsAfter(QWidget* widgetStart, QWidget* widgetEnd = NULL,
+                           bool includingStart = false,
+                           bool includingEnd = true);
+  void disableWidgetsBetween(QWidget* start, QWidget* end = NULL,
+                             bool includeStart = false,
+                             bool includeEnd = false);
   void enableWidgets(QWidget* widget, bool enable);
 
   void onInputVolumeVisibilityChanged(bool visible);
@@ -88,6 +97,8 @@ protected slots:
   void UpdateVolumeRendering();
 
 protected:
+  QList< QWidget* > allInteractiveWidgets;
+
   QScopedPointer< qSlicerWorkspaceGenerationModuleWidgetPrivate > d_ptr;
 
   vtkMRMLAnnotationROINode* GetAnnotationROINode();

@@ -86,7 +86,7 @@ public:
   void UpdateVolumeRendering();
 
   // Load workspace mesh
-  void LoadWorkspace(QString workspaceMeshFilePath);
+  bool LoadWorkspace(QString workspaceMeshFilePath);
 
   // Getters
   vtkSlicerVolumeRenderingLogic* getVolumeRenderingLogic();
@@ -98,6 +98,8 @@ public:
 
   // Setters
   void setWorkspaceGenerationNode(vtkMRMLWorkspaceGenerationNode* wgn);
+  void setWorkspaceMeshModelDisplayNode(
+    vtkMRMLModelDisplayNode* workspaceMeshModelDisplayNode);
 
 protected:
   vtkSlicerWorkspaceGenerationLogic();

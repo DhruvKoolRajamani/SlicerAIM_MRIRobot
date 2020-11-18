@@ -96,6 +96,19 @@ qSlicerAbstractCoreModule*
 }
 
 //----------------------------------------------------------------------------
+void vtkSlicerWorkspaceGenerationLogic::setWorkspaceMeshModelDisplayNode(
+  vtkMRMLModelDisplayNode* workspaceMeshModelDisplayNode)
+{
+  if (!workspaceMeshModelDisplayNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": Workspace Mesh Model Display Node is NULL";
+    return;
+  }
+
+  this->WorkspaceMeshModelDisplayNode = workspaceMeshModelDisplayNode;
+}
+
+//----------------------------------------------------------------------------
 void vtkSlicerWorkspaceGenerationLogic::setWorkspaceGenerationNode(
   vtkMRMLWorkspaceGenerationNode* wgn)
 {
@@ -338,7 +351,7 @@ vtkMRMLVolumeNode*
 }
 
 //------------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
+bool vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
   QString workspaceMeshFilePath)
 {
   qInfo() << Q_FUNC_INFO;
@@ -356,11 +369,11 @@ void vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
     modelsLogic->SetMRMLScene(this->GetMRMLScene());
     WorkspaceMeshModelNode = modelsLogic->AddModel(
       workspaceMeshFilePath.toLocal8Bit().data(), vtkMRMLStorageNode::RAS);
-    WorkspaceMeshModelDisplayNode =
-      WorkspaceMeshModelNode->GetModelDisplayNode();
-    this->WorkspaceGenerationNode->SetAndObserveWorkspaceMeshModelNodeID(
-      WorkspaceMeshModelNode->GetID());
+
+    return true;
   }
+
+  return false;
 }
 
 //------------------------------------------------------------------------------
