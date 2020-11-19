@@ -4,11 +4,12 @@ project(SlicerAIM_MRIRobot)
 
 #-----------------------------------------------------------------------------
 # Extension meta-information
+set(EXTENSION_NAME SlicerAIM_MRIRobot)
 set(EXTENSION_HOMEPAGE "https://www.slicer.org/wiki/Documentation/Nightly/Extensions/AIM_MRIRobot")
-set(EXTENSION_CATEGORY "MRIRobot")
+set(EXTENSION_CATEGORY "/home/dhruv/SlicerExtensions/SlicerAIM_MRIRobot/WorkspaceGeneration/Resources/home/dhruv/SlicerExtensions/SlicerAIM_MRIRobot/WorkspaceGeneration/Resources")
 set(EXTENSION_CONTRIBUTORS "Dhruv Kool Rajamani (Automated and Interventional Medicine Lab)")
 set(EXTENSION_DESCRIPTION "This extension provides a systematic environment to manage the workflow of the WPI-AIM MRI Robot for stereotactic surgeries")
-set(EXTENSION_ICONURL "http://www.example.com/Slicer/Extensions/AIM_MRIRobot.png")
+set(EXTENSION_ICONURL "https://raw.githubusercontent.com/DhruvKoolRajamani/SlicerAIM_MRIRobot/master/AIM_MRIRobot.png?token=AIQ5C6G5QJ2GYLKYPHJBF7S7OWC7Y")
 set(EXTENSION_SCREENSHOTURLS "http://www.example.com/Slicer/Extensions/AIM_MRIRobot/Screenshots/1.png")
 set(EXTENSION_DEPENDS "NA") # Specified as a list or "NA" if no dependencies
 
@@ -19,6 +20,7 @@ include(${Slicer_USE_FILE})
 
 #-----------------------------------------------------------------------------
 # Extension modules
+add_subdirectory(Utilities)
 add_subdirectory(WorkspaceGeneration)
 ## NEXT_MODULE
 
