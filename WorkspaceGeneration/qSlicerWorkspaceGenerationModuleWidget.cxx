@@ -420,6 +420,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeVisibilityChanged(
   this->updateGUIFromMRML();
 }
 
+// bug: #13 fix volume rendering preset combo box widget @DhruvKoolRajamani
 // --------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onPresetComboBoxNodeChanged(
   vtkMRMLNode* selectedNode)
@@ -638,7 +639,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onApplyTransformClick()
   }
 
   vtkMRMLModelNode* workspaceMeshModelNode =
-    d->logic()->getWorkspaceMeshModelNode();
+    workspaceGenerationNode->GetWorkspaceMeshModelNode();
 
   if (workspaceMeshModelNode == NULL)
   {
@@ -650,6 +651,9 @@ void qSlicerWorkspaceGenerationModuleWidget::onApplyTransformClick()
   d->WorkspaceMeshRegistrationMatrix->DeepCopy(
     d->WorkspaceMeshMRMLMatrixWidget->values().data());
   qDebug() << Q_FUNC_INFO << *(d->WorkspaceMeshRegistrationMatrix->GetData());
+
+  workspaceMeshModelNode->ApplyTransformMatrix(
+    d->WorkspaceMeshRegistrationMatrix);
 
   this->updateGUIFromMRML();
 }
