@@ -21,10 +21,28 @@
 // Slicer includes
 #include "qSlicerAbstractModuleWidget.h"
 
+// Volume Rendering includes
+#include <qSlicerVolumeRenderingModuleWidget.h>
+#include <qSlicerVolumeRenderingPresetComboBox.h>
+
+// Volume Rendering Logic includes
+#include <vtkSlicerVolumeRenderingLogic.h>
+#include <vtkSlicerVolumeRenderingModuleLogicExport.h>
+
+// Annotation ROI Node
+#include <vtkMRMLAnnotationROINode.h>
+
+// Slicer Module includes
+#include <qSlicerAbstractModule.h>
+#include <qSlicerCoreApplication.h>
+#include <qSlicerModuleManager.h>
+
+#include "ctkPushButton.h"
+
 #include "qSlicerWorkspaceGenerationModuleExport.h"
-#include "vtkMRMLModelDisplayNode.h"
-#include "vtkMRMLModelNode.h"
-#include "vtkMRMLVolumeNode.h"
+#include <vtkMRMLModelDisplayNode.h>
+#include <vtkMRMLModelNode.h>
+#include <vtkMRMLVolumeNode.h>
 
 class qSlicerWorkspaceGenerationModuleWidgetPrivate;
 class vtkMRMLNode;
@@ -49,36 +67,51 @@ public slots:
 
 protected slots:
   void onParameterNodeSelectionChanged();
-  void onInputNodeSelectionChanged(vtkMRMLNode*);
-  void onInputNodeNodeAdded(vtkMRMLNode*);
-  void onOutputModelNodeAdded(vtkMRMLNode*);
-  void onOutputModelSelectionChanged(vtkMRMLNode*);
-  void onWorkspaceOFDButtonClick();
+  void onInputVolumeNodeSelectionChanged(vtkMRMLNode*);
+  void onInputVolumeNodeAdded(vtkMRMLNode*);
+  void onAnnotationROINodeAdded(vtkMRMLNode*);
+  void onAnnotationROISelectionChanged(vtkMRMLNode*);
+  void onPresetComboBoxNodeChanged(vtkMRMLNode*);
+  void onPresetOffsetChanged(double, double, bool);
   void onWorkspaceLoadButtonClick();
-  void onSaveSceneButtonClick();
+  void onWorkspaceMeshModelNodeChanged(vtkMRMLNode* currentNode);
+  void onWorkspaceMeshModelNodeAdded(vtkMRMLNode* nodeAdded);
+  void onApplyTransformClick();
   void onSceneImportedEvent();
 
   void updateGUIFromMRML();
 
   void blockAllSignals(bool block);
   void enableAllWidgets(bool enable);
-  void disableWidgetsAfter(QWidget* widget);
+  void disableWidgetsAfter(QWidget* widgetStart, QWidget* widgetEnd = NULL,
+                           bool includingStart = false,
+                           bool includingEnd = true);
+  void disableWidgetsBetween(QWidget* start, QWidget* end = NULL,
+                             bool includeStart = false,
+                             bool includeEnd = false);
   void enableWidgets(QWidget* widget, bool enable);
 
-  void UpdateOutputModel();
+  void onInputVolumeVisibilityChanged(bool visible);
+  void onWorkspaceMeshVisibilityChanged(bool visible);
+
+  void UpdateVolumeRendering();
 
 protected:
+  QList< QWidget* > allInteractiveWidgets;
+
   QScopedPointer< qSlicerWorkspaceGenerationModuleWidgetPrivate > d_ptr;
 
-  vtkMRMLModelNode* GetOutputModelNode();
-  vtkMRMLNode* GetInputNode();
-  vtkMRMLVolumeNode* inputVolumeNode;
+  vtkMRMLAnnotationROINode* GetAnnotationROINode();
+  vtkMRMLVolumeNode* GetInputVolumeNode();
 
-  QString workspaceMeshFilePath;
+  vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
+  qSlicerAbstractCoreModule* VolumeRenderingModule;
 
   virtual void setup();
   virtual void enter();
   virtual void exit();
+
+  void setCheckState(ctkPushButton* btn, bool state);
 
 private:
   Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationModuleWidget);

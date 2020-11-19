@@ -1,0 +1,33 @@
+{
+  "editor.rulers": [
+    80
+  ],
+  "files.associations": {
+    "*.txx": "cpp",
+    "random": "cpp",
+    "array": "cpp",
+    "string": "cpp",
+    "string_view": "cpp"
+  },
+  "cmake.saveBeforeBuild": true,
+  "editor.formatOnSave": true,
+  "python.pythonPath": "/usr/bin/python",
+  "githubIssues.createIssueTriggers": [
+    "feature",
+    "bug",
+    "documentation",
+    "question"
+  ],
+  "githubIssues.issueCompletions.enabled": true,
+  "githubIssues.useBranchForIssues": "prompt",
+  "githubIssues.queries": [
+    {
+      "label": "My Open Issues",
+      "query": "assignee:${user} state:open"
+    },
+    {
+      "label": "Issues",
+      "query": "repo:${owner}/${repository} state:open" //  sort:created-desc
+    }
+  ]
+}
