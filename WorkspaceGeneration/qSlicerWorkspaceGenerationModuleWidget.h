@@ -47,6 +47,14 @@
 class qSlicerWorkspaceGenerationModuleWidgetPrivate;
 class vtkMRMLNode;
 
+struct ProbeSpecifications
+{
+  double A;
+  double B;
+  double C;
+  double D;
+};
+
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class Q_SLICER_QTMODULES_WORKSPACEGENERATION_EXPORT
   qSlicerWorkspaceGenerationModuleWidget : public qSlicerAbstractModuleWidget
@@ -77,6 +85,7 @@ protected slots:
   void onWorkspaceMeshModelNodeChanged(vtkMRMLNode* currentNode);
   void onWorkspaceMeshModelNodeAdded(vtkMRMLNode* nodeAdded);
   void onApplyTransformClick();
+  void onGenerateWorkspaceClick();
   void onSceneImportedEvent();
 
   void updateGUIFromMRML();

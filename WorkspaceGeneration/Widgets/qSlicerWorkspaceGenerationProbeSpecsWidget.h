@@ -13,40 +13,40 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  This file was originally developed by Jean-Christophe Fillion-Robin, Kitware Inc.
-  and was partially funded by NIH grant 3P41RR013218-12S1
+  This file was originally developed by Jean-Christophe Fillion-Robin, Kitware
+Inc. and was partially funded by NIH grant 3P41RR013218-12S1
 
 ==============================================================================*/
 
-#ifndef __qSlicerWorkspaceGenerationFooBarWidget_h
-#define __qSlicerWorkspaceGenerationFooBarWidget_h
+#ifndef __qSlicerWorkspaceGenerationProbeSpecsWidget_h
+#define __qSlicerWorkspaceGenerationProbeSpecsWidget_h
 
 // Qt includes
 #include <QWidget>
 
-// FooBar Widgets includes
+// ProbeSpecs Widgets includes
 #include "qSlicerWorkspaceGenerationModuleWidgetsExport.h"
 
-class qSlicerWorkspaceGenerationFooBarWidgetPrivate;
+class qSlicerWorkspaceGenerationProbeSpecsWidgetPrivate;
 
 /// \ingroup Slicer_QtModules_WorkspaceGeneration
-class Q_SLICER_MODULE_WORKSPACEGENERATION_WIDGETS_EXPORT qSlicerWorkspaceGenerationFooBarWidget
-  : public QWidget
+class Q_SLICER_MODULE_WORKSPACEGENERATION_WIDGETS_EXPORT
+  qSlicerWorkspaceGenerationProbeSpecsWidget : public QWidget
 {
   Q_OBJECT
 public:
   typedef QWidget Superclass;
-  qSlicerWorkspaceGenerationFooBarWidget(QWidget *parent=0);
-  virtual ~qSlicerWorkspaceGenerationFooBarWidget();
+  qSlicerWorkspaceGenerationProbeSpecsWidget(QWidget* parent = 0);
+  virtual ~qSlicerWorkspaceGenerationProbeSpecsWidget();
 
 protected slots:
 
 protected:
-  QScopedPointer<qSlicerWorkspaceGenerationFooBarWidgetPrivate> d_ptr;
+  QScopedPointer< qSlicerWorkspaceGenerationProbeSpecsWidgetPrivate > d_ptr;
 
 private:
-  Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationFooBarWidget);
-  Q_DISABLE_COPY(qSlicerWorkspaceGenerationFooBarWidget);
+  Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationProbeSpecsWidget);
+  Q_DISABLE_COPY(qSlicerWorkspaceGenerationProbeSpecsWidget);
 };
 
 #endif
