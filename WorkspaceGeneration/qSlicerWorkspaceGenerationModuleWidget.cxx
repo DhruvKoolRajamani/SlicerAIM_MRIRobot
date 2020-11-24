@@ -270,6 +270,24 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
   setCheckState(d->InputVolumeSetVisibilityCheckBox__2_2, false);
   setCheckState(d->WorkspaceVisibilityToggle__3_9, false);
 
+  // Set default probe specs
+  double _cannulaToTreatment{5.0};       // C
+  double _treatmentToTip{10.0};          // A
+  double _robotToEntry{5.0};             // B
+  double _robotToTreatmentAtHome{41.0};  // D
+
+  d->A_DoubleSpinBox__3_3->setValue(_treatmentToTip);
+  d->B_DoubleSpinBox__3_4->setValue(_robotToEntry);
+  d->C_DoubleSpinBox__3_5->setValue(_cannulaToTreatment);
+  d->D_DoubleSpinBox__3_6->setValue(_robotToTreatmentAtHome);
+
+  d->A_DoubleSpinBox__3_3->setEnabled(true);
+  d->B_DoubleSpinBox__3_4->setEnabled(true);
+  d->C_DoubleSpinBox__3_5->setEnabled(true);
+  d->D_DoubleSpinBox__3_6->setEnabled(true);
+  d->RegistrationMatrix__3_7->setEnabled(true);
+  d->RegistrationMatrix__3_7->setEditable(true);
+
   this->updateGUIFromMRML();
 }
 
@@ -540,13 +558,6 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeChanged(
   // d->WorkspaceMeshModelDisplayNode = modelDisplayNode;
   d->logic()->setWorkspaceMeshModelDisplayNode(modelDisplayNode);
 
-  d->A_DoubleSpinBox__3_3->setEnabled(true);
-  d->B_DoubleSpinBox__3_4->setEnabled(true);
-  d->C_DoubleSpinBox__3_5->setEnabled(true);
-  d->D_DoubleSpinBox__3_6->setEnabled(true);
-  d->RegistrationMatrix__3_7->setEnabled(true);
-  d->RegistrationMatrix__3_7->setEditable(true);
-
   // Create logic to accommodate creating a new annotation ROI node.
   // Should you transfer the data to the new node? Reset all visibility params?
 
@@ -582,16 +593,6 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeAdded(
     std::string outputModelNodeName = "GeneralWorkspace";
     // std::string(modelNode->GetName()).append("GeneralWorkspace");
     modelNode->SetName(outputModelNodeName.c_str());
-  }
-
-  modelNode->CreateDefaultDisplayNodes();
-  vtkMRMLModelDisplayNode* displayNode =
-    vtkMRMLModelDisplayNode::SafeDownCast(modelNode->GetDisplayNode());
-  if (displayNode)
-  {
-    displayNode->SetColor(1, 1, 0);
-    displayNode->Visibility2DOn();
-    displayNode->SetSliceIntersectionThickness(2);
   }
 }
 
@@ -680,19 +681,11 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
   vtkMRMLModelNode* workspaceMeshModelNode =
     workspaceGenerationNode->GetWorkspaceMeshModelNode();
 
-  if (workspaceMeshModelNode == NULL)
+  if (!workspaceMeshModelNode)
   {
-    qCritical() << Q_FUNC_INFO << ": Workspace Mesh Model Node does not exist";
+    qCritical() << Q_FUNC_INFO << ": No workspace mesh model node created";
     return;
   }
-
-  struct ProbeSpec
-  {
-    double _cannulaToTreatment;
-    double _treatmentToTip;
-    double _robotToEntry;
-    double _robotToTreatmentAtHome;
-  };
 
   d->ProbeSpecs = {
     d->A_DoubleSpinBox__3_3->value(),  // _treatmentToTip
@@ -706,8 +699,16 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
     d->RegistrationMatrix__3_7->values().data());
   qDebug() << Q_FUNC_INFO << *(d->WorkspaceMeshRegistrationMatrix->GetData());
 
-  workspaceMeshModelNode->ApplyTransformMatrix(
-    d->WorkspaceMeshRegistrationMatrix);
+  d->logic()->GenerateWorkspace(workspaceMeshModelNode,
+                                d->ProbeSpecs.convertToProbe(),
+                                d->WorkspaceMeshRegistrationMatrix);
+
+  // d->WorkspaceMeshModelNode = d->logic()->getWorkspaceMeshModelNode();
+  d->WorkspaceMeshModelNode = workspaceMeshModelNode;
+  d->WorkspaceModelSelector__3_1->setCurrentNode(workspaceMeshModelNode);
+
+  // workspaceMeshModelNode->ApplyTransformMatrix(
+  //   d->WorkspaceMeshRegistrationMatrix);
 
   this->updateGUIFromMRML();
 }
@@ -875,15 +876,6 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
     {
       auto visibility = d->WorkspaceMeshModelDisplayNode->GetVisibility();
       setCheckState(d->WorkspaceVisibilityToggle__3_9, visibility);
-      // d->ModelOpacitySlider->setValue(modelDisplayNode->GetOpacity());
-
-      // Should be a color picker instead of InputVolumeRenderingDisplayNode
-      // double* outputColor = d->WorkspaceMeshModelDisplayNode->GetColor();
-      // QColor nodeOutputColor;
-      // nodeOutputColor.setRgbF(outputColor[0], outputColor[1],
-      // outputColor[2]); d->WorkspaceMeshModelDisplayNode->SetColor(
-      //   nodeOutputColor.red(), nodeOutputColor.green(),
-      //   nodeOutputColor.blue());
     }
     else
     {

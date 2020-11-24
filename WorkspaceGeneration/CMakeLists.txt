@@ -30,6 +30,7 @@ set(MODULE_INCLUDE_DIRECTORIES
   ${qSlicerVolumeRenderingModuleWidgets_INCLUDE_DIRS}
   ${qSlicerVolumeRenderingModuleWidgets_SRCS}
   ${utilities_INCLUDE_DIRS}
+  ${neurorobot_INCLUDE_DIRS}
   )
 
 set(MODULE_SRCS
@@ -57,6 +58,7 @@ set(MODULE_TARGET_LIBRARIES
   # vtkSlicerMarkupsModuleMRML
   qSlicerVolumeRenderingModuleWidgets
   utilities
+  NeuroKinematics
   )
 
 set(MODULE_RESOURCES

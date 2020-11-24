@@ -377,6 +377,100 @@ bool vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
 }
 
 //------------------------------------------------------------------------------
+Eigen::Matrix4d
+  vtkSlicerWorkspaceGenerationLogic::convertToEigenMatrix(vtkMatrix4x4* vtkMat)
+{
+  Eigen::Matrix4d eigMat;
+
+  for (int i = 0; i < 4; i++)
+  {
+    for (int j = 0; j < 4; j++)
+    {
+      eigMat(i, j) = vtkMat->GetElement(i, j);
+    }
+  }
+
+  return eigMat;
+}
+
+//------------------------------------------------------------------------------
+void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
+  vtkMRMLModelNode* modelNode, Probe probe, vtkMatrix4x4* registrationMatrix)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (modelNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": output model node is invalid";
+    return;
+  }
+
+  // Initialize NeuroKinematics
+  NeuroKinematics neuro_kinematics(&probe);
+  ForwardKinematics fk(neuro_kinematics);
+
+  vtkSmartPointer< vtkPoints > General_Workspace_PC =
+    vtkSmartPointer< vtkPoints >::New();
+  General_Workspace_PC = fk.get_General_Workspace(
+    vtkSlicerWorkspaceGenerationLogic::convertToEigenMatrix(registrationMatrix),
+    General_Workspace_PC);
+  vtkSmartPointer< vtkPolyData > polydata_General_Workspace_PC =
+    vtkSmartPointer< vtkPolyData >::New();
+  polydata_General_Workspace_PC->SetPoints(General_Workspace_PC);
+
+  qDebug() << Q_FUNC_INFO << ": Number of points";
+  qDebug() << polydata_General_Workspace_PC->GetNumberOfPoints();
+
+  modelNode->SetAndObservePolyData(polydata_General_Workspace_PC);
+  // Attach a display node if needed
+  vtkMRMLModelDisplayNode* displayNode =
+    vtkMRMLModelDisplayNode::SafeDownCast(modelNode->GetDisplayNode());
+  if (displayNode == NULL)
+  {
+    qWarning() << Q_FUNC_INFO << ": Display node is null, creating a new one ";
+
+    modelNode->CreateDefaultDisplayNodes();
+    displayNode =
+      vtkMRMLModelDisplayNode::SafeDownCast(modelNode->GetDisplayNode());
+  }
+
+  if (displayNode)
+  {
+    std::string name = std::string(modelNode->GetName()).append("ModelDisplay");
+    displayNode->SetName(name.c_str());
+    displayNode->SetColor(1, 1, 0);
+    displayNode->Visibility2DOn();
+    displayNode->Visibility3DOn();
+    displayNode->SetVisibility(true);
+    displayNode->SetSliceIntersectionThickness(2);
+  }
+
+  WorkspaceMeshModelNode = modelNode;
+
+  // qSlicerAbstractCoreModule* modelsModule =
+  //   qSlicerCoreApplication::application()->moduleManager()->module("Models");
+  // vtkSlicerModelsLogic* modelsLogic =
+  //   modelsModule ? vtkSlicerModelsLogic::SafeDownCast(modelsModule->logic())
+  //   :
+  //                  0;
+
+  // if (modelsLogic)
+  // {
+  //   qDebug() << Q_FUNC_INFO << ": Models Logic is available.";
+
+  //   modelsLogic->SetMRMLScene(this->GetMRMLScene());
+  //   WorkspaceMeshModelNode = modelsLogic->AddModel(
+  //     polydata_General_Workspace_PC);  //, vtkMRMLStorageNode::RAS);
+
+  //   // modelNode->SetPolyDataConnection(
+  //   //   generateWorkspace->GetPolyDataConnection());
+  //   // modelNode->SetAndObservePolyData(generateWorkspace->GetPolyData());
+
+  //   // WorkspaceMeshModelNode = modelNode;
+  // }
+}
+
+//------------------------------------------------------------------------------
 vtkMRMLModelNode* vtkSlicerWorkspaceGenerationLogic::getWorkspaceMeshModelNode()
 {
   qInfo() << Q_FUNC_INFO;

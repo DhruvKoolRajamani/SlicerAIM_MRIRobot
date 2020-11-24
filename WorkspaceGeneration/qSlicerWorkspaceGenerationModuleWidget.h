@@ -44,6 +44,9 @@
 #include <vtkMRMLModelNode.h>
 #include <vtkMRMLVolumeNode.h>
 
+// Neurorobot includes
+#include "NeuroKinematics/ForwardKinematics.h"
+
 class qSlicerWorkspaceGenerationModuleWidgetPrivate;
 class vtkMRMLNode;
 
@@ -53,6 +56,17 @@ struct ProbeSpecifications
   double B;
   double C;
   double D;
+
+  Probe convertToProbe()
+  {
+    Probe probe;
+    probe._treatmentToTip = A;
+    probe._robotToEntry = B;
+    probe._cannulaToTreatment = C;
+    probe._robotToTreatmentAtHome = D;
+
+    return probe;
+  }
 };
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
