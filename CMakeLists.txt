@@ -21,6 +21,9 @@ include(${Slicer_USE_FILE})
 #-----------------------------------------------------------------------------
 # Extension modules
 add_subdirectory(Utilities)
+add_subdirectory(NeuroRobot)
+set(NeuroKinematics_DIR ${CMAKE_BINARY_DIR}/NeuroRobot/CMakeFiles/Export/cmake/)
+
 add_subdirectory(WorkspaceGeneration)
 ## NEXT_MODULE
 

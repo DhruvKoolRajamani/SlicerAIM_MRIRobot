@@ -44,8 +44,30 @@
 #include <vtkMRMLModelNode.h>
 #include <vtkMRMLVolumeNode.h>
 
+// Neurorobot includes
+#include "NeuroKinematics/ForwardKinematics.h"
+
 class qSlicerWorkspaceGenerationModuleWidgetPrivate;
 class vtkMRMLNode;
+
+struct ProbeSpecifications
+{
+  double A;
+  double B;
+  double C;
+  double D;
+
+  Probe convertToProbe()
+  {
+    Probe probe;
+    probe._treatmentToTip = A;
+    probe._robotToEntry = B;
+    probe._cannulaToTreatment = C;
+    probe._robotToTreatmentAtHome = D;
+
+    return probe;
+  }
+};
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class Q_SLICER_QTMODULES_WORKSPACEGENERATION_EXPORT
@@ -77,6 +99,7 @@ protected slots:
   void onWorkspaceMeshModelNodeChanged(vtkMRMLNode* currentNode);
   void onWorkspaceMeshModelNodeAdded(vtkMRMLNode* nodeAdded);
   void onApplyTransformClick();
+  void onGenerateWorkspaceClick();
   void onSceneImportedEvent();
 
   void updateGUIFromMRML();

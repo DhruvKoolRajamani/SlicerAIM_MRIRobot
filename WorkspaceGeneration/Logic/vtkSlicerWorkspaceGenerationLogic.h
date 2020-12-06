@@ -32,6 +32,10 @@
 #include <vtkSlicerVolumeRenderingLogic.h>
 #include <vtkSlicerVolumeRenderingModuleLogicExport.h>
 
+// Models logic includes
+#include <vtkSlicerModelsLogic.h>
+#include <vtkSlicerModelsModuleLogicExport.h>
+
 // Volume Rendering Display Node
 #include <vtkMRMLVolumeRenderingDisplayNode.h>
 
@@ -44,6 +48,7 @@
 #include <qSlicerModuleManager.h>
 
 // vtk includes
+#include "vtkMatrix4x4.h"
 #include "vtkSmartPointer.h"
 #include "vtkWeakPointer.h"
 #include <vtkPolyData.h>
@@ -56,7 +61,11 @@
 // STD includes
 #include <cstdlib>
 
-// Utilities includes
+// Eigen includes
+#include <eigen3/Eigen/Core>
+
+// Neurorobot includes
+#include "NeuroKinematics/ForwardKinematics.h"
 
 #include "vtkSlicerWorkspaceGenerationModuleLogicExport.h"
 
@@ -87,6 +96,13 @@ public:
 
   // Load workspace mesh
   bool LoadWorkspace(QString workspaceMeshFilePath);
+
+  // Convert vtkMatrix to eigen Matrix
+  static Eigen::Matrix4d convertToEigenMatrix(vtkMatrix4x4* vtkMat);
+
+  // Generate Workspace
+  void GenerateWorkspace(vtkMRMLModelNode* modelNode, Probe probe,
+                         vtkMatrix4x4* registrationMatrix);
 
   // Getters
   vtkSlicerVolumeRenderingLogic* getVolumeRenderingLogic();
@@ -129,8 +145,13 @@ protected:
   vtkMRMLVolumeRenderingDisplayNode* InputVolumeRenderingDisplayNode;
   vtkMRMLModelDisplayNode* WorkspaceMeshModelDisplayNode;
 
+  // Volume Rendering Logic
   vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
   qSlicerAbstractCoreModule* VolumeRenderingModule;
+
+  // Models Logic
+  vtkSlicerModelsLogic* ModelsLogic;
+  qSlicerAbstractCoreModule* ModelsModule;
 
 private:
   vtkSlicerWorkspaceGenerationLogic(

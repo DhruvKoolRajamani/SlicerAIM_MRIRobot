@@ -42,7 +42,7 @@
       </widget>
      </item>
      <item row="0" column="1" colspan="3">
-      <widget class="qMRMLNodeComboBox" name="ParameterNodeSelector">
+      <widget class="qMRMLNodeComboBox" name="ParameterNodeSelector__1_1">
        <property name="nodeTypes">
         <stringlist>
          <string>vtkMRMLWorkspaceGenerationNode</string>
@@ -67,7 +67,7 @@
       <number>7</number>
      </property>
      <item row="2" column="1">
-      <widget class="qMRMLNodeComboBox" name="ROINodeSelector">
+      <widget class="qMRMLNodeComboBox" name="ROINodeSelector__2_3">
        <property name="toolTip">
         <string extracomment="Select an annotation ROI node to store the output">Select an annotation ROI node to store the output</string>
        </property>
@@ -138,7 +138,7 @@
       </widget>
      </item>
      <item row="1" column="1" colspan="2">
-      <widget class="qMRMLNodeComboBox" name="InputVolumeNodeSelector">
+      <widget class="qMRMLNodeComboBox" name="InputVolumeNodeSelector__2_1">
        <property name="nodeTypes">
         <stringlist>
          <string>vtkMRMLVolumeNode</string>
@@ -158,21 +158,8 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="0" colspan="3">
-      <widget class="qSlicerVolumeRenderingPresetComboBox" name="InputVolumeRenderingPresetComboBox">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="layoutDirection">
-        <enum>Qt::LeftToRight</enum>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="2">
-      <widget class="ctkPushButton" name="InputVolumeSetVisibilityCheckBox">
+      <widget class="ctkPushButton" name="InputVolumeSetVisibilityCheckBox__2_2">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
          <horstretch>0</horstretch>
@@ -193,36 +180,6 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0" colspan="3">
-      <widget class="QLabel" name="InputVolumePropertiesLabel">
-       <property name="font">
-        <font>
-         <family>DejaVu Sans</family>
-         <pointsize>10</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="lineWidth">
-        <number>1</number>
-       </property>
-       <property name="text">
-        <string>Volume Properties</string>
-       </property>
-       <property name="scaledContents">
-        <bool>false</bool>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-       <property name="margin">
-        <number>2</number>
-       </property>
-       <property name="indent">
-        <number>0</number>
-       </property>
-      </widget>
-     </item>
     </layout>
    </item>
    <item>
@@ -233,28 +190,158 @@
      <property name="horizontalSpacing">
       <number>7</number>
      </property>
-     <item row="1" column="1">
-      <widget class="qMRMLNodeComboBox" name="WorkspaceMeshModelNodeSelector">
-       <property name="nodeTypes">
-        <stringlist>
-         <string>vtkMRMLModelNode</string>
-        </stringlist>
+     <item row="5" column="7" colspan="2">
+      <widget class="QPushButton" name="GenerateWorkspaceButton__3_8">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
-       <property name="noneEnabled">
-        <bool>true</bool>
+       <property name="text">
+        <string>Generate Workspace</string>
        </property>
-       <property name="addEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="renameEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="selectNodeUponCreation">
-        <bool>true</bool>
+       <property name="flat">
+        <bool>false</bool>
        </property>
       </widget>
      </item>
-     <item row="0" column="0" colspan="6">
+     <item row="1" column="0">
+      <widget class="QLabel" name="WorkspaceMeshLabel">
+       <property name="text">
+        <string>Workspace Mesh</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0" colspan="9">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="A_Label">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <italic>true</italic>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>A</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="ctkDoubleSpinBox" name="A_DoubleSpinBox__3_3">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="B_Label">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <italic>true</italic>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>B</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="ctkDoubleSpinBox" name="B_DoubleSpinBox__3_4">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="C_Label">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <italic>true</italic>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>C</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="ctkDoubleSpinBox" name="C_DoubleSpinBox__3_5">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="D_Label">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <italic>true</italic>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>D</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="ctkDoubleSpinBox" name="D_DoubleSpinBox__3_6">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="0" column="0" colspan="9">
       <widget class="QLabel" name="WorkspaceMeshSettingsLabel">
        <property name="font">
         <font>
@@ -284,10 +371,31 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0" colspan="5">
-      <widget class="qMRMLMatrixWidget" name="WorkspaceMeshMRMLMatrixWidget">
+     <item row="2" column="0" colspan="9">
+      <widget class="ctkCollapsibleButton" name="ProbeSpecsCollapsibleButton__3_2">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Probe Specifications</string>
+       </property>
+       <layout class="QVBoxLayout" name="ProbeSpecsVerticalLayout">
+        <item>
+         <widget class="qSlicerWorkspaceGenerationProbeSpecsWidget" name="ProbeSpecsWidget" native="true"/>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="5" column="0" colspan="7">
+      <widget class="qMRMLMatrixWidget" name="RegistrationMatrix__3_7">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -295,7 +403,7 @@
        <property name="minimumSize">
         <size>
          <width>0</width>
-         <height>100</height>
+         <height>0</height>
         </size>
        </property>
        <property name="editable">
@@ -313,49 +421,12 @@
        <property name="singleStep">
         <double>0.001000000000000</double>
        </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="WorkspaceMeshLabel">
-       <property name="text">
-        <string>Workspace Mesh</string>
+       <property name="coordinateReference">
+        <enum>qMRMLMatrixWidget::GLOBAL</enum>
        </property>
       </widget>
      </item>
-     <item row="3" column="5">
-      <widget class="QPushButton" name="ApplyTransformButton">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Transform</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2" colspan="3">
-      <widget class="QPushButton" name="WorkspaceMeshLoadBtn">
-       <property name="text">
-        <string>Load Mesh</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="5">
-      <widget class="ctkPushButton" name="WorkspaceMeshSetVisibilityCheckBox">
-       <property name="text">
-        <string>Visibility</string>
-       </property>
-       <property name="checkable">
-        <bool>true</bool>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0" colspan="6">
+     <item row="4" column="0" colspan="9">
       <widget class="QLabel" name="RegistrationMatrixLabel">
        <property name="font">
         <font>
@@ -385,7 +456,50 @@
        </property>
       </widget>
      </item>
+     <item row="1" column="1" colspan="8">
+      <widget class="qMRMLNodeComboBox" name="WorkspaceModelSelector__3_1">
+       <property name="nodeTypes">
+        <stringlist>
+         <string>vtkMRMLModelNode</string>
+        </stringlist>
+       </property>
+       <property name="noneEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="addEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="renameEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="selectNodeUponCreation">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
     </layout>
+   </item>
+   <item>
+    <widget class="ctkPushButton" name="WorkspaceVisibilityToggle__3_9">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Visibility</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
    <item>
     <spacer name="verticalSpacer">
@@ -421,9 +535,15 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>qSlicerVolumeRenderingPresetComboBox</class>
-   <extends>qSlicerWidget</extends>
-   <header>qSlicerVolumeRenderingPresetComboBox.h</header>
+   <class>ctkCollapsibleButton</class>
+   <extends>QWidget</extends>
+   <header>ctkCollapsibleButton.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ctkDoubleSpinBox</class>
+   <extends>QWidget</extends>
+   <header>ctkDoubleSpinBox.h</header>
   </customwidget>
   <customwidget>
    <class>ctkMatrixWidget</class>
@@ -434,6 +554,11 @@
    <class>ctkPushButton</class>
    <extends>QPushButton</extends>
    <header>ctkPushButton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qSlicerWorkspaceGenerationProbeSpecsWidget</class>
+   <extends>QWidget</extends>
+   <header>qSlicerWorkspaceGenerationProbeSpecsWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
