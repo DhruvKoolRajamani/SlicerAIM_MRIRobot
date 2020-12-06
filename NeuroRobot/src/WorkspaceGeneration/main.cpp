@@ -12,7 +12,7 @@
 #include <vtkPoints.h>
 // #include <vtkPoissonReconstruction.h>
 #include <vtkPolyData.h>
-// #include <vtkPowerCrustSurfaceReconstruction.h>
+#include <vtkPowerCrustSurfaceReconstruction.h>
 #include <vtkProperty.h>
 #include <vtkSmartPointer.h>
 #include <vtkXMLPolyDataWriter.h>
@@ -59,23 +59,22 @@ int main(int argc, char* argv[])
   // writer->SetDataModeToBinary();
   // writer->SetDataModeToAscii();
 
-  // std::cerr << "Using PowerCrust Algorithm to create General Workspace
-  // surface "
-  //              "mesh"
-  //           << std::endl;
-  // vtkSmartPointer< vtkPowerCrustSurfaceReconstruction >
-  //   surface_General_Workspace =
-  //     vtkSmartPointer< vtkPowerCrustSurfaceReconstruction >::New();
-  // surface_General_Workspace->SetInputData(polydata_General_Workspace_PC);
-  // std::string filename_General_workspace_ply = "General_Workspace.ply";
-  // vtkSmartPointer< vtkPLYWriter > plyWriter_General_Workspace =
-  //   vtkSmartPointer< vtkPLYWriter >::New();
-  // plyWriter_General_Workspace->SetFileName(
-  //   filename_General_workspace_ply.c_str());
-  // plyWriter_General_Workspace->SetInputConnection(
-  //   surface_General_Workspace->GetOutputPort());
-  // std::cout << "Writing " << filename_General_workspace_ply << std::endl;
-  // plyWriter_General_Workspace->Write();
+  std::cerr << "Using PowerCrust Algorithm to create General Workspace surface "
+               "mesh"
+            << std::endl;
+  vtkSmartPointer< vtkPowerCrustSurfaceReconstruction >
+    surface_General_Workspace =
+      vtkSmartPointer< vtkPowerCrustSurfaceReconstruction >::New();
+  surface_General_Workspace->SetInputData(polydata_General_Workspace_PC);
+  std::string filename_General_workspace_ply = "General_Workspace.ply";
+  vtkSmartPointer< vtkPLYWriter > plyWriter_General_Workspace =
+    vtkSmartPointer< vtkPLYWriter >::New();
+  plyWriter_General_Workspace->SetFileName(
+    filename_General_workspace_ply.c_str());
+  plyWriter_General_Workspace->SetInputConnection(
+    surface_General_Workspace->GetOutputPort());
+  std::cout << "Writing " << filename_General_workspace_ply << std::endl;
+  plyWriter_General_Workspace->Write();
 
   // // Create a polydata object and add the points to it.
   // vtkSmartPointer<vtkPolyData> polydata =

@@ -32,6 +32,10 @@
 #include <vtkSlicerVolumeRenderingLogic.h>
 #include <vtkSlicerVolumeRenderingModuleLogicExport.h>
 
+// Models logic includes
+#include <vtkSlicerModelsLogic.h>
+#include <vtkSlicerModelsModuleLogicExport.h>
+
 // Volume Rendering Display Node
 #include <vtkMRMLVolumeRenderingDisplayNode.h>
 
@@ -141,8 +145,13 @@ protected:
   vtkMRMLVolumeRenderingDisplayNode* InputVolumeRenderingDisplayNode;
   vtkMRMLModelDisplayNode* WorkspaceMeshModelDisplayNode;
 
+  // Volume Rendering Logic
   vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
   qSlicerAbstractCoreModule* VolumeRenderingModule;
+
+  // Models Logic
+  vtkSlicerModelsLogic* ModelsLogic;
+  qSlicerAbstractCoreModule* ModelsModule;
 
 private:
   vtkSlicerWorkspaceGenerationLogic(

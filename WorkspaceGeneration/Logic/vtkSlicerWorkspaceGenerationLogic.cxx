@@ -33,10 +33,6 @@
 #include <vtkMRMLModelNode.h>
 #include <vtkMRMLScene.h>
 
-// Models logic includes
-#include <vtkSlicerModelsLogic.h>
-#include <vtkSlicerModelsModuleLogicExport.h>
-
 // Volume Rendering MRML includes
 #include <vtkMRMLScene.h>
 #include <vtkMRMLVolumeNode.h>
@@ -46,10 +42,15 @@
 #include <vtkCleanPolyData.h>
 #include <vtkCollection.h>
 #include <vtkCollectionIterator.h>
+#include <vtkDelaunay3D.h>
+#include <vtkGeometryFilter.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkPoints.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkPowerCrustSurfaceReconstruction.h>
 #include <vtkSmartPointer.h>
+#include <vtkTriangleFilter.h>
 
 // STD includes
 #include <cassert>
@@ -74,6 +75,13 @@ vtkSlicerWorkspaceGenerationLogic::vtkSlicerWorkspaceGenerationLogic()
                                  vtkSlicerVolumeRenderingLogic::SafeDownCast(
                                    VolumeRenderingModule->logic()) :
                                  0;
+
+  this->ModelsModule =
+    qSlicerCoreApplication::application()->moduleManager()->module("Models");
+  this->ModelsLogic =
+    this->ModelsModule ?
+      vtkSlicerModelsLogic::SafeDownCast(this->ModelsModule->logic()) :
+      0;
 }
 
 //----------------------------------------------------------------------------
@@ -356,18 +364,12 @@ bool vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
 {
   qInfo() << Q_FUNC_INFO;
 
-  qSlicerAbstractCoreModule* modelsModule =
-    qSlicerCoreApplication::application()->moduleManager()->module("Models");
-  vtkSlicerModelsLogic* modelsLogic =
-    modelsModule ? vtkSlicerModelsLogic::SafeDownCast(modelsModule->logic()) :
-                   0;
-
-  if (modelsLogic)
+  if (this->ModelsLogic)
   {
     qDebug() << Q_FUNC_INFO << ": Models Logic is available.";
 
-    modelsLogic->SetMRMLScene(this->GetMRMLScene());
-    WorkspaceMeshModelNode = modelsLogic->AddModel(
+    this->ModelsLogic->SetMRMLScene(this->GetMRMLScene());
+    WorkspaceMeshModelNode = this->ModelsLogic->AddModel(
       workspaceMeshFilePath.toLocal8Bit().data(), vtkMRMLStorageNode::RAS);
 
     return true;
@@ -409,19 +411,82 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   NeuroKinematics neuro_kinematics(&probe);
   ForwardKinematics fk(neuro_kinematics);
 
-  vtkSmartPointer< vtkPoints > General_Workspace_PC =
+  vtkSmartPointer< vtkPoints > workspacePointCloud =
     vtkSmartPointer< vtkPoints >::New();
-  General_Workspace_PC = fk.get_General_Workspace(
+  workspacePointCloud = fk.get_General_Workspace(
     vtkSlicerWorkspaceGenerationLogic::convertToEigenMatrix(registrationMatrix),
-    General_Workspace_PC);
-  vtkSmartPointer< vtkPolyData > polydata_General_Workspace_PC =
+    workspacePointCloud);
+  vtkSmartPointer< vtkPolyData > polyDataWorkspace =
     vtkSmartPointer< vtkPolyData >::New();
-  polydata_General_Workspace_PC->SetPoints(General_Workspace_PC);
+  polyDataWorkspace->SetPoints(workspacePointCloud.GetPointer());
 
   qDebug() << Q_FUNC_INFO << ": Number of points";
-  qDebug() << polydata_General_Workspace_PC->GetNumberOfPoints();
+  qDebug() << polyDataWorkspace->GetNumberOfPoints();
 
-  modelNode->SetAndObservePolyData(polydata_General_Workspace_PC);
+  bool usePowerCrust = false;
+  if (usePowerCrust)
+  {
+
+    vtkSmartPointer< vtkPowerCrustSurfaceReconstruction > surface =
+      vtkSmartPointer< vtkPowerCrustSurfaceReconstruction >::New();
+
+    // try
+    // {
+    surface->SetInputData(polyDataWorkspace);
+    // surface->Update();
+    // vtkSmartPointer< vtkPolyDataMapper > surfaceMapper =
+    //   vtkSmartPointer< vtkPolyDataMapper >::New();
+    // surfaceMapper->SetInputConnection(surface->GetOutputPort());
+
+    surface->Update();
+
+    vtkSmartPointer< vtkTriangleFilter > triangleFilter =
+      vtkSmartPointer< vtkTriangleFilter >::New();
+
+    triangleFilter->SetInputData(surface->GetOutput());
+    triangleFilter->Update();
+
+    // if (this->ModelsLogic)
+    // {
+    //   qDebug() << Q_FUNC_INFO << ": Models Logic is available.";
+
+    //   this->ModelsLogic->SetMRMLScene(this->GetMRMLScene());
+
+    //   WorkspaceMeshModelNode =
+    //     this->ModelsLogic->AddModel(surface->GetMedialSurface());
+    //   // modelNode = WorkspaceMeshModelNode;
+    // }
+
+    modelNode->SetAndObservePolyData(triangleFilter->GetOutput());
+  }
+  else
+  {
+    vtkSmartPointer< vtkDelaunay3D > delaunay =
+      vtkSmartPointer< vtkDelaunay3D >::New();
+    delaunay->SetInputData(polyDataWorkspace);
+    delaunay->SetAlpha(0);
+    delaunay->SetTolerance(0.3);
+    delaunay->SetOffset(5.0);
+    delaunay->Update();
+
+    vtkSmartPointer< vtkGeometryFilter > surfaceFilter =
+      vtkSmartPointer< vtkGeometryFilter >::New();
+    surfaceFilter->SetInputConnection(delaunay->GetOutputPort());
+    surfaceFilter->Update();
+    modelNode->SetAndObservePolyData(surfaceFilter->GetOutput());
+  }
+
+  WorkspaceMeshModelNode = modelNode;
+
+  // modelNode->SetAndObservePolyData(surface->GetOutput());
+  //   modelNode->SetPolyDataConnection(
+  //     surface->GetOutputPort());
+  // }
+  // catch (std::exception& ex)
+  // {
+  //   qDebug() << Q_FUNC_INFO << ": " << ex.what();
+  // }
+
   // Attach a display node if needed
   vtkMRMLModelDisplayNode* displayNode =
     vtkMRMLModelDisplayNode::SafeDownCast(modelNode->GetDisplayNode());
@@ -447,20 +512,13 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
 
   WorkspaceMeshModelNode = modelNode;
 
-  // qSlicerAbstractCoreModule* modelsModule =
-  //   qSlicerCoreApplication::application()->moduleManager()->module("Models");
-  // vtkSlicerModelsLogic* modelsLogic =
-  //   modelsModule ? vtkSlicerModelsLogic::SafeDownCast(modelsModule->logic())
-  //   :
-  //                  0;
-
   // if (modelsLogic)
   // {
   //   qDebug() << Q_FUNC_INFO << ": Models Logic is available.";
 
   //   modelsLogic->SetMRMLScene(this->GetMRMLScene());
   //   WorkspaceMeshModelNode = modelsLogic->AddModel(
-  //     polydata_General_Workspace_PC);  //, vtkMRMLStorageNode::RAS);
+  //     polyDataWorkspace);  //, vtkMRMLStorageNode::RAS);
 
   //   // modelNode->SetPolyDataConnection(
   //   //   generateWorkspace->GetPolyDataConnection());
