@@ -49,35 +49,7 @@
         </size>
        </property>
        <property name="pixmap">
-        <pixmap>../Icons/probe_specs_2.jpg</pixmap>
-       </property>
-       <property name="scaledContents">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="ProbeSpec1_Label">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>140</width>
-         <height>140</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>140</width>
-         <height>140</height>
-        </size>
-       </property>
-       <property name="pixmap">
-        <pixmap>../Icons/probe_specs_1.jpg</pixmap>
+        <pixmap resource="../qSlicerWorkspaceGenerationModule.qrc">:/Icons/probe_specs_2.jpg</pixmap>
        </property>
        <property name="scaledContents">
         <bool>true</bool>
@@ -272,10 +244,40 @@
        </item>
       </layout>
      </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="ProbeSpec1_Label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>140</width>
+         <height>140</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>140</width>
+         <height>140</height>
+        </size>
+       </property>
+       <property name="pixmap">
+        <pixmap resource="../qSlicerWorkspaceGenerationModule.qrc">:/Icons/probe_specs_1.jpg</pixmap>
+       </property>
+       <property name="scaledContents">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../qSlicerWorkspaceGenerationModule.qrc"/>
+ </resources>
  <connections/>
 </ui>

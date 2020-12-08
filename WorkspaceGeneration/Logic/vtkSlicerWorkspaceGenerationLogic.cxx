@@ -47,8 +47,8 @@
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkPoints.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkPowerCrustSurfaceReconstruction.h>
+// #include <vtkPolyDataMapper.h>
+// #include <vtkPowerCrustSurfaceReconstruction.h>
 #include <vtkSmartPointer.h>
 #include <vtkTriangleFilter.h>
 
@@ -427,37 +427,37 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   if (usePowerCrust)
   {
 
-    vtkSmartPointer< vtkPowerCrustSurfaceReconstruction > surface =
-      vtkSmartPointer< vtkPowerCrustSurfaceReconstruction >::New();
+    // vtkSmartPointer< vtkPowerCrustSurfaceReconstruction > surface =
+    //   vtkSmartPointer< vtkPowerCrustSurfaceReconstruction >::New();
 
-    // try
-    // {
-    surface->SetInputData(polyDataWorkspace);
+    // // try
+    // // {
+    // surface->SetInputData(polyDataWorkspace);
+    // // surface->Update();
+    // // vtkSmartPointer< vtkPolyDataMapper > surfaceMapper =
+    // //   vtkSmartPointer< vtkPolyDataMapper >::New();
+    // // surfaceMapper->SetInputConnection(surface->GetOutputPort());
+
     // surface->Update();
-    // vtkSmartPointer< vtkPolyDataMapper > surfaceMapper =
-    //   vtkSmartPointer< vtkPolyDataMapper >::New();
-    // surfaceMapper->SetInputConnection(surface->GetOutputPort());
 
-    surface->Update();
+    // vtkSmartPointer< vtkTriangleFilter > triangleFilter =
+    //   vtkSmartPointer< vtkTriangleFilter >::New();
 
-    vtkSmartPointer< vtkTriangleFilter > triangleFilter =
-      vtkSmartPointer< vtkTriangleFilter >::New();
+    // triangleFilter->SetInputData(surface->GetOutput());
+    // triangleFilter->Update();
 
-    triangleFilter->SetInputData(surface->GetOutput());
-    triangleFilter->Update();
+    // // if (this->ModelsLogic)
+    // // {
+    // //   qDebug() << Q_FUNC_INFO << ": Models Logic is available.";
 
-    // if (this->ModelsLogic)
-    // {
-    //   qDebug() << Q_FUNC_INFO << ": Models Logic is available.";
+    // //   this->ModelsLogic->SetMRMLScene(this->GetMRMLScene());
 
-    //   this->ModelsLogic->SetMRMLScene(this->GetMRMLScene());
+    // //   WorkspaceMeshModelNode =
+    // //     this->ModelsLogic->AddModel(surface->GetMedialSurface());
+    // //   // modelNode = WorkspaceMeshModelNode;
+    // // }
 
-    //   WorkspaceMeshModelNode =
-    //     this->ModelsLogic->AddModel(surface->GetMedialSurface());
-    //   // modelNode = WorkspaceMeshModelNode;
-    // }
-
-    modelNode->SetAndObservePolyData(triangleFilter->GetOutput());
+    // modelNode->SetAndObservePolyData(triangleFilter->GetOutput());
   }
   else
   {
