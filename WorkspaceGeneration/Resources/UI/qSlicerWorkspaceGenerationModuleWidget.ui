@@ -1,566 +1,658 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>qSlicerWorkspaceGenerationModuleWidget</class>
- <widget class="qSlicerWidget" name="qSlicerWorkspaceGenerationModuleWidget">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>709</width>
-    <height>898</height>
-   </rect>
-  </property>
-  <property name="windowTitle">
-   <string>Form</string>
-  </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
-    <layout class="QGridLayout" name="ParameterLayout">
-     <property name="leftMargin">
-      <number>5</number>
-     </property>
-     <property name="bottomMargin">
-      <number>0</number>
-     </property>
-     <property name="spacing">
-      <number>7</number>
-     </property>
-     <item row="0" column="0">
-      <widget class="QLabel" name="ParameterDataLabel">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Parameter Node</string>
-       </property>
-       <property name="margin">
-        <number>5</number>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1" colspan="3">
-      <widget class="qMRMLNodeComboBox" name="ParameterNodeSelector__1_1">
-       <property name="nodeTypes">
-        <stringlist>
-         <string>vtkMRMLWorkspaceGenerationNode</string>
-        </stringlist>
-       </property>
-       <property name="renameEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="selectNodeUponCreation">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
+  <class>qSlicerWorkspaceGenerationModuleWidget</class>
+  <widget class="qSlicerWidget" name="qSlicerWorkspaceGenerationModuleWidget">
+    <property name="geometry">
+      <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>709</width>
+        <height>898</height>
+      </rect>
+    </property>
+    <property name="windowTitle">
+      <string>Form</string>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+        <layout class="QGridLayout" name="ParameterLayout">
+          <property name="leftMargin">
+            <number>5</number>
+          </property>
+          <property name="bottomMargin">
+            <number>0</number>
+          </property>
+          <property name="spacing">
+            <number>7</number>
+          </property>
+          <item row="0" column="0">
+            <widget class="QLabel" name="ParameterDataLabel">
+              <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                </sizepolicy>
+              </property>
+              <property name="text">
+                <string>Parameter Node</string>
+              </property>
+              <property name="margin">
+                <number>5</number>
+              </property>
+            </widget>
+          </item>
+          <item row="0" column="1" colspan="3">
+            <widget class="qMRMLNodeComboBox" name="ParameterNodeSelector__1_1">
+              <property name="nodeTypes">
+                <stringlist>
+                  <string>vtkMRMLWorkspaceGenerationNode</string>
+                </stringlist>
+              </property>
+              <property name="renameEnabled">
+                <bool>true</bool>
+              </property>
+              <property name="selectNodeUponCreation">
+                <bool>true</bool>
+              </property>
+            </widget>
+          </item>
+        </layout>
+      </item>
+      <item>
+        <widget class="ctkCollapsibleButton" name="InputSettingsCollapsibleButton">
+          <property name="font">
+            <font>
+              <family>DejaVu Sans</family>
+              <weight>75</weight>
+              <bold>true</bold>
+            </font>
+          </property>
+          <property name="text">
+            <string>Input Settings</string>
+          </property>
+          <property name="buttonTextAlignment">
+            <set>Qt::AlignCenter</set>
+          </property>
+          <layout class="QGridLayout" name="InputLayout">
+            <property name="leftMargin">
+              <number>5</number>
+            </property>
+            <property name="horizontalSpacing">
+              <number>7</number>
+            </property>
+            <item row="2" column="1">
+              <widget class="qMRMLNodeComboBox" name="ROINodeSelector__2_3">
+                <property name="toolTip">
+                  <string extracomment="Select an annotation ROI node to store the output">Select an annotation ROI node to store the output</string>
+                </property>
+                <property name="nodeTypes">
+                  <stringlist>
+                    <string>vtkMRMLAnnotationROINode</string>
+                  </stringlist>
+                </property>
+                <property name="noneEnabled">
+                  <bool>true</bool>
+                </property>
+                <property name="renameEnabled">
+                  <bool>true</bool>
+                </property>
+                <property name="selectNodeUponCreation">
+                  <bool>true</bool>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="0">
+              <widget class="QLabel" name="AnnotationROINodeLabel">
+                <property name="text">
+                  <string>ROI</string>
+                </property>
+                <property name="margin">
+                  <number>5</number>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="0">
+              <widget class="QLabel" name="InputVolumeNodeLabel">
+                <property name="text">
+                  <string>Input Volume</string>
+                </property>
+                <property name="margin">
+                  <number>5</number>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="1" colspan="2">
+              <widget class="qMRMLNodeComboBox" name="InputVolumeNodeSelector__2_1">
+                <property name="nodeTypes">
+                  <stringlist>
+                    <string>vtkMRMLVolumeNode</string>
+                  </stringlist>
+                </property>
+                <property name="noneEnabled">
+                  <bool>true</bool>
+                </property>
+                <property name="removeEnabled">
+                  <bool>false</bool>
+                </property>
+                <property name="renameEnabled">
+                  <bool>true</bool>
+                </property>
+                <property name="selectNodeUponCreation">
+                  <bool>true</bool>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="2">
+              <widget class="ctkPushButton" name="InputVolumeSetVisibilityCheckBox__2_2">
+                <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                  </sizepolicy>
+                </property>
+                <property name="text">
+                  <string>Visibility</string>
+                </property>
+                <property name="checkable">
+                  <bool>true</bool>
+                </property>
+                <property name="checked">
+                  <bool>true</bool>
+                </property>
+                <property name="flat">
+                  <bool>true</bool>
+                </property>
+              </widget>
+            </item>
+          </layout>
+        </widget>
+      </item>
+      <item>
+        <widget class="ctkCollapsibleButton" name="WorkspaceMeshSettingsCollapsibleButton">
+          <property name="font">
+            <font>
+              <family>DejaVu Sans</family>
+              <weight>75</weight>
+              <bold>true</bold>
+            </font>
+          </property>
+          <property name="text">
+            <string>Robot Workspace Settings</string>
+          </property>
+          <property name="buttonTextAlignment">
+            <set>Qt::AlignCenter</set>
+          </property>
+          <layout class="QGridLayout" name="WorkspaceMeshLayout">
+            <property name="leftMargin">
+              <number>5</number>
+            </property>
+            <property name="horizontalSpacing">
+              <number>7</number>
+            </property>
+            <item row="1" column="0">
+              <widget class="QLabel" name="WorkspaceMeshLabel">
+                <property name="text">
+                  <string>Workspace Mesh</string>
+                </property>
+              </widget>
+            </item>
+            <item row="6" column="0" colspan="3">
+              <widget class="qMRMLMatrixWidget" name="RegistrationMatrix__3_7">
+                <property name="enabled">
+                  <bool>true</bool>
+                </property>
+                <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                  </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                  <size>
+                    <width>0</width>
+                    <height>0</height>
+                  </size>
+                </property>
+                <property name="editable">
+                  <bool>true</bool>
+                </property>
+                <property name="minimum">
+                  <double>-1000.000000000000000</double>
+                </property>
+                <property name="maximum">
+                  <double>1000.000000000000000</double>
+                </property>
+                <property name="decimals">
+                  <number>3</number>
+                </property>
+                <property name="singleStep">
+                  <double>0.001000000000000</double>
+                </property>
+                <property name="coordinateReference">
+                  <enum>qMRMLMatrixWidget::GLOBAL</enum>
+                </property>
+              </widget>
+            </item>
+            <item row="6" column="3">
+              <widget class="QPushButton" name="GenerateWorkspaceButton__3_8">
+                <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                  </sizepolicy>
+                </property>
+                <property name="text">
+                  <string>Generate Workspace</string>
+                </property>
+                <property name="flat">
+                  <bool>false</bool>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="0" colspan="4">
+              <widget class="QLabel" name="RegistrationMatrixLabel">
+                <property name="font">
+                  <font>
+                    <family>DejaVu Sans</family>
+                    <pointsize>10</pointsize>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                  </font>
+                </property>
+                <property name="lineWidth">
+                  <number>1</number>
+                </property>
+                <property name="text">
+                  <string>Registration Matrix</string>
+                </property>
+                <property name="scaledContents">
+                  <bool>false</bool>
+                </property>
+                <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                </property>
+                <property name="margin">
+                  <number>2</number>
+                </property>
+                <property name="indent">
+                  <number>0</number>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="0" colspan="4">
+              <widget class="ctkCollapsibleButton" name="ProbeSpecsCollapsibleButton__3_2">
+                <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                  </sizepolicy>
+                </property>
+                <property name="text">
+                  <string>Probe Specifications Help</string>
+                </property>
+                <property name="collapsed">
+                  <bool>true</bool>
+                </property>
+                <property name="flat">
+                  <bool>false</bool>
+                </property>
+                <layout class="QVBoxLayout" name="ProbeSpecsVerticalLayout">
+                  <item>
+                    <widget class="qSlicerWorkspaceGenerationProbeSpecsWidget" name="ProbeSpecsWidget" native="true"/>
+                  </item>
+                </layout>
+              </widget>
+            </item>
+            <item row="3" column="0" colspan="4">
+              <widget class="QLabel" name="label">
+                <property name="font">
+                  <font>
+                    <family>DejaVu Sans</family>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                  </font>
+                </property>
+                <property name="text">
+                  <string>Probe Specifications</string>
+                </property>
+                <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                </property>
+              </widget>
+            </item>
+            <item row="4" column="0" colspan="4">
+              <layout class="QHBoxLayout" name="horizontalLayout">
+                <item>
+                  <widget class="QLabel" name="A_Label">
+                    <property name="sizePolicy">
+                      <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                      </sizepolicy>
+                    </property>
+                    <property name="font">
+                      <font>
+                        <pointsize>10</pointsize>
+                        <weight>75</weight>
+                        <italic>true</italic>
+                        <bold>true</bold>
+                      </font>
+                    </property>
+                    <property name="text">
+                      <string>A</string>
+                    </property>
+                    <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                    </property>
+                    <property name="margin">
+                      <number>5</number>
+                    </property>
+                  </widget>
+                </item>
+                <item>
+                  <widget class="ctkDoubleSpinBox" name="A_DoubleSpinBox__3_3">
+                    <property name="sizePolicy">
+                      <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                      </sizepolicy>
+                    </property>
+                  </widget>
+                </item>
+                <item>
+                  <widget class="QLabel" name="B_Label">
+                    <property name="sizePolicy">
+                      <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                      </sizepolicy>
+                    </property>
+                    <property name="font">
+                      <font>
+                        <pointsize>10</pointsize>
+                        <weight>75</weight>
+                        <italic>true</italic>
+                        <bold>true</bold>
+                      </font>
+                    </property>
+                    <property name="text">
+                      <string>B</string>
+                    </property>
+                    <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                    </property>
+                    <property name="margin">
+                      <number>5</number>
+                    </property>
+                  </widget>
+                </item>
+                <item>
+                  <widget class="ctkDoubleSpinBox" name="B_DoubleSpinBox__3_4">
+                    <property name="sizePolicy">
+                      <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                      </sizepolicy>
+                    </property>
+                  </widget>
+                </item>
+                <item>
+                  <widget class="QLabel" name="C_Label">
+                    <property name="sizePolicy">
+                      <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                      </sizepolicy>
+                    </property>
+                    <property name="font">
+                      <font>
+                        <pointsize>10</pointsize>
+                        <weight>75</weight>
+                        <italic>true</italic>
+                        <bold>true</bold>
+                      </font>
+                    </property>
+                    <property name="text">
+                      <string>C</string>
+                    </property>
+                    <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                    </property>
+                    <property name="margin">
+                      <number>5</number>
+                    </property>
+                  </widget>
+                </item>
+                <item>
+                  <widget class="ctkDoubleSpinBox" name="C_DoubleSpinBox__3_5">
+                    <property name="sizePolicy">
+                      <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                      </sizepolicy>
+                    </property>
+                  </widget>
+                </item>
+                <item>
+                  <widget class="QLabel" name="D_Label">
+                    <property name="sizePolicy">
+                      <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                      </sizepolicy>
+                    </property>
+                    <property name="font">
+                      <font>
+                        <pointsize>10</pointsize>
+                        <weight>75</weight>
+                        <italic>true</italic>
+                        <bold>true</bold>
+                      </font>
+                    </property>
+                    <property name="text">
+                      <string>D</string>
+                    </property>
+                    <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                    </property>
+                    <property name="margin">
+                      <number>5</number>
+                    </property>
+                  </widget>
+                </item>
+                <item>
+                  <widget class="ctkDoubleSpinBox" name="D_DoubleSpinBox__3_6">
+                    <property name="sizePolicy">
+                      <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                      </sizepolicy>
+                    </property>
+                  </widget>
+                </item>
+              </layout>
+            </item>
+            <item row="1" column="3">
+              <widget class="ctkPushButton" name="WorkspaceVisibilityToggle__3_9">
+                <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                  </sizepolicy>
+                </property>
+                <property name="text">
+                  <string>Visibility</string>
+                </property>
+                <property name="checkable">
+                  <bool>true</bool>
+                </property>
+                <property name="checked">
+                  <bool>true</bool>
+                </property>
+                <property name="flat">
+                  <bool>true</bool>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="1">
+              <widget class="qMRMLNodeComboBox" name="WorkspaceModelSelector__3_1">
+                <property name="nodeTypes">
+                  <stringlist>
+                    <string>vtkMRMLModelNode</string>
+                  </stringlist>
+                </property>
+                <property name="noneEnabled">
+                  <bool>true</bool>
+                </property>
+                <property name="addEnabled">
+                  <bool>true</bool>
+                </property>
+                <property name="renameEnabled">
+                  <bool>true</bool>
+                </property>
+                <property name="selectNodeUponCreation">
+                  <bool>true</bool>
+                </property>
+              </widget>
+            </item>
+          </layout>
+        </widget>
+      </item>
+      <item>
+        <widget class="ctkCollapsibleButton" name="MarkupsFiducialsCollapsibleButton__4_1">
+          <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+            </sizepolicy>
+          </property>
+          <property name="font">
+            <font>
+              <family>DejaVu Sans</family>
+              <pointsize>10</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+            </font>
+          </property>
+          <property name="text">
+            <string>Entry Point and Target Point Selection</string>
+          </property>
+          <property name="buttonTextAlignment">
+            <set>Qt::AlignCenter</set>
+          </property>
+          <property name="lineWidth" stdset="0">
+            <number>1</number>
+          </property>
+          <property name="scaledContents" stdset="0">
+            <bool>false</bool>
+          </property>
+          <property name="margin" stdset="0">
+            <number>5</number>
+          </property>
+          <property name="indent" stdset="0">
+            <number>0</number>
+          </property>
+          <layout class="QGridLayout" name="MarkupsFiducialsGridLayout">
+            <property name="leftMargin">
+              <number>5</number>
+            </property>
+            <property name="horizontalSpacing">
+              <number>7</number>
+            </property>
+            <item row="0" column="1">
+              <widget class="qMRMLNodeComboBox" name="EntryPointFiducialSelector__4_2"/>
+            </item>
+            <item row="0" column="0">
+              <widget class="QLabel" name="EntryPointSelectLabel">
+                <property name="text">
+                  <string>Entry Point (EP)</string>
+                </property>
+              </widget>
+            </item>
+            <item row="0" column="2">
+              <widget class="qSlicerMarkupsPlaceWidget" name="EntryPointMarkupsPlaceWidget__4_3"/>
+            </item>
+            <item row="1" column="0">
+              <widget class="QLabel" name="TargetPointSelectLabel">
+                <property name="text">
+                  <string>Target Point (TP)</string>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="1">
+              <widget class="qMRMLNodeComboBox" name="TargetPointFiducialSelector__4_4"/>
+            </item>
+            <item row="1" column="2">
+              <widget class="qSlicerMarkupsPlaceWidget" name="TargetPointMarkupsPlaceWidget__4_5"/>
+            </item>
+          </layout>
+        </widget>
+      </item>
+      <item>
+        <spacer name="verticalSpacer">
+          <property name="orientation">
+            <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+            <size>
+              <width>20</width>
+              <height>600</height>
+            </size>
+          </property>
+        </spacer>
+      </item>
     </layout>
-   </item>
-   <item>
-    <layout class="QGridLayout" name="InputLayout">
-     <property name="leftMargin">
-      <number>5</number>
-     </property>
-     <property name="horizontalSpacing">
-      <number>7</number>
-     </property>
-     <item row="2" column="1">
-      <widget class="qMRMLNodeComboBox" name="ROINodeSelector__2_3">
-       <property name="toolTip">
-        <string extracomment="Select an annotation ROI node to store the output">Select an annotation ROI node to store the output</string>
-       </property>
-       <property name="nodeTypes">
-        <stringlist>
-         <string>vtkMRMLAnnotationROINode</string>
-        </stringlist>
-       </property>
-       <property name="noneEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="renameEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="selectNodeUponCreation">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0" colspan="3">
-      <widget class="QLabel" name="InputSettingsLabel">
-       <property name="font">
-        <font>
-         <family>DejaVu Sans</family>
-         <pointsize>10</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="lineWidth">
-        <number>1</number>
-       </property>
-       <property name="text">
-        <string>Input Settings</string>
-       </property>
-       <property name="scaledContents">
-        <bool>false</bool>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-       <property name="margin">
-        <number>2</number>
-       </property>
-       <property name="indent">
-        <number>0</number>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="AnnotationROINodeLabel">
-       <property name="text">
-        <string>ROI</string>
-       </property>
-       <property name="margin">
-        <number>5</number>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="InputVolumeNodeLabel">
-       <property name="text">
-        <string>Input Volume</string>
-       </property>
-       <property name="margin">
-        <number>5</number>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1" colspan="2">
-      <widget class="qMRMLNodeComboBox" name="InputVolumeNodeSelector__2_1">
-       <property name="nodeTypes">
-        <stringlist>
-         <string>vtkMRMLVolumeNode</string>
-        </stringlist>
-       </property>
-       <property name="noneEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="removeEnabled">
-        <bool>false</bool>
-       </property>
-       <property name="renameEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="selectNodeUponCreation">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="ctkPushButton" name="InputVolumeSetVisibilityCheckBox__2_2">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Visibility</string>
-       </property>
-       <property name="checkable">
-        <bool>true</bool>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-       <property name="flat">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QGridLayout" name="WorkspaceMeshLayout">
-     <property name="leftMargin">
-      <number>5</number>
-     </property>
-     <property name="horizontalSpacing">
-      <number>7</number>
-     </property>
-     <item row="5" column="7" colspan="2">
-      <widget class="QPushButton" name="GenerateWorkspaceButton__3_8">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Generate Workspace</string>
-       </property>
-       <property name="flat">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="WorkspaceMeshLabel">
-       <property name="text">
-        <string>Workspace Mesh</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0" colspan="9">
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QLabel" name="A_Label">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <italic>true</italic>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>A</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="ctkDoubleSpinBox" name="A_DoubleSpinBox__3_3">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="B_Label">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <italic>true</italic>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>B</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="ctkDoubleSpinBox" name="B_DoubleSpinBox__3_4">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="C_Label">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <italic>true</italic>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>C</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="ctkDoubleSpinBox" name="C_DoubleSpinBox__3_5">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="D_Label">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <italic>true</italic>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>D</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="ctkDoubleSpinBox" name="D_DoubleSpinBox__3_6">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="0" column="0" colspan="9">
-      <widget class="QLabel" name="WorkspaceMeshSettingsLabel">
-       <property name="font">
-        <font>
-         <family>DejaVu Sans</family>
-         <pointsize>10</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="lineWidth">
-        <number>1</number>
-       </property>
-       <property name="text">
-        <string>Robot Workspace Settings</string>
-       </property>
-       <property name="scaledContents">
-        <bool>false</bool>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-       <property name="margin">
-        <number>5</number>
-       </property>
-       <property name="indent">
-        <number>0</number>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0" colspan="9">
-      <widget class="ctkCollapsibleButton" name="ProbeSpecsCollapsibleButton__3_2">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Probe Specifications</string>
-       </property>
-       <layout class="QVBoxLayout" name="ProbeSpecsVerticalLayout">
-        <item>
-         <widget class="qSlicerWorkspaceGenerationProbeSpecsWidget" name="ProbeSpecsWidget" native="true"/>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item row="5" column="0" colspan="7">
-      <widget class="qMRMLMatrixWidget" name="RegistrationMatrix__3_7">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="editable">
-        <bool>true</bool>
-       </property>
-       <property name="minimum">
-        <double>-1000.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>1000.000000000000000</double>
-       </property>
-       <property name="decimals">
-        <number>3</number>
-       </property>
-       <property name="singleStep">
-        <double>0.001000000000000</double>
-       </property>
-       <property name="coordinateReference">
-        <enum>qMRMLMatrixWidget::GLOBAL</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0" colspan="9">
-      <widget class="QLabel" name="RegistrationMatrixLabel">
-       <property name="font">
-        <font>
-         <family>DejaVu Sans</family>
-         <pointsize>10</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="lineWidth">
-        <number>1</number>
-       </property>
-       <property name="text">
-        <string>Registration Matrix</string>
-       </property>
-       <property name="scaledContents">
-        <bool>false</bool>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-       <property name="margin">
-        <number>2</number>
-       </property>
-       <property name="indent">
-        <number>0</number>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1" colspan="8">
-      <widget class="qMRMLNodeComboBox" name="WorkspaceModelSelector__3_1">
-       <property name="nodeTypes">
-        <stringlist>
-         <string>vtkMRMLModelNode</string>
-        </stringlist>
-       </property>
-       <property name="noneEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="addEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="renameEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="selectNodeUponCreation">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <widget class="ctkPushButton" name="WorkspaceVisibilityToggle__3_9">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="text">
-      <string>Visibility</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-     <property name="flat">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>600</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-  </layout>
- </widget>
- <customwidgets>
-  <customwidget>
-   <class>qMRMLMatrixWidget</class>
-   <extends>ctkMatrixWidget</extends>
-   <header>qMRMLMatrixWidget.h</header>
-  </customwidget>
-  <customwidget>
-   <class>qMRMLNodeComboBox</class>
-   <extends>QWidget</extends>
-   <header>qMRMLNodeComboBox.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>qSlicerWidget</class>
-   <extends>QWidget</extends>
-   <header>qSlicerWidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ctkCollapsibleButton</class>
-   <extends>QWidget</extends>
-   <header>ctkCollapsibleButton.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ctkDoubleSpinBox</class>
-   <extends>QWidget</extends>
-   <header>ctkDoubleSpinBox.h</header>
-  </customwidget>
-  <customwidget>
-   <class>ctkMatrixWidget</class>
-   <extends>QWidget</extends>
-   <header>ctkMatrixWidget.h</header>
-  </customwidget>
-  <customwidget>
-   <class>ctkPushButton</class>
-   <extends>QPushButton</extends>
-   <header>ctkPushButton.h</header>
-  </customwidget>
-  <customwidget>
-   <class>qSlicerWorkspaceGenerationProbeSpecsWidget</class>
-   <extends>QWidget</extends>
-   <header>qSlicerWorkspaceGenerationProbeSpecsWidget.h</header>
-  </customwidget>
- </customwidgets>
- <resources/>
- <connections/>
+  </widget>
+  <customwidgets>
+    <customwidget>
+      <class>qMRMLMatrixWidget</class>
+      <extends>ctkMatrixWidget</extends>
+      <header>qMRMLMatrixWidget.h</header>
+    </customwidget>
+    <customwidget>
+      <class>qMRMLNodeComboBox</class>
+      <extends>QWidget</extends>
+      <header>qMRMLNodeComboBox.h</header>
+      <container>1</container>
+    </customwidget>
+    <customwidget>
+      <class>qSlicerWidget</class>
+      <extends>QWidget</extends>
+      <header>qSlicerWidget.h</header>
+      <container>1</container>
+    </customwidget>
+    <customwidget>
+      <class>qSlicerMarkupsPlaceWidget</class>
+      <extends>qSlicerWidget</extends>
+      <header>qSlicerMarkupsPlaceWidget.h</header>
+    </customwidget>
+    <customwidget>
+      <class>ctkCollapsibleButton</class>
+      <extends>QWidget</extends>
+      <header>ctkCollapsibleButton.h</header>
+      <container>1</container>
+    </customwidget>
+    <customwidget>
+      <class>ctkDoubleSpinBox</class>
+      <extends>QWidget</extends>
+      <header>ctkDoubleSpinBox.h</header>
+    </customwidget>
+    <customwidget>
+      <class>ctkMatrixWidget</class>
+      <extends>QWidget</extends>
+      <header>ctkMatrixWidget.h</header>
+    </customwidget>
+    <customwidget>
+      <class>ctkPushButton</class>
+      <extends>QPushButton</extends>
+      <header>ctkPushButton.h</header>
+    </customwidget>
+    <customwidget>
+      <class>qSlicerWorkspaceGenerationProbeSpecsWidget</class>
+      <extends>QWidget</extends>
+      <header>qSlicerWorkspaceGenerationProbeSpecsWidget.h</header>
+    </customwidget>
+  </customwidgets>
+  <resources/>
+  <connections/>
 </ui>

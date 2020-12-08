@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>726</width>
+    <width>581</width>
     <height>148</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Probe Specifications</string>
+   <string>Probe Specifications Help</string>
   </property>
   <layout class="QVBoxLayout" name="ProbeSpecVerticalLayout">
    <property name="leftMargin">
