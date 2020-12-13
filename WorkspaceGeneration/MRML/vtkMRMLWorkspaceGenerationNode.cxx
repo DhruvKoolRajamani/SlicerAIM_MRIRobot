@@ -23,6 +23,8 @@
 static const char* INPUT_ROLE = "InputVolume";
 static const char* ROI_ROLE = "ROI";
 static const char* WORKSPACEMESH_MODEL_ROLE = "WorkspaceMeshModel";
+static const char* ENTRY_POINT_ROLE = "EntryPoint";
+static const char* TARGET_POINT_ROLE = "TargetPoint";
 
 vtkMRMLNodeNewMacro(vtkMRMLWorkspaceGenerationNode);
 
@@ -37,11 +39,36 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
   vtkNew< vtkIntArray > inputVolumeEvents;
   inputVolumeEvents->InsertNextValue(vtkCommand::ModifiedEvent);
 
+  vtkNew< vtkIntArray > workspaceMeshEvents;
+  workspaceMeshEvents->InsertNextValue(vtkCommand::ModifiedEvent);
+  workspaceMeshEvents->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
+
+  vtkNew< vtkIntArray > entryPointMarkupEvents;
+  entryPointMarkupEvents->InsertNextValue(vtkCommand::ModifiedEvent);
+  entryPointMarkupEvents->InsertNextValue(vtkMRMLMarkupsNode::PointAddedEvent);
+  entryPointMarkupEvents->InsertNextValue(
+    vtkMRMLMarkupsNode::PointRemovedEvent);
+  entryPointMarkupEvents->InsertNextValue(
+    vtkMRMLMarkupsNode::PointModifiedEvent);
+
+  vtkNew< vtkIntArray > targetPointMarkupEvents;
+  targetPointMarkupEvents->InsertNextValue(vtkCommand::ModifiedEvent);
+  targetPointMarkupEvents->InsertNextValue(vtkMRMLMarkupsNode::PointAddedEvent);
+  targetPointMarkupEvents->InsertNextValue(
+    vtkMRMLMarkupsNode::PointRemovedEvent);
+  targetPointMarkupEvents->InsertNextValue(
+    vtkMRMLMarkupsNode::PointModifiedEvent);
+
   // inputVolumeEvents->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
 
   this->AddNodeReferenceRole(INPUT_ROLE, NULL, inputVolumeEvents.GetPointer());
   this->AddNodeReferenceRole(ROI_ROLE);
-  this->AddNodeReferenceRole(WORKSPACEMESH_MODEL_ROLE);
+  this->AddNodeReferenceRole(WORKSPACEMESH_MODEL_ROLE, NULL,
+                             workspaceMeshEvents.GetPointer());
+  this->AddNodeReferenceRole(ENTRY_POINT_ROLE, NULL,
+                             entryPointMarkupEvents.GetPointer());
+  this->AddNodeReferenceRole(TARGET_POINT_ROLE, NULL,
+                             targetPointMarkupEvents.GetPointer());
 
   this->AutoUpdateOutput = true;
   // this->InputNodeType = NONE;
@@ -106,6 +133,23 @@ void vtkMRMLWorkspaceGenerationNode::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //-----------------------------------------------------------------
+void vtkMRMLWorkspaceGenerationNode::ProcessMRMLEvents(vtkObject* caller,
+                                                       unsigned long /*event*/,
+                                                       void* /*callData*/)
+{
+  vtkMRMLMarkupsFiducialNode* callerNode =
+    vtkMRMLMarkupsFiducialNode::SafeDownCast(caller);
+  if (callerNode == NULL)
+    return;
+
+  if ((this->GetEntryPointNode() && this->GetEntryPointNode() == caller) ||
+      (this->GetTargetPointNode() && this->GetTargetPointNode() == caller))
+  {
+    this->InvokeCustomModifiedEvent(MarkupsPositionModifiedEvent);
+  }
+}
+
+//-----------------------------------------------------------------
 vtkMRMLVolumeNode* vtkMRMLWorkspaceGenerationNode::GetInputVolumeNode()
 {
   qInfo() << Q_FUNC_INFO;
@@ -153,6 +197,42 @@ vtkMRMLModelNode* vtkMRMLWorkspaceGenerationNode::GetWorkspaceMeshModelNode()
   }
 
   return workspaceMeshModelNode;
+}
+
+//-----------------------------------------------------------------
+vtkMRMLMarkupsFiducialNode* vtkMRMLWorkspaceGenerationNode::GetEntryPointNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLMarkupsFiducialNode* entryPointNode =
+    vtkMRMLMarkupsFiducialNode::SafeDownCast(
+      this->GetNodeReference(ENTRY_POINT_ROLE));
+
+  if (!entryPointNode)
+  {
+    qWarning() << Q_FUNC_INFO << ": entryPointNode node is null";
+    return NULL;
+  }
+
+  return entryPointNode;
+}
+
+//-----------------------------------------------------------------
+vtkMRMLMarkupsFiducialNode* vtkMRMLWorkspaceGenerationNode::GetTargetPointNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLMarkupsFiducialNode* targetPointNode =
+    vtkMRMLMarkupsFiducialNode::SafeDownCast(
+      this->GetNodeReference(TARGET_POINT_ROLE));
+
+  if (!targetPointNode)
+  {
+    qWarning() << Q_FUNC_INFO << ": targetPointNode node is null";
+    return NULL;
+  }
+
+  return targetPointNode;
 }
 
 //-----------------------------------------------------------------
@@ -207,4 +287,53 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveAnnotationROINodeID(
   }
 
   this->SetAndObserveNodeReferenceID(ROI_ROLE, annotationROIId);
+}
+
+//-----------------------------------------------------------------
+void vtkMRMLWorkspaceGenerationNode::SetAndObserveEntryPointNodeId(
+  const char* entryPointNodeId)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  // error check
+  const char* targetPointNodeId = this->GetNodeReferenceID(TARGET_POINT_ROLE);
+  if (entryPointNodeId == NULL)
+  {
+    vtkErrorMacro("Entry point node id cannot be null.");
+    return;
+  }
+
+  if (targetPointNodeId != NULL &&
+      strcmp(targetPointNodeId, entryPointNodeId) == 0)
+  {
+    vtkErrorMacro("Entry point and target point cannot be the same.");
+    return;
+  }
+
+  this->SetAndObserveNodeReferenceID(ENTRY_POINT_ROLE, entryPointNodeId);
+}
+
+//-----------------------------------------------------------------
+void vtkMRMLWorkspaceGenerationNode::SetAndObserveTargetPointNodeId(
+  const char* targetPointNodeId)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  // error check
+  const char* entryPointNodeId = this->GetNodeReferenceID(ENTRY_POINT_ROLE);
+  if (targetPointNodeId == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Target point node id cannot be null.";
+    return;
+  }
+
+  if (entryPointNodeId != NULL &&
+      strcmp(targetPointNodeId, entryPointNodeId) == 0)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Entry point and target point cannot be the same.";
+    return;
+  }
+
+  this->SetAndObserveNodeReferenceID(TARGET_POINT_ROLE, targetPointNodeId);
 }

@@ -5,7 +5,7 @@ set(MODULE_TITLE ${MODULE_NAME})
 
 string(TOUPPER ${MODULE_NAME} MODULE_NAME_UPPER)
 
-# add_definitions(-DQT_NO_INFO_OUTPUT)
+add_definitions(-DQT_NO_INFO_OUTPUT)
 
 #-----------------------------------------------------------------------------
 add_subdirectory(MRML)

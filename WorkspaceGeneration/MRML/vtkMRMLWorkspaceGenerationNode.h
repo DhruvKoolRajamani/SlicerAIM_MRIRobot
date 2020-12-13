@@ -39,6 +39,10 @@
 // Annotation ROI Node
 #include <vtkMRMLAnnotationROINode.h>
 
+// Markups Fiducial Node
+#include <vtkMRMLMarkupsFiducialDisplayNode.h>
+#include <vtkMRMLMarkupsFiducialNode.h>
+
 // Slicer includes
 #include "vtkMRMLNode.h"
 #include "vtkMRMLScene.h"
@@ -52,6 +56,16 @@ class VTK_SLICER_WORKSPACEGENERATION_MODULE_MRML_EXPORT
   vtkMRMLWorkspaceGenerationNode : public vtkMRMLNode
 {
 public:
+  enum Events
+  {
+    /// MarkupsPositionModifiedEvent is called when markup point positions are
+    /// modified. This make it easier for logic or other classes to observe any
+    /// changes in input data.
+    // vtkCommand::UserEvent + 777 is just a random value that is very unlikely
+    // to be used for anything else in this class
+    MarkupsPositionModifiedEvent = vtkCommand::UserEvent + 777
+  };
+
   vtkTypeMacro(vtkMRMLWorkspaceGenerationNode, vtkMRMLNode);
 
   // Standard MRML node methods
@@ -82,10 +96,16 @@ public:
   void SetAndObserveAnnotationROINodeID(const char* annotationROINodeId);
   void
     SetAndObserveWorkspaceMeshModelNodeID(const char* workspaceMeshModelNodeId);
+  void SetAndObserveEntryPointNodeId(const char* entryPointNodeId);
+  void SetAndObserveTargetPointNodeId(const char* targetPointNodeId);
+  void ProcessMRMLEvents(vtkObject* caller, unsigned long event,
+                         void* callData) VTK_OVERRIDE;
 
   vtkMRMLVolumeNode* GetInputVolumeNode();
   vtkMRMLAnnotationROINode* GetAnnotationROINode();
   vtkMRMLModelNode* GetWorkspaceMeshModelNode();
+  vtkMRMLMarkupsFiducialNode* GetEntryPointNode();
+  vtkMRMLMarkupsFiducialNode* GetTargetPointNode();
 
 private:
   bool AutoUpdateOutput;

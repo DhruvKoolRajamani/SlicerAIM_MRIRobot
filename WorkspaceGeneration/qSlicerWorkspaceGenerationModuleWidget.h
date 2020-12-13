@@ -32,6 +32,9 @@
 // Annotation ROI Node
 #include <vtkMRMLAnnotationROINode.h>
 
+//  Markups nodes
+#include "vtkMRMLMarkupsFiducialNode.h"
+
 // Slicer Module includes
 #include <qSlicerAbstractModule.h>
 #include <qSlicerCoreApplication.h>
@@ -94,6 +97,11 @@ protected slots:
   void onAnnotationROINodeAdded(vtkMRMLNode*);
   void onAnnotationROISelectionChanged(vtkMRMLNode*);
   void onPresetComboBoxNodeChanged(vtkMRMLNode*);
+  void onEntryPointAdded(vtkMRMLNode*);
+  void onEntryPointSelectionChanged(vtkMRMLNode*);
+  void onTargetPointSelectionChanged(vtkMRMLNode*);
+  void onTargetPointAdded(vtkMRMLNode*);
+  void onMarkupChanged(vtkObject*, unsigned long, void*);
   void onPresetOffsetChanged(double, double, bool);
   void onWorkspaceLoadButtonClick();
   void onWorkspaceMeshModelNodeChanged(vtkMRMLNode* currentNode);
@@ -101,6 +109,8 @@ protected slots:
   void onApplyTransformClick();
   void onGenerateWorkspaceClick();
   void onSceneImportedEvent();
+
+  void subscribeToMarkupEvents(vtkMRMLMarkupsFiducialNode*);
 
   void updateGUIFromMRML();
 

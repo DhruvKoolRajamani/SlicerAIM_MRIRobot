@@ -18,35 +18,36 @@ Inc. and was partially funded by NIH grant 3P41RR013218-12S1
 
 ==============================================================================*/
 
-#ifndef __qSlicerWorkspaceGenerationProbeSpecsWidget_h
-#define __qSlicerWorkspaceGenerationProbeSpecsWidget_h
+#ifndef __qSlicerWorkspaceGenerationMarkupsFiducialsWidget_h
+#define __qSlicerWorkspaceGenerationMarkupsFiducialsWidget_h
 
 // Qt includes
 #include <QWidget>
 
-// ProbeSpecs Widgets includes
+// MarkupsFiducials Widgets includes
 #include "qSlicerWorkspaceGenerationModuleWidgetsExport.h"
 
-class qSlicerWorkspaceGenerationProbeSpecsWidgetPrivate;
+class qSlicerWorkspaceGenerationMarkupsFiducialsWidgetPrivate;
 
 /// \ingroup Slicer_QtModules_WorkspaceGeneration
 class Q_SLICER_MODULE_WORKSPACEGENERATION_WIDGETS_EXPORT
-  qSlicerWorkspaceGenerationProbeSpecsWidget : public QWidget
+  qSlicerWorkspaceGenerationMarkupsFiducialsWidget : public QWidget
 {
   Q_OBJECT
 public:
   typedef QWidget Superclass;
-  qSlicerWorkspaceGenerationProbeSpecsWidget(QWidget* parent = 0);
-  virtual ~qSlicerWorkspaceGenerationProbeSpecsWidget();
+  qSlicerWorkspaceGenerationMarkupsFiducialsWidget(QWidget* parent = 0);
+  virtual ~qSlicerWorkspaceGenerationMarkupsFiducialsWidget();
 
 protected slots:
 
 protected:
-  QScopedPointer< qSlicerWorkspaceGenerationProbeSpecsWidgetPrivate > d_ptr;
+  QScopedPointer< qSlicerWorkspaceGenerationMarkupsFiducialsWidgetPrivate >
+    d_ptr;
 
 private:
-  Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationProbeSpecsWidget);
-  Q_DISABLE_COPY(qSlicerWorkspaceGenerationProbeSpecsWidget);
+  Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationMarkupsFiducialsWidget);
+  Q_DISABLE_COPY(qSlicerWorkspaceGenerationMarkupsFiducialsWidget);
 };
 
 #endif

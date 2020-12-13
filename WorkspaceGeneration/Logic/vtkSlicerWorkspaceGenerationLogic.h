@@ -36,6 +36,10 @@
 #include <vtkSlicerModelsLogic.h>
 #include <vtkSlicerModelsModuleLogicExport.h>
 
+// Markups Logic includes
+#include <vtkSlicerMarkupsLogic.h>
+#include <vtkSlicerMarkupsModuleLogicExport.h>
+
 // Volume Rendering Display Node
 #include <vtkMRMLVolumeRenderingDisplayNode.h>
 
@@ -94,6 +98,9 @@ public:
   // Updates output model from file?
   void UpdateVolumeRendering();
 
+  // Update Markup Fiducial nodes for entry point and target point
+  void UpdateMarkupFiducialNodes();
+
   // Load workspace mesh
   bool LoadWorkspace(QString workspaceMeshFilePath);
 
@@ -131,6 +138,9 @@ protected:
   virtual void OnMRMLSceneNodeAdded(vtkMRMLNode* node) VTK_OVERRIDE;
   virtual void OnMRMLSceneNodeRemoved(vtkMRMLNode* node) VTK_OVERRIDE;
 
+  // Prune any markups that are more than one.
+  void PruneExcessMarkups(vtkMRMLMarkupsFiducialNode* mfn);
+
   // Parameter Nodes
   vtkMRMLWorkspaceGenerationNode* WorkspaceGenerationNode;
 
@@ -152,6 +162,10 @@ protected:
   // Models Logic
   vtkSlicerModelsLogic* ModelsLogic;
   qSlicerAbstractCoreModule* ModelsModule;
+
+  // Markups Logic
+  vtkSlicerMarkupsLogic* MarkupsLogic;
+  qSlicerAbstractCoreModule* MarkupsModule;
 
 private:
   vtkSlicerWorkspaceGenerationLogic(

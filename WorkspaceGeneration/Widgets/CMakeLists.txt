@@ -9,19 +9,19 @@ set(${KIT}_INCLUDE_DIRECTORIES
   )
 
 set(${KIT}_SRCS
-  qSlicer${MODULE_NAME}ProbeSpecsWidget.cxx
-  qSlicer${MODULE_NAME}ProbeSpecsWidget.h
+  qSlicer${MODULE_NAME}ProbeSpecsHelpWidget.cxx
+  qSlicer${MODULE_NAME}ProbeSpecsHelpWidget.h
   # qSlicer${MODULE_NAME}MarkupsFiducialsWidget.cxx
   # qSlicer${MODULE_NAME}MarkupsFiducialsWidget.h
   )
 
 set(${KIT}_MOC_SRCS
-  qSlicer${MODULE_NAME}ProbeSpecsWidget.h
+  qSlicer${MODULE_NAME}ProbeSpecsHelpWidget.h
   # qSlicer${MODULE_NAME}MarkupsFiducialsWidget.h
   )
 
 set(${KIT}_UI_SRCS
-  ../Resources/UI/qSlicer${MODULE_NAME}ProbeSpecsWidget.ui
+  ../Resources/UI/qSlicer${MODULE_NAME}ProbeSpecsHelpWidget.ui
   # ../Resources/UI/qSlicer${MODULE_NAME}MarkupsFiducialsWidget.ui
   )
 
