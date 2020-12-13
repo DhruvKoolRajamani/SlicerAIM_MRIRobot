@@ -377,11 +377,15 @@ void vtkSlicerWorkspaceGenerationLogic::PruneExcessMarkups(
 
     while (mfn->GetNumberOfControlPoints() > 1)
     {
-      qDebug() << Q_FUNC_INFO << ": Removing point with id - "
-               << mfn->GetNumberOfControlPoints() - 1;
-      mfn->RemoveNthControlPoint(mfn->GetNumberOfControlPoints() - 1);
+      // qDebug() << Q_FUNC_INFO << ": Removing point with id - "
+      //          << mfn->GetNumberOfControlPoints() - 1;
+      mfn->RemoveNthControlPoint(
+        0);  // RemoveNthControlPoint(mfn->GetNumberOfControlPoints()
+             // - 1);
     }
   }
+
+  mfn->SetNthControlPointLabel(0, mfn->GetName());
 }
 
 //------------------------------------------------------------------------------

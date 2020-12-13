@@ -849,7 +849,15 @@ void qSlicerWorkspaceGenerationModuleWidget::subscribeToMarkupEvents(
   markup->AddObserver(vtkMRMLMarkupsNode::PointStartInteractionEvent, this,
                       &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
 
+  // Important to identify when marker has been dropped after moving
   markup->AddObserver(vtkMRMLMarkupsNode::PointEndInteractionEvent, this,
+                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
+
+  // Important to identify when marker has been dropped after adding
+  markup->AddObserver(vtkMRMLMarkupsNode::PointPositionDefinedEvent, this,
+                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
+
+  markup->AddObserver(vtkMRMLMarkupsNode::PointPositionUndefinedEvent, this,
                       &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
 }
 
@@ -858,9 +866,10 @@ void qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged(
   vtkObject* caller, unsigned long event, void* vtkNotUsed(data))
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  // qDebug() << Q_FUNC_INFO;
-
+  // qDebug() <<
+  // "===============================================================";
   std::string eventName;
+  vtkMRMLMarkupsNode* markupNode = vtkMRMLMarkupsNode::SafeDownCast(caller);
   switch (event)
   {
     case vtkMRMLMarkupsNode::PointAddedEvent:
@@ -878,11 +887,24 @@ void qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged(
       break;
     case vtkMRMLMarkupsNode::PointEndInteractionEvent:
       eventName = "vtkMRMLMarkupsNode::PointEndInteractionEvent";
+      // qDebug() << "Marker Name: " << markupNode->GetName();
+      d->logic()->UpdateMarkupFiducialNodes();
+      break;
+    case vtkMRMLMarkupsNode::PointPositionDefinedEvent:
+      eventName = "vtkMRMLMarkupsNode::PointPositionDefinedEvent";
+      // qDebug() << "Marker Name: " << markupNode->GetName();
+      d->logic()->UpdateMarkupFiducialNodes();
+      break;
+    case vtkMRMLMarkupsNode::PointPositionUndefinedEvent:
+      eventName = "vtkMRMLMarkupsNode::PointPositionUndefinedEvent";
       break;
     default:
       eventName = "UNKNOWN";
       break;
   }
+  // qDebug() << eventName.c_str();
+  // qDebug() <<
+  // "===============================================================";
 }
 
 //-----------------------------------------------------------------------------
