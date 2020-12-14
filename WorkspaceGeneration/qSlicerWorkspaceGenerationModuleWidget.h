@@ -32,6 +32,10 @@
 // Annotation ROI Node
 #include <vtkMRMLAnnotationROINode.h>
 
+//  Markups nodes
+#include "vtkMRMLMarkupsFiducialNode.h"
+#include <vtkMRMLMarkupsNode.h>
+
 // Slicer Module includes
 #include <qSlicerAbstractModule.h>
 #include <qSlicerCoreApplication.h>
@@ -60,9 +64,9 @@ struct ProbeSpecifications
   Probe convertToProbe()
   {
     Probe probe;
-    probe._treatmentToTip = A;
-    probe._robotToEntry = B;
-    probe._cannulaToTreatment = C;
+    probe._treatmentToTip         = A;
+    probe._robotToEntry           = B;
+    probe._cannulaToTreatment     = C;
     probe._robotToTreatmentAtHome = D;
 
     return probe;
@@ -81,7 +85,7 @@ public:
   virtual ~qSlicerWorkspaceGenerationModuleWidget();
 
 public slots:
-  void setMRMLScene(vtkMRMLScene* scene);
+  void        setMRMLScene(vtkMRMLScene* scene);
   std::string GetClassName()
   {
     return "WorkspaceGenerationModuleWidget";
@@ -94,13 +98,23 @@ protected slots:
   void onAnnotationROINodeAdded(vtkMRMLNode*);
   void onAnnotationROISelectionChanged(vtkMRMLNode*);
   void onPresetComboBoxNodeChanged(vtkMRMLNode*);
+  void onEntryPointAdded(vtkMRMLNode*);
+  void onEntryPointSelectionChanged(vtkMRMLNode*);
+  void onTargetPointSelectionChanged(vtkMRMLNode*);
+  void onTargetPointAdded(vtkMRMLNode*);
+  void onMarkupChanged(vtkObject*, unsigned long, void*);
   void onPresetOffsetChanged(double, double, bool);
-  void onWorkspaceLoadButtonClick();
-  void onWorkspaceMeshModelNodeChanged(vtkMRMLNode* currentNode);
-  void onWorkspaceMeshModelNodeAdded(vtkMRMLNode* nodeAdded);
-  void onApplyTransformClick();
+  void onWorkspaceMeshModelNodeChanged(vtkMRMLNode*);
+  void onWorkspaceMeshModelNodeAdded(vtkMRMLNode*);
   void onGenerateWorkspaceClick();
   void onSceneImportedEvent();
+
+  // // DEPRECATED
+  // void onWorkspaceLoadButtonClick();
+  // void onApplyTransformClick();
+
+  void subscribeToMarkupEvents(vtkMRMLMarkupsFiducialNode*);
+  void markupPlacedEventHandler(vtkMRMLMarkupsNode*);
 
   void updateGUIFromMRML();
 
@@ -108,10 +122,10 @@ protected slots:
   void enableAllWidgets(bool enable);
   void disableWidgetsAfter(QWidget* widgetStart, QWidget* widgetEnd = NULL,
                            bool includingStart = false,
-                           bool includingEnd = true);
+                           bool includingEnd   = true);
   void disableWidgetsBetween(QWidget* start, QWidget* end = NULL,
                              bool includeStart = false,
-                             bool includeEnd = false);
+                             bool includeEnd   = false);
   void enableWidgets(QWidget* widget, bool enable);
 
   void onInputVolumeVisibilityChanged(bool visible);
@@ -125,10 +139,10 @@ protected:
   QScopedPointer< qSlicerWorkspaceGenerationModuleWidgetPrivate > d_ptr;
 
   vtkMRMLAnnotationROINode* GetAnnotationROINode();
-  vtkMRMLVolumeNode* GetInputVolumeNode();
+  vtkMRMLVolumeNode*        GetInputVolumeNode();
 
   vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
-  qSlicerAbstractCoreModule* VolumeRenderingModule;
+  qSlicerAbstractCoreModule*     VolumeRenderingModule;
 
   virtual void setup();
   virtual void enter();

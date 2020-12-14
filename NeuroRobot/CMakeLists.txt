@@ -21,7 +21,7 @@ find_package(VTK COMPONENTS
   vtkIOXML
   vtkInteractionStyle
   # vtkPoissonReconstruction
-  Powercrust
+  # Powercrust
   vtkRenderingContextOpenGL2
   vtkRenderingCore
   vtkRenderingFreeType
@@ -73,16 +73,16 @@ install(EXPORT NeuroKinematics
 
 export(EXPORT NeuroKinematics FILE NeuroKinematicsConfig.cmake)
 
-add_executable(generate_ply src/WorkspaceGeneration/main.cpp)
-target_link_libraries(generate_ply PRIVATE NeuroKinematics ${VTK_LIBRARIES})
+# add_executable(generate_ply src/WorkspaceGeneration/main.cpp)
+# target_link_libraries(generate_ply PRIVATE NeuroKinematics ${VTK_LIBRARIES})
 
-# Tests
-message("Adding NeuroRobot Tests")
-file(GLOB tests "tests/*_test.cpp")
-foreach(test ${tests})
-  get_filename_component(FILENAME ${test} NAME_WE)
-  message("Test: " ${FILENAME})
-  add_executable(${FILENAME} ${test})
-  target_link_libraries(${FILENAME} PRIVATE ${VTK_LIBRARIES})
-endforeach(test ${tests})
-message("Added NeuroRobot Tests")
+# # Tests
+# message("Adding NeuroRobot Tests")
+# file(GLOB tests "tests/*_test.cpp")
+# foreach(test ${tests})
+#   get_filename_component(FILENAME ${test} NAME_WE)
+#   message("Test: " ${FILENAME})
+#   add_executable(${FILENAME} ${test})
+#   target_link_libraries(${FILENAME} PRIVATE ${VTK_LIBRARIES})
+# endforeach(test ${tests})
+# message("Added NeuroRobot Tests")

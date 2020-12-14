@@ -29,6 +29,8 @@ set(${KIT}_TARGET_LIBRARIES
   vtkSlicerVolumesModuleLogic
   vtkSlicerModelsModuleLogic
   vtkSlicerVolumeRenderingModuleLogic
+  vtkSlicerMarkupsModuleMRML
+  vtkSlicerMarkupsModuleLogic
   # utilities
   NeuroKinematics
   )

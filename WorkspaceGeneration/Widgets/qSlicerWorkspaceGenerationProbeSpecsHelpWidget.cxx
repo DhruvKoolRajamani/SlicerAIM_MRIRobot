@@ -19,55 +19,55 @@ Inc. and was partially funded by NIH grant 3P41RR013218-12S1
 ==============================================================================*/
 
 // ProbeSpecs Widgets includes
-#include "qSlicerWorkspaceGenerationProbeSpecsWidget.h"
-#include "ui_qSlicerWorkspaceGenerationProbeSpecsWidget.h"
+#include "qSlicerWorkspaceGenerationProbeSpecsHelpWidget.h"
+#include "ui_qSlicerWorkspaceGenerationProbeSpecsHelpWidget.h"
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_WorkspaceGeneration
-class qSlicerWorkspaceGenerationProbeSpecsWidgetPrivate
-  : public Ui_qSlicerWorkspaceGenerationProbeSpecsWidget
+class qSlicerWorkspaceGenerationProbeSpecsHelpWidgetPrivate
+  : public Ui_qSlicerWorkspaceGenerationProbeSpecsHelpWidget
 {
-  Q_DECLARE_PUBLIC(qSlicerWorkspaceGenerationProbeSpecsWidget);
+  Q_DECLARE_PUBLIC(qSlicerWorkspaceGenerationProbeSpecsHelpWidget);
 
 protected:
-  qSlicerWorkspaceGenerationProbeSpecsWidget* const q_ptr;
+  qSlicerWorkspaceGenerationProbeSpecsHelpWidget* const q_ptr;
 
 public:
-  qSlicerWorkspaceGenerationProbeSpecsWidgetPrivate(
-    qSlicerWorkspaceGenerationProbeSpecsWidget& object);
-  virtual void setupUi(qSlicerWorkspaceGenerationProbeSpecsWidget*);
+  qSlicerWorkspaceGenerationProbeSpecsHelpWidgetPrivate(
+    qSlicerWorkspaceGenerationProbeSpecsHelpWidget& object);
+  virtual void setupUi(qSlicerWorkspaceGenerationProbeSpecsHelpWidget*);
 };
 
 // --------------------------------------------------------------------------
-qSlicerWorkspaceGenerationProbeSpecsWidgetPrivate ::
-  qSlicerWorkspaceGenerationProbeSpecsWidgetPrivate(
-    qSlicerWorkspaceGenerationProbeSpecsWidget& object)
+qSlicerWorkspaceGenerationProbeSpecsHelpWidgetPrivate ::
+  qSlicerWorkspaceGenerationProbeSpecsHelpWidgetPrivate(
+    qSlicerWorkspaceGenerationProbeSpecsHelpWidget& object)
   : q_ptr(&object)
 {
 }
 
 // --------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationProbeSpecsWidgetPrivate ::setupUi(
-  qSlicerWorkspaceGenerationProbeSpecsWidget* widget)
+void qSlicerWorkspaceGenerationProbeSpecsHelpWidgetPrivate ::setupUi(
+  qSlicerWorkspaceGenerationProbeSpecsHelpWidget* widget)
 {
-  this->Ui_qSlicerWorkspaceGenerationProbeSpecsWidget::setupUi(widget);
+  this->Ui_qSlicerWorkspaceGenerationProbeSpecsHelpWidget::setupUi(widget);
 }
 
 //-----------------------------------------------------------------------------
-// qSlicerWorkspaceGenerationProbeSpecsWidget methods
+// qSlicerWorkspaceGenerationProbeSpecsHelpWidget methods
 
 //-----------------------------------------------------------------------------
-qSlicerWorkspaceGenerationProbeSpecsWidget ::
-  qSlicerWorkspaceGenerationProbeSpecsWidget(QWidget* parentWidget)
+qSlicerWorkspaceGenerationProbeSpecsHelpWidget ::
+  qSlicerWorkspaceGenerationProbeSpecsHelpWidget(QWidget* parentWidget)
   : Superclass(parentWidget)
-  , d_ptr(new qSlicerWorkspaceGenerationProbeSpecsWidgetPrivate(*this))
+  , d_ptr(new qSlicerWorkspaceGenerationProbeSpecsHelpWidgetPrivate(*this))
 {
-  Q_D(qSlicerWorkspaceGenerationProbeSpecsWidget);
+  Q_D(qSlicerWorkspaceGenerationProbeSpecsHelpWidget);
   d->setupUi(this);
 }
 
 //-----------------------------------------------------------------------------
-qSlicerWorkspaceGenerationProbeSpecsWidget ::
-  ~qSlicerWorkspaceGenerationProbeSpecsWidget()
+qSlicerWorkspaceGenerationProbeSpecsHelpWidget ::
+  ~qSlicerWorkspaceGenerationProbeSpecsHelpWidget()
 {
 }
