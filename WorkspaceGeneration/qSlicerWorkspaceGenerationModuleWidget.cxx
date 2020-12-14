@@ -76,13 +76,13 @@ public:
   vtkMRMLModelNode* WorkspaceMeshModelNode;
 
   vtkMRMLVolumeRenderingDisplayNode* InputVolumeRenderingDisplayNode;
-  vtkMRMLModelDisplayNode* WorkspaceMeshModelDisplayNode;
-  vtkMRMLMarkupsDisplayNode* EntryPointDisplayNode;
-  vtkMRMLMarkupsDisplayNode* TargetPointDisplayNode;
+  vtkMRMLModelDisplayNode*           WorkspaceMeshModelDisplayNode;
+  vtkMRMLMarkupsDisplayNode*         EntryPointDisplayNode;
+  vtkMRMLMarkupsDisplayNode*         TargetPointDisplayNode;
 
   vtkMRMLVolumePropertyNode* VolumePropertyNode;
 
-  vtkMatrix4x4* WorkspaceMeshRegistrationMatrix;
+  vtkMatrix4x4*         WorkspaceMeshRegistrationMatrix;
   vtkMRMLTransformNode* WorkspaceMeshTransformNode;
 };
 
@@ -150,7 +150,7 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
   // Connect buttons in UI
   this->setMRMLScene(d->logic()->GetMRMLScene());
   this->VolumeRenderingModule = d->logic()->getVolumeRenderingModule();
-  this->VolumeRenderingLogic = d->logic()->getVolumeRenderingLogic();
+  this->VolumeRenderingLogic  = d->logic()->getVolumeRenderingLogic();
 
   connect(d->ParameterNodeSelector__1_1,
           SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
@@ -314,6 +314,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
   this->updateGUIFromMRML();
 }
 
+// 1.1 Load input volume and render volume
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeNodeSelectionChanged(
   vtkMRMLNode* nodeSelected)
@@ -355,6 +356,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeNodeSelectionChanged(
   this->updateGUIFromMRML();
 }
 
+// 1.1 Load input volume and render volume
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeNodeAdded(
   vtkMRMLNode* addedNode)
@@ -364,6 +366,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeNodeAdded(
   qInfo() << Q_FUNC_INFO;
 }
 
+// 1.2 Rendered volume output automatically sets an ROI
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onAnnotationROISelectionChanged(
   vtkMRMLNode* selectedNode)
@@ -409,6 +412,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onAnnotationROISelectionChanged(
   this->updateGUIFromMRML();
 }
 
+// 1.2 Rendered volume output automatically sets an ROI
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onAnnotationROINodeAdded(
   vtkMRMLNode* addedNode)
@@ -427,6 +431,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onAnnotationROINodeAdded(
   }
 }
 
+// 1.3 Rendered volume visibility only changes after volume is rendered
 // --------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeVisibilityChanged(
   bool visible)
@@ -464,6 +469,9 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeVisibilityChanged(
   this->updateGUIFromMRML();
 }
 
+// =============================================================================
+// ================================= TODO ======================================
+// =============================================================================
 // bug: #13 fix volume rendering preset combo box widget @DhruvKoolRajamani
 // --------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onPresetComboBoxNodeChanged(
@@ -524,7 +532,9 @@ void qSlicerWorkspaceGenerationModuleWidget::onPresetOffsetChanged(double,
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
   qInfo() << Q_FUNC_INFO;
 }
+// =============================================================================
 
+// 2.1 Generate general workspace of the robot
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeChanged(
   vtkMRMLNode* nodeSelected)
@@ -587,6 +597,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeChanged(
   this->updateGUIFromMRML();
 }
 
+// 2.1 Generate general workspace of the robot
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeAdded(
   vtkMRMLNode* addedNode)
@@ -619,70 +630,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeAdded(
   }
 }
 
-//-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceLoadButtonClick()
-{
-  Q_D(qSlicerWorkspaceGenerationModuleWidget);
-
-  qInfo() << Q_FUNC_INFO;
-
-  auto fileName = QFileDialog::getOpenFileName(this, tr("Open Workspace Mesh"),
-                                               QDir::currentPath(),
-                                               tr("Polymesh File (*.ply)"));
-
-  if (fileName.isEmpty())
-  {
-    // Return if no path is specified
-    qCritical() << Q_FUNC_INFO << ": No filepath specified";
-    return;
-  }
-
-  if (d->logic()->LoadWorkspace(fileName))
-  {
-    d->WorkspaceMeshModelNode = d->logic()->getWorkspaceMeshModelNode();
-    d->WorkspaceModelSelector__3_2->setCurrentNode(d->WorkspaceGenerationNode);
-  }
-}
-
-// --------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshVisibilityChanged(
-  bool visible)
-{
-  Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  qInfo() << Q_FUNC_INFO;
-
-  vtkMRMLWorkspaceGenerationNode* selectedWorkspaceGenerationNode =
-    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
-      d->ParameterNodeSelector__1_1->currentNode());
-
-  if (selectedWorkspaceGenerationNode == NULL)
-  {
-    qCritical() << Q_FUNC_INFO << ": No workspace generation node created yet.";
-    return;
-  }
-
-  vtkMRMLModelNode* workspaceMeshModelNode =
-    d->logic()->getWorkspaceMeshModelNode();
-
-  if (!workspaceMeshModelNode)
-  {
-    qCritical() << Q_FUNC_INFO << ": No workspace mesh model node created";
-    return;
-  }
-
-  // Get volume rendering display node for volume. Create if absent.
-  if (!d->WorkspaceMeshModelDisplayNode)
-  {
-    qCritical() << Q_FUNC_INFO << ": No workspace mesh model display node";
-    return;
-  }
-
-  d->WorkspaceMeshModelDisplayNode->SetVisibility(visible);
-
-  // Update widget from display node of the volume node
-  this->updateGUIFromMRML();
-}
-
+// 2.1 Generate general workspace of the robot
 // --------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
 {
@@ -733,12 +681,117 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
   this->updateGUIFromMRML();
 }
 
+// 2.2 Workspace visibility can change after workspace is generated
+// --------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshVisibilityChanged(
+  bool visible)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* selectedWorkspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (selectedWorkspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": No workspace generation node created yet.";
+    return;
+  }
+
+  vtkMRMLModelNode* workspaceMeshModelNode =
+    d->logic()->getWorkspaceMeshModelNode();
+
+  if (!workspaceMeshModelNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No workspace mesh model node created";
+    return;
+  }
+
+  // Get volume rendering display node for volume. Create if absent.
+  if (!d->WorkspaceMeshModelDisplayNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No workspace mesh model display node";
+    return;
+  }
+
+  d->WorkspaceMeshModelDisplayNode->SetVisibility(visible);
+
+  // Update widget from display node of the volume node
+  this->updateGUIFromMRML();
+}
+
+/** ------------------------------- DEPRECATED ---------------------------------
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceLoadButtonClick()
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+
+  qInfo() << Q_FUNC_INFO;
+
+  auto fileName = QFileDialog::getOpenFileName(this, tr("Open Workspace Mesh"),
+                                               QDir::currentPath(),
+                                               tr("Polymesh File (*.ply)"));
+
+  if (fileName.isEmpty())
+  {
+    // Return if no path is specified
+    qCritical() << Q_FUNC_INFO << ": No filepath specified";
+    return;
+  }
+
+  if (d->logic()->LoadWorkspace(fileName))
+  {
+    d->WorkspaceMeshModelNode = d->logic()->getWorkspaceMeshModelNode();
+    d->WorkspaceModelSelector__3_2->setCurrentNode(d->WorkspaceGenerationNode);
+  }
+}
+
+// --------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onApplyTransformClick()
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  vtkMRMLModelNode* workspaceMeshModelNode =
+    workspaceGenerationNode->GetWorkspaceMeshModelNode();
+
+  if (workspaceMeshModelNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Workspace Mesh Model Node does not exist";
+    return;
+  }
+
+  d->WorkspaceMeshRegistrationMatrix = vtkMatrix4x4::New();
+  d->WorkspaceMeshRegistrationMatrix->DeepCopy(
+    d->RegistrationMatrix__3_10->values().data());
+
+  workspaceMeshModelNode->ApplyTransformMatrix(
+    d->WorkspaceMeshRegistrationMatrix);
+
+  this->updateGUIFromMRML();
+}
+//-----------------------------------------------------------------------------
+*/
+
+// 1 + 2 = 3.1 Place Entry Point.
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onEntryPointAdded(
   vtkMRMLNode* addedNode)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  qDebug() << Q_FUNC_INFO;
+  qInfo() << Q_FUNC_INFO;
 
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
@@ -766,12 +819,13 @@ void qSlicerWorkspaceGenerationModuleWidget::onEntryPointAdded(
   }
 }
 
+// 1 + 2 = 3.1 Place Entry Point.
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onEntryPointSelectionChanged(
   vtkMRMLNode* selectedNode)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  qDebug() << Q_FUNC_INFO;
+  qInfo() << Q_FUNC_INFO;
 
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
@@ -830,89 +884,13 @@ void qSlicerWorkspaceGenerationModuleWidget::onEntryPointSelectionChanged(
   this->updateGUIFromMRML();
 }
 
-//-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::subscribeToMarkupEvents(
-  vtkMRMLMarkupsFiducialNode* markup)
-{
-  Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  qDebug() << Q_FUNC_INFO;
-
-  markup->AddObserver(vtkMRMLMarkupsNode::PointModifiedEvent, this,
-                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
-
-  markup->AddObserver(vtkMRMLMarkupsNode::PointAddedEvent, this,
-                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
-
-  markup->AddObserver(vtkMRMLMarkupsNode::PointRemovedEvent, this,
-                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
-
-  markup->AddObserver(vtkMRMLMarkupsNode::PointStartInteractionEvent, this,
-                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
-
-  // Important to identify when marker has been dropped after moving
-  markup->AddObserver(vtkMRMLMarkupsNode::PointEndInteractionEvent, this,
-                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
-
-  // Important to identify when marker has been dropped after adding
-  markup->AddObserver(vtkMRMLMarkupsNode::PointPositionDefinedEvent, this,
-                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
-
-  markup->AddObserver(vtkMRMLMarkupsNode::PointPositionUndefinedEvent, this,
-                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged(
-  vtkObject* caller, unsigned long event, void* vtkNotUsed(data))
-{
-  Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  // qDebug() <<
-  // "===============================================================";
-  std::string eventName;
-  vtkMRMLMarkupsNode* markupNode = vtkMRMLMarkupsNode::SafeDownCast(caller);
-  switch (event)
-  {
-    case vtkMRMLMarkupsNode::PointAddedEvent:
-      eventName = "vtkMRMLMarkupsNode::PointAddedEvent";
-      d->logic()->UpdateMarkupFiducialNodes();
-      break;
-    case vtkMRMLMarkupsNode::PointRemovedEvent:
-      eventName = "vtkMRMLMarkupsNode::PointRemovedEvent";
-      break;
-    case vtkMRMLMarkupsNode::PointModifiedEvent:
-      eventName = "vtkMRMLMarkupsNode::PointModifiedEvent";
-      break;
-    case vtkMRMLMarkupsNode::PointStartInteractionEvent:
-      eventName = "vtkMRMLMarkupsNode::PointStartInteractionEvent";
-      break;
-    case vtkMRMLMarkupsNode::PointEndInteractionEvent:
-      eventName = "vtkMRMLMarkupsNode::PointEndInteractionEvent";
-      // qDebug() << "Marker Name: " << markupNode->GetName();
-      d->logic()->UpdateMarkupFiducialNodes();
-      break;
-    case vtkMRMLMarkupsNode::PointPositionDefinedEvent:
-      eventName = "vtkMRMLMarkupsNode::PointPositionDefinedEvent";
-      // qDebug() << "Marker Name: " << markupNode->GetName();
-      d->logic()->UpdateMarkupFiducialNodes();
-      break;
-    case vtkMRMLMarkupsNode::PointPositionUndefinedEvent:
-      eventName = "vtkMRMLMarkupsNode::PointPositionUndefinedEvent";
-      break;
-    default:
-      eventName = "UNKNOWN";
-      break;
-  }
-  // qDebug() << eventName.c_str();
-  // qDebug() <<
-  // "===============================================================";
-}
-
+// 3.2 (can be independent of 3.1) - Place Target Point
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onTargetPointAdded(
   vtkMRMLNode* addedNode)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  qDebug() << Q_FUNC_INFO;
+  qInfo() << Q_FUNC_INFO;
 
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
@@ -940,12 +918,13 @@ void qSlicerWorkspaceGenerationModuleWidget::onTargetPointAdded(
   }
 }
 
+// 3.2 (can be independent of 3.1) - Place Target Point
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onTargetPointSelectionChanged(
   vtkMRMLNode* selectedNode)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  qDebug() << Q_FUNC_INFO;
+  qInfo() << Q_FUNC_INFO;
 
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
@@ -1005,40 +984,147 @@ void qSlicerWorkspaceGenerationModuleWidget::onTargetPointSelectionChanged(
   this->updateGUIFromMRML();
 }
 
-// --------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onApplyTransformClick()
+// 3. Markup event handling!!!
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::subscribeToMarkupEvents(
+  vtkMRMLMarkupsFiducialNode* markup)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
-
   qInfo() << Q_FUNC_INFO;
+
+  markup->AddObserver(vtkMRMLMarkupsNode::PointModifiedEvent, this,
+                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
+
+  markup->AddObserver(vtkMRMLMarkupsNode::PointAddedEvent, this,
+                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
+
+  markup->AddObserver(vtkMRMLMarkupsNode::PointRemovedEvent, this,
+                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
+
+  markup->AddObserver(vtkMRMLMarkupsNode::PointStartInteractionEvent, this,
+                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
+
+  // Important to identify when marker has been dropped after moving
+  markup->AddObserver(vtkMRMLMarkupsNode::PointEndInteractionEvent, this,
+                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
+
+  // Important to identify when marker has been dropped after adding
+  markup->AddObserver(vtkMRMLMarkupsNode::PointPositionDefinedEvent, this,
+                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
+
+  markup->AddObserver(vtkMRMLMarkupsNode::PointPositionUndefinedEvent, this,
+                      &qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged);
+}
+
+// 3. Markup event handling!!!
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged(
+  vtkObject* caller, unsigned long event, void* vtkNotUsed(data))
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  // qDebug() <<
+  // "===============================================================";
+  std::string         eventName;
+  vtkMRMLMarkupsNode* markupNode = vtkMRMLMarkupsNode::SafeDownCast(caller);
+  switch (event)
+  {
+    case vtkMRMLMarkupsNode::PointAddedEvent:
+      eventName = "vtkMRMLMarkupsNode::PointAddedEvent";
+      d->logic()->UpdateMarkupFiducialNodes();
+      break;
+    case vtkMRMLMarkupsNode::PointRemovedEvent:
+      eventName = "vtkMRMLMarkupsNode::PointRemovedEvent";
+      break;
+    case vtkMRMLMarkupsNode::PointModifiedEvent:
+      eventName = "vtkMRMLMarkupsNode::PointModifiedEvent";
+      break;
+    case vtkMRMLMarkupsNode::PointStartInteractionEvent:
+      eventName = "vtkMRMLMarkupsNode::PointStartInteractionEvent";
+      break;
+    case vtkMRMLMarkupsNode::PointEndInteractionEvent:
+      eventName = "vtkMRMLMarkupsNode::PointEndInteractionEvent";
+      // qDebug() << "Marker Name: " << markupNode->GetName();
+      this->markupPlacedEventHandler(markupNode);
+      break;
+    case vtkMRMLMarkupsNode::PointPositionDefinedEvent:
+      eventName = "vtkMRMLMarkupsNode::PointPositionDefinedEvent";
+      // qDebug() << "Marker Name: " << markupNode->GetName();
+      // d->logic()->UpdateMarkupFiducialNodes();
+      this->markupPlacedEventHandler(markupNode);
+      break;
+    case vtkMRMLMarkupsNode::PointPositionUndefinedEvent:
+      eventName = "vtkMRMLMarkupsNode::PointPositionUndefinedEvent";
+      break;
+    default:
+      eventName = "UNKNOWN";
+      break;
+  }
+  // qDebug() << eventName.c_str();
+  // qDebug() <<
+  // "===============================================================";
+}
+
+// 3. Markup event handling!!!
+// Special function demands detailed description.
+// Once steps 1. Input Volume, 2. Workspace Generation are complete.
+// Event triggered: Marker placed and position is defined
+//          - Entry Point:
+//            - First Time:
+//              Generate subworkspace with apriori parameters.
+//              Use assumed static skull thickness from stl model of bit
+//            - Successive Times:
+//              Update subworkspace, this time use updated burr hole
+//              specifications. (Consider using constant bit size, or
+//              update the radius -> if disproportionate, move marker
+//              until radius is equal???)
+//          - Target Point:
+//            - First time:
+//              if Entry Point has been placed;
+//                then draw axis from EP to TP and use for initial burr
+//                hole estimate.
+//                DO identifyBurrHoleRecursively()
+//              else DO NOTHING
+//            - Successive Times:
+//              Only being moved around for planning
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
+  vtkMRMLMarkupsNode* markup)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qDebug() << Q_FUNC_INFO;
 
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
       d->ParameterNodeSelector__1_1->currentNode());
 
-  if (workspaceGenerationNode == NULL)
+  vtkMRMLMarkupsFiducialNode* entryPointNode =
+    workspaceGenerationNode->GetEntryPointNode();
+
+  vtkMRMLMarkupsFiducialNode* targetPointNode =
+    workspaceGenerationNode->GetTargetPointNode();
+
+  bool burrholeSet = workspaceGenerationNode->GetBurrHoleDetected();
+
+  if (entryPointNode == NULL)
   {
-    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    qWarning() << Q_FUNC_INFO << ": Entry point still hasn't been placed.";
     return;
   }
 
-  vtkMRMLModelNode* workspaceMeshModelNode =
-    workspaceGenerationNode->GetWorkspaceMeshModelNode();
+  // Calculate Subworkspace
+  d->logic()->UpdateSubWorkspace(workspaceGenerationNode, burrholeSet);
 
-  if (workspaceMeshModelNode == NULL)
+  if (targetPointNode != NULL)
   {
-    qCritical() << Q_FUNC_INFO << ": Workspace Mesh Model Node does not exist";
-    return;
+    // Easy to modify this to a lock if asynchronousity is required.
+    if (!burrholeSet)
+    {
+      burrholeSet = d->logic()->IdentifyBurrHole(workspaceGenerationNode);
+
+      // Should be ideally moved to burr hole detection.
+      workspaceGenerationNode->SetBurrHoleDetected(burrholeSet);
+    }
   }
-
-  d->WorkspaceMeshRegistrationMatrix = vtkMatrix4x4::New();
-  d->WorkspaceMeshRegistrationMatrix->DeepCopy(
-    d->RegistrationMatrix__3_10->values().data());
-
-  workspaceMeshModelNode->ApplyTransformMatrix(
-    d->WorkspaceMeshRegistrationMatrix);
-
-  this->updateGUIFromMRML();
 }
 
 //-----------------------------------------------------------------------------
@@ -1082,7 +1168,7 @@ vtkMRMLVolumeNode* qSlicerWorkspaceGenerationModuleWidget::GetInputVolumeNode()
 
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::setCheckState(ctkPushButton* btn,
-                                                           bool state)
+                                                           bool           state)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -1102,7 +1188,7 @@ void qSlicerWorkspaceGenerationModuleWidget::setCheckState(ctkPushButton* btn,
 void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  qDebug() << Q_FUNC_INFO;
+  qInfo() << Q_FUNC_INFO;
 
   // Check if workspace generation node exists
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
@@ -1448,7 +1534,7 @@ void qSlicerWorkspaceGenerationModuleWidget::disableWidgetsBetween(
 
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::enableWidgets(QWidget* widget,
-                                                           bool enable)
+                                                           bool     enable)
 {
   widget->setEnabled(enable);
 }

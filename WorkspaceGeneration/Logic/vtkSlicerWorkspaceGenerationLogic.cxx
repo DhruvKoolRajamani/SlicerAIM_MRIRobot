@@ -388,6 +388,30 @@ void vtkSlicerWorkspaceGenerationLogic::PruneExcessMarkups(
   mfn->SetNthControlPointLabel(0, mfn->GetName());
 }
 
+//-----------------------------------------------------------------------------
+bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
+  vtkMRMLWorkspaceGenerationNode* wsgn)
+{
+  qInfo() << Q_FUNC_INFO;
+}
+
+// feature: #18 Generate subworkspace given markup points. @FaridTavakol
+//------------------------------------------------------------------------------
+void vtkSlicerWorkspaceGenerationLogic::UpdateSubWorkspace(
+  vtkMRMLWorkspaceGenerationNode* wsgn, bool apriori)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (apriori)
+  {
+    // Get Default burr hole parameters to perform fit
+    // Use Burrholeparameters class, as of now assume radius to be constant.
+    // center vector will change in xyz. initial step take:
+    //      BurrHoleCenter = (Registration Matrix*(???)) Vector(TargetPoint -
+    //      EntryPoint)
+  }
+}
+
 //------------------------------------------------------------------------------
 vtkMRMLVolumeNode*
   vtkSlicerWorkspaceGenerationLogic::RenderVolume(vtkMRMLVolumeNode* volumeNode)
@@ -484,7 +508,7 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   }
 
   // Initialize NeuroKinematics
-  NeuroKinematics neuro_kinematics(&probe);
+  NeuroKinematics   neuro_kinematics(&probe);
   ForwardKinematics fk(neuro_kinematics);
 
   vtkSmartPointer< vtkPoints > workspacePointCloud =
@@ -663,8 +687,8 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSelectionNode(
   }
 
   // try the application logic first
-  vtkMRMLApplicationLogic* mrmlAppLogic = this->GetMRMLApplicationLogic();
-  vtkMRMLSelectionNode* selectionNode = NULL;
+  vtkMRMLApplicationLogic* mrmlAppLogic  = this->GetMRMLApplicationLogic();
+  vtkMRMLSelectionNode*    selectionNode = NULL;
   if (mrmlAppLogic)
   {
     selectionNode = mrmlAppLogic->GetSelectionNode();

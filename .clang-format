@@ -3,6 +3,8 @@ AccessModifierOffset: -2
 ConstructorInitializerIndentWidth: 2
 AlignEscapedNewlinesLeft: false
 AlignTrailingComments: true
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakTemplateDeclarations: true

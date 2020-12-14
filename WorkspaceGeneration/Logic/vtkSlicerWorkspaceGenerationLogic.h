@@ -101,6 +101,12 @@ public:
   // Update Markup Fiducial nodes for entry point and target point
   void UpdateMarkupFiducialNodes();
 
+  // Update the subworkspace
+  void UpdateSubWorkspace(vtkMRMLWorkspaceGenerationNode*, bool);
+
+  // Identify the Burr Hole
+  bool IdentifyBurrHole(vtkMRMLWorkspaceGenerationNode*);
+
   // Load workspace mesh
   bool LoadWorkspace(QString workspaceMeshFilePath);
 
@@ -113,10 +119,10 @@ public:
 
   // Getters
   vtkSlicerVolumeRenderingLogic* getVolumeRenderingLogic();
-  qSlicerAbstractCoreModule* getVolumeRenderingModule();
-  vtkMRMLModelNode* getWorkspaceMeshModelNode();
+  qSlicerAbstractCoreModule*     getVolumeRenderingModule();
+  vtkMRMLModelNode*              getWorkspaceMeshModelNode();
   vtkMRMLVolumeRenderingDisplayNode*
-    getCurrentInputVolumeRenderingDisplayNode();
+                           getCurrentInputVolumeRenderingDisplayNode();
   vtkMRMLModelDisplayNode* getCurrentWorkspaceMeshModelDisplayNode();
 
   // Setters
@@ -145,7 +151,7 @@ protected:
   vtkMRMLWorkspaceGenerationNode* WorkspaceGenerationNode;
 
   // Input Nodes
-  vtkMRMLVolumeNode* InputVolumeNode;
+  vtkMRMLVolumeNode*        InputVolumeNode;
   vtkMRMLAnnotationROINode* AnnotationROINode;
 
   // Robot Workspace Nodes
@@ -153,18 +159,18 @@ protected:
 
   // Display Nodes
   vtkMRMLVolumeRenderingDisplayNode* InputVolumeRenderingDisplayNode;
-  vtkMRMLModelDisplayNode* WorkspaceMeshModelDisplayNode;
+  vtkMRMLModelDisplayNode*           WorkspaceMeshModelDisplayNode;
 
   // Volume Rendering Logic
   vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
-  qSlicerAbstractCoreModule* VolumeRenderingModule;
+  qSlicerAbstractCoreModule*     VolumeRenderingModule;
 
   // Models Logic
-  vtkSlicerModelsLogic* ModelsLogic;
+  vtkSlicerModelsLogic*      ModelsLogic;
   qSlicerAbstractCoreModule* ModelsModule;
 
   // Markups Logic
-  vtkSlicerMarkupsLogic* MarkupsLogic;
+  vtkSlicerMarkupsLogic*     MarkupsLogic;
   qSlicerAbstractCoreModule* MarkupsModule;
 
 private:

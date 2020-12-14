@@ -32,12 +32,16 @@
 #include <vtkObject.h>
 #include <vtkObjectBase.h>
 #include <vtkObjectFactory.h>
+#include <vtkVector.h>
 
 // Volume MRML Node
 #include <vtkMRMLVolumeNode.h>
 
 // Annotation ROI Node
 #include <vtkMRMLAnnotationROINode.h>
+
+// Model Node
+#include <vtkMRMLModelNode.h>
 
 // Markups Fiducial Node
 #include <vtkMRMLMarkupsFiducialDisplayNode.h>
@@ -51,6 +55,43 @@
 #include "vtkSlicerWorkspaceGenerationModuleMRMLExport.h"
 
 class vtkMRMLModelNode;
+
+class BurrHoleParameters
+{
+public:
+  // Setters
+  void setCenter(vtkVector3d center)
+  {
+    center = _center;
+  }
+  void setRadius(double radius)
+  {
+    _radius = radius;
+  }
+  void setDrillBit(vtkMRMLModelNode* drill_bit)
+  {
+    _drill_bit = drill_bit;
+  }
+
+  // Getters
+  vtkVector3d getCenter() const
+  {
+    return _center;
+  }
+  double getRadius() const
+  {
+    return _radius;
+  }
+  vtkMRMLModelNode* getDrillBit() const
+  {
+    return _drill_bit;
+  }
+
+private:
+  vtkVector3d       _center;
+  double            _radius;
+  vtkMRMLModelNode* _drill_bit;
+};
 
 class VTK_SLICER_WORKSPACEGENERATION_MODULE_MRML_EXPORT
   vtkMRMLWorkspaceGenerationNode : public vtkMRMLNode
@@ -72,17 +113,26 @@ public:
   static vtkMRMLWorkspaceGenerationNode* New();
 
   virtual vtkMRMLNode* CreateNodeInstance() VTK_OVERRIDE;
-  virtual const char* GetNodeTagName() VTK_OVERRIDE
+  virtual const char*  GetNodeTagName() VTK_OVERRIDE
   {
     return "WorkspaceGeneration";
   };
-  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
+  void         PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   virtual void ReadXMLAttributes(const char** atts) VTK_OVERRIDE;
   virtual void WriteXML(ostream& of, int indent) VTK_OVERRIDE;
   virtual void Copy(vtkMRMLNode* node) VTK_OVERRIDE;
 
   vtkGetMacro(AutoUpdateOutput, bool);
   vtkSetMacro(AutoUpdateOutput, bool);
+
+  vtkGetMacro(BurrHoleDetected, bool);
+  vtkSetMacro(BurrHoleDetected, bool);
+
+  vtkGetVector3Macro(BurrHoleCenter, double);
+  vtkSetVector3Macro(BurrHoleCenter, double);
+
+  vtkGetMacro(BurrHoleRadius, float);
+  vtkSetMacro(BurrHoleRadius, float);
 
 protected:
   // Constructor/destructor methods
@@ -92,23 +142,34 @@ protected:
   void operator=(const vtkMRMLWorkspaceGenerationNode&);
 
 public:
+  void SetBurrHoleParameters(BurrHoleParameters burrHoleParams);
+  void SetBurrHoleParameters(vtkVector3d center, double radius,
+                             vtkMRMLModelNode* drill_bit = NULL);
+  void SetBurrHoleParameters(double center[3], double radius,
+                             vtkMRMLModelNode* drill_bit = NULL);
+
   void SetAndObserveInputVolumeNodeID(const char* inputNodeId);
   void SetAndObserveAnnotationROINodeID(const char* annotationROINodeId);
   void
-    SetAndObserveWorkspaceMeshModelNodeID(const char* workspaceMeshModelNodeId);
+       SetAndObserveWorkspaceMeshModelNodeID(const char* workspaceMeshModelNodeId);
   void SetAndObserveEntryPointNodeId(const char* entryPointNodeId);
   void SetAndObserveTargetPointNodeId(const char* targetPointNodeId);
   void ProcessMRMLEvents(vtkObject* caller, unsigned long event,
                          void* callData) VTK_OVERRIDE;
 
-  vtkMRMLVolumeNode* GetInputVolumeNode();
-  vtkMRMLAnnotationROINode* GetAnnotationROINode();
-  vtkMRMLModelNode* GetWorkspaceMeshModelNode();
+  vtkMRMLVolumeNode*          GetInputVolumeNode();
+  vtkMRMLAnnotationROINode*   GetAnnotationROINode();
+  vtkMRMLModelNode*           GetWorkspaceMeshModelNode();
   vtkMRMLMarkupsFiducialNode* GetEntryPointNode();
   vtkMRMLMarkupsFiducialNode* GetTargetPointNode();
+  BurrHoleParameters          GetBurrHoleParams();
 
 private:
-  bool AutoUpdateOutput;
+  bool               AutoUpdateOutput;
+  bool               BurrHoleDetected;
+  double             BurrHoleCenter[3];
+  float              BurrHoleRadius;
+  BurrHoleParameters BurrHoleParams;
 
   // int InputNodeType;
 };
