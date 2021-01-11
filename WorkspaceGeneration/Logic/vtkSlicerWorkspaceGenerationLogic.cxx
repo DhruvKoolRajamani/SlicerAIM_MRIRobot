@@ -44,6 +44,7 @@
 #include <vtkCollectionIterator.h>
 #include <vtkDelaunay3D.h>
 #include <vtkGeometryFilter.h>
+#include <vtkMath.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkPoints.h>
@@ -393,6 +394,71 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   vtkMRMLWorkspaceGenerationNode* wsgn)
 {
   qInfo() << Q_FUNC_INFO;
+
+  if (wsgn == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Workspace Generation Node is not available.";
+    return false;
+  }
+
+  vtkMRMLMarkupsFiducialNode* epNode = wsgn->GetEntryPointNode();
+  vtkMRMLMarkupsFiducialNode* tpNode = wsgn->GetTargetPointNode();
+
+  if (epNode == NULL || tpNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Please make sure to place both EP and TP for the first "
+                   "pass at finding the burr hole.";
+    return false;
+  }
+
+  // Get the initial estimate of the axis of the drill bit by subtracting EP
+  // from the TP.
+  // Should I use the registration matrix to transform from MRI WS to ROBOT WS
+  // here? Or later?
+  vtkVector3d tp = tpNode->GetNthControlPointPositionVector(0);
+  vtkVector3d ep = epNode->GetNthControlPointPositionVector(0);
+  double      bAxisLineArr[3];
+  vtkMath::Subtract(tp.GetData(), ep.GetData(), bAxisLineArr);
+  vtkVector3d bAxisLine = vtkVector3d(bAxisLineArr);
+
+  // Get a ROI of slices from around the EP
+  // vtkSmartPointer< vtkExtractVOI > voiHead =
+  //   vtkSmartPointer< vtkExtractVOI >::New();
+  // voiHead->SetInputConnection(
+  //   wsgn->GetInputVolumeNode()->GetImageDataConnection());
+  // voiHead->SetVOI(epNode->Get)
+
+  if (wsgn->GetInputVolumeNode() != nullptr)
+  {
+    // Skin extraction here
+    // vtkSmartPointer< vtkMarchingCubes > skinExtractor =
+    //   vtkSmartPointer< vtkMarchingCubes >::New();
+
+    // skinExtractor->SetInputConnection(
+    //   wsgn->GetInputVolumeNode()->GetImageDataConnection());
+
+    // skinExtractor->SetValue(0, 200);
+    // skinExtractor->ComputeNormalsOn();
+    // skinExtractor->Update();
+    // qDebug() << Q_FUNC_INFO << ": Updated Marching Cubes";
+
+    // vtkSmartPointer< vtkStripper > skinStripper =
+    //   vtkSmartPointer< vtkStripper >::New();
+    // skinStripper->SetInputConnection(skinExtractor->GetOutputPort());
+
+    // skinStripper->Update();
+    // qDebug() << Q_FUNC_INFO << ": Updated Stripper";
+  }
+
+  // vtkSmartPointer< vtkPolyDataMapper > skinMapper =
+  //   vtkSmartPointer< vtkPolyDataMapper >::New();
+
+  // skinMapper->SetInputConnection(skinStripper->GetOutputPort());
+  // skinMapper->ScalarVisibilityOn();
+
+  return true;
 }
 
 // feature: #18 Generate subworkspace given markup points. @FaridTavakol
@@ -520,58 +586,20 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
     vtkSmartPointer< vtkPolyData >::New();
   polyDataWorkspace->SetPoints(workspacePointCloud.GetPointer());
 
-  bool usePowerCrust = false;
-  if (usePowerCrust)
-  {
+  // bug: Convert surface model to segmentation. @DhruvKoolRajamani
+  vtkSmartPointer< vtkDelaunay3D > delaunay =
+    vtkSmartPointer< vtkDelaunay3D >::New();
+  delaunay->SetInputData(polyDataWorkspace);
+  delaunay->SetAlpha(6);
+  delaunay->SetTolerance(0.3);
+  delaunay->SetOffset(5.0);
+  delaunay->Update();
 
-    // vtkSmartPointer< vtkPowerCrustSurfaceReconstruction > surface =
-    //   vtkSmartPointer< vtkPowerCrustSurfaceReconstruction >::New();
-
-    // // try
-    // // {
-    // surface->SetInputData(polyDataWorkspace);
-    // // surface->Update();
-    // // vtkSmartPointer< vtkPolyDataMapper > surfaceMapper =
-    // //   vtkSmartPointer< vtkPolyDataMapper >::New();
-    // // surfaceMapper->SetInputConnection(surface->GetOutputPort());
-
-    // surface->Update();
-
-    // vtkSmartPointer< vtkTriangleFilter > triangleFilter =
-    //   vtkSmartPointer< vtkTriangleFilter >::New();
-
-    // triangleFilter->SetInputData(surface->GetOutput());
-    // triangleFilter->Update();
-
-    // // if (this->ModelsLogic)
-    // // {
-    // //   qDebug() << Q_FUNC_INFO << ": Models Logic is available.";
-
-    // //   this->ModelsLogic->SetMRMLScene(this->GetMRMLScene());
-
-    // //   WorkspaceMeshModelNode =
-    // //     this->ModelsLogic->AddModel(surface->GetMedialSurface());
-    // //   // modelNode = WorkspaceMeshModelNode;
-    // // }
-
-    // modelNode->SetAndObservePolyData(triangleFilter->GetOutput());
-  }
-  else
-  {
-    vtkSmartPointer< vtkDelaunay3D > delaunay =
-      vtkSmartPointer< vtkDelaunay3D >::New();
-    delaunay->SetInputData(polyDataWorkspace);
-    delaunay->SetAlpha(0);
-    delaunay->SetTolerance(0.3);
-    delaunay->SetOffset(5.0);
-    delaunay->Update();
-
-    vtkSmartPointer< vtkGeometryFilter > surfaceFilter =
-      vtkSmartPointer< vtkGeometryFilter >::New();
-    surfaceFilter->SetInputConnection(delaunay->GetOutputPort());
-    surfaceFilter->Update();
-    modelNode->SetAndObservePolyData(surfaceFilter->GetOutput());
-  }
+  vtkSmartPointer< vtkGeometryFilter > surfaceFilter =
+    vtkSmartPointer< vtkGeometryFilter >::New();
+  surfaceFilter->SetInputConnection(delaunay->GetOutputPort());
+  surfaceFilter->Update();
+  modelNode->SetAndObservePolyData(surfaceFilter->GetOutput());
 
   WorkspaceMeshModelNode = modelNode;
   // Attach a display node if needed
@@ -590,11 +618,16 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   {
     std::string name = std::string(modelNode->GetName()).append("ModelDisplay");
     displayNode->SetName(name.c_str());
-    displayNode->SetColor(1, 1, 0);
-    displayNode->Visibility2DOn();
-    displayNode->Visibility3DOn();
+    // displayNode->SetColor(1, 1, 0);
+    // displayNode->Visibility2DOn();
+    // displayNode->Visibility3DOn();
+    displayNode->SetSliceDisplayModeToDistanceEncodedProjection();
+    displayNode->SetSliceIntersectionVisibility(true);
     displayNode->SetVisibility(true);
     displayNode->SetSliceIntersectionThickness(2);
+    qDebug() << Q_FUNC_INFO
+             << displayNode->GetSliceDisplayModeAsString(
+                  displayNode->GetSliceDisplayMode());
   }
 
   WorkspaceMeshModelNode = modelNode;

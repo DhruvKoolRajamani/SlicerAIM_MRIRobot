@@ -107,6 +107,7 @@ protected slots:
   void onWorkspaceMeshModelNodeChanged(vtkMRMLNode*);
   void onWorkspaceMeshModelNodeAdded(vtkMRMLNode*);
   void onGenerateWorkspaceClick();
+  void onGenerateIsoSurfaceClick();
   void onSceneImportedEvent();
 
   // // DEPRECATED

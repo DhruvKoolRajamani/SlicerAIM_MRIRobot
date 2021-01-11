@@ -71,6 +71,13 @@
 // Neurorobot includes
 #include "NeuroKinematics/ForwardKinematics.h"
 
+// Isosurface creation
+#include <vtkContourFilter.h>
+#include <vtkExtractVOI.h>
+#include <vtkMarchingCubes.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkStripper.h>
+
 #include "vtkSlicerWorkspaceGenerationModuleLogicExport.h"
 
 class vtkMRMLWorkspaceGenerationNode;

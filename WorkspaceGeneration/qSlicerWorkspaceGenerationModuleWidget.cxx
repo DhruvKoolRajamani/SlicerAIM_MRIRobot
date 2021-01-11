@@ -51,6 +51,10 @@
 #include "vtkMRMLWorkspaceGenerationNode.h"
 #include "vtkSlicerWorkspaceGenerationLogic.h"
 
+// Isosurface creation
+#include <vtkMarchingCubes.h>
+#include <vtkStripper.h>
+
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class qSlicerWorkspaceGenerationModuleWidgetPrivate
@@ -194,6 +198,8 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
   connect(d->TargetPointFiducialSelector__4_4,
           SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
           SLOT(onTargetPointSelectionChanged(vtkMRMLNode*)));
+  connect(d->GenerateIsosurfaceButton__5_2, SIGNAL(released()), this,
+          SLOT(onGenerateIsoSurfaceClick()));
 
   d->EntryPointMarkupsPlaceWidget__4_3->setPlaceMultipleMarkups(
     qSlicerMarkupsPlaceWidget::PlaceMultipleMarkupsType::
@@ -310,6 +316,15 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
   d->D_DoubleSpinBox__3_8->setEnabled(true);
   d->RegistrationMatrix__3_10->setEnabled(true);
   d->RegistrationMatrix__3_10->setEditable(true);
+
+  // Set temporary values for temp mri image.
+  // TODO: Remove once testing pig images
+  auto regMat = d->RegistrationMatrix__3_10->values();
+  regMat[3]   = -100;
+  regMat[7]   = 300;
+  regMat[11]  = 100;
+  qDebug() << Q_FUNC_INFO << regMat;
+  d->RegistrationMatrix__3_10->setValues(regMat);
 
   this->updateGUIFromMRML();
 }
@@ -1107,24 +1122,47 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
 
   if (entryPointNode == NULL)
   {
-    qWarning() << Q_FUNC_INFO << ": Entry point still hasn't been placed.";
+    qWarning() << Q_FUNC_INFO << ": Entry point has not been created.";
+    return;
+  }
+
+  if (targetPointNode == NULL)
+  {
+    qWarning() << Q_FUNC_INFO << ": Target point has not been created.";
+    return;
+  }
+
+  if (entryPointNode->GetNumberOfDefinedControlPoints() == 0)
+  {
+    qWarning() << Q_FUNC_INFO << ": Entry point has not been placed yet.";
     return;
   }
 
   // Calculate Subworkspace
   d->logic()->UpdateSubWorkspace(workspaceGenerationNode, burrholeSet);
 
-  if (targetPointNode != NULL)
+  if (targetPointNode->GetNumberOfDefinedControlPoints() == 0)
   {
-    // Easy to modify this to a lock if asynchronousity is required.
-    if (!burrholeSet)
-    {
-      burrholeSet = d->logic()->IdentifyBurrHole(workspaceGenerationNode);
-
-      // Should be ideally moved to burr hole detection.
-      workspaceGenerationNode->SetBurrHoleDetected(burrholeSet);
-    }
+    qWarning() << Q_FUNC_INFO << ": Target point has not been placed yet.";
+    return;
   }
+
+  // Easy to modify this to a lock if asynchronousity is required.
+  if (!burrholeSet)
+  {
+    burrholeSet = d->logic()->IdentifyBurrHole(workspaceGenerationNode);
+
+    // Should be ideally moved to burr hole detection.
+    workspaceGenerationNode->SetBurrHoleDetected(burrholeSet);
+  }
+}
+
+// 4. Generate IsoSurface for burr hole identification
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onGenerateIsoSurfaceClick()
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
 }
 
 //-----------------------------------------------------------------------------

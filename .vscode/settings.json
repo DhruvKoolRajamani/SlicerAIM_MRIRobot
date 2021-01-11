@@ -9,6 +9,7 @@
     "string": "cpp",
     "string_view": "cpp"
   },
+  "C_Cpp.default.intelliSenseMode": "gcc-x86",
   "cmake.saveBeforeBuild": true,
   "editor.formatOnSave": true,
   "python.pythonPath": "/usr/bin/python",
