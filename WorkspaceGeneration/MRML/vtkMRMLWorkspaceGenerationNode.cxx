@@ -20,11 +20,12 @@
 #include <sstream>
 #include <string.h>
 
-static const char* INPUT_ROLE               = "InputVolume";
-static const char* ROI_ROLE                 = "ROI";
-static const char* WORKSPACEMESH_MODEL_ROLE = "WorkspaceMeshModel";
-static const char* ENTRY_POINT_ROLE         = "EntryPoint";
-static const char* TARGET_POINT_ROLE        = "TargetPoint";
+static const char* INPUT_ROLE = "InputVolume";
+static const char* ROI_ROLE   = "ROI";
+static const char* WORKSPACEMESH_SEGMENTATION_ROLE =
+  "WorkspaceMeshSegmentation";
+static const char* ENTRY_POINT_ROLE  = "EntryPoint";
+static const char* TARGET_POINT_ROLE = "TargetPoint";
 
 vtkMRMLNodeNewMacro(vtkMRMLWorkspaceGenerationNode);
 
@@ -90,7 +91,7 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
 
   this->AddNodeReferenceRole(INPUT_ROLE, NULL, inputVolumeEvents.GetPointer());
   this->AddNodeReferenceRole(ROI_ROLE);
-  this->AddNodeReferenceRole(WORKSPACEMESH_MODEL_ROLE, NULL,
+  this->AddNodeReferenceRole(WORKSPACEMESH_SEGMENTATION_ROLE, NULL,
                              workspaceMeshEvents.GetPointer());
   this->AddNodeReferenceRole(ENTRY_POINT_ROLE, NULL,
                              entryPointMarkupEvents.GetPointer());
@@ -229,20 +230,22 @@ vtkMRMLAnnotationROINode* vtkMRMLWorkspaceGenerationNode::GetAnnotationROINode()
 }
 
 //-----------------------------------------------------------------
-vtkMRMLModelNode* vtkMRMLWorkspaceGenerationNode::GetWorkspaceMeshModelNode()
+vtkMRMLSegmentationNode*
+  vtkMRMLWorkspaceGenerationNode::GetWorkspaceMeshSegmentationNode()
 {
   qInfo() << Q_FUNC_INFO;
 
-  vtkMRMLModelNode* workspaceMeshModelNode = vtkMRMLModelNode::SafeDownCast(
-    this->GetNodeReference(WORKSPACEMESH_MODEL_ROLE));
+  vtkMRMLSegmentationNode* workspaceMeshSegmentationNode =
+    vtkMRMLSegmentationNode::SafeDownCast(
+      this->GetNodeReference(WORKSPACEMESH_SEGMENTATION_ROLE));
 
-  if (!workspaceMeshModelNode)
+  if (!workspaceMeshSegmentationNode)
   {
-    qWarning() << Q_FUNC_INFO << ": workspaceMeshModelNode node is null";
+    qWarning() << Q_FUNC_INFO << ": workspaceMeshSegmentationNode node is null";
     return NULL;
   }
 
-  return workspaceMeshModelNode;
+  return workspaceMeshSegmentationNode;
 }
 
 //-----------------------------------------------------------------
@@ -303,23 +306,24 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveInputVolumeNodeID(
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetAndObserveWorkspaceMeshModelNodeID(
-  const char* workspaceMeshModelNodeId)
+void vtkMRMLWorkspaceGenerationNode::
+  SetAndObserveWorkspaceMeshSegmentationNodeID(
+    const char* workspaceMeshSegmentationNodeId)
 {
   qInfo() << Q_FUNC_INFO;
 
   // error check
   const char* roiId = this->GetNodeReferenceID(ROI_ROLE);
-  if (workspaceMeshModelNodeId != NULL && roiId != NULL &&
-      strcmp(workspaceMeshModelNodeId, roiId) == 0)
+  if (workspaceMeshSegmentationNodeId != NULL && roiId != NULL &&
+      strcmp(workspaceMeshSegmentationNodeId, roiId) == 0)
   {
     vtkErrorMacro(
       "Workspace Mesh node and Annotation ROI Node cannot be same.");
     return;
   }
 
-  this->SetAndObserveNodeReferenceID(WORKSPACEMESH_MODEL_ROLE,
-                                     workspaceMeshModelNodeId);
+  this->SetAndObserveNodeReferenceID(WORKSPACEMESH_SEGMENTATION_ROLE,
+                                     workspaceMeshSegmentationNodeId);
 }
 
 //-----------------------------------------------------------------
@@ -329,10 +333,10 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveAnnotationROINodeID(
   qInfo() << Q_FUNC_INFO;
 
   // error check
-  const char* workspaceMeshModelNodeId =
-    this->GetNodeReferenceID(WORKSPACEMESH_MODEL_ROLE);
-  if (workspaceMeshModelNodeId != NULL && annotationROIId != NULL &&
-      strcmp(annotationROIId, workspaceMeshModelNodeId) == 0)
+  const char* workspaceMeshSegmentationNodeId =
+    this->GetNodeReferenceID(WORKSPACEMESH_SEGMENTATION_ROLE);
+  if (workspaceMeshSegmentationNodeId != NULL && annotationROIId != NULL &&
+      strcmp(annotationROIId, workspaceMeshSegmentationNodeId) == 0)
   {
     vtkErrorMacro("Workspace Mesh node and annotation node cannot be null.");
     return;

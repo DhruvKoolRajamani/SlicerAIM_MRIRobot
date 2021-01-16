@@ -43,6 +43,9 @@
 // Model Node
 #include <vtkMRMLModelNode.h>
 
+// Segmentation Node
+#include <vtkMRMLSegmentationNode.h>
+
 // Markups Fiducial Node
 #include <vtkMRMLMarkupsFiducialDisplayNode.h>
 #include <vtkMRMLMarkupsFiducialNode.h>
@@ -150,8 +153,8 @@ public:
 
   void SetAndObserveInputVolumeNodeID(const char* inputNodeId);
   void SetAndObserveAnnotationROINodeID(const char* annotationROINodeId);
-  void
-       SetAndObserveWorkspaceMeshModelNodeID(const char* workspaceMeshModelNodeId);
+  void SetAndObserveWorkspaceMeshSegmentationNodeID(
+    const char* workspaceMeshSegmentationNodeId);
   void SetAndObserveEntryPointNodeId(const char* entryPointNodeId);
   void SetAndObserveTargetPointNodeId(const char* targetPointNodeId);
   void ProcessMRMLEvents(vtkObject* caller, unsigned long event,
@@ -159,7 +162,7 @@ public:
 
   vtkMRMLVolumeNode*          GetInputVolumeNode();
   vtkMRMLAnnotationROINode*   GetAnnotationROINode();
-  vtkMRMLModelNode*           GetWorkspaceMeshModelNode();
+  vtkMRMLSegmentationNode*    GetWorkspaceMeshSegmentationNode();
   vtkMRMLMarkupsFiducialNode* GetEntryPointNode();
   vtkMRMLMarkupsFiducialNode* GetTargetPointNode();
   BurrHoleParameters          GetBurrHoleParams();

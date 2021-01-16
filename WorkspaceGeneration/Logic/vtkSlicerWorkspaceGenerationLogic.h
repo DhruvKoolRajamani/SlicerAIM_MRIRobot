@@ -40,8 +40,15 @@
 #include <vtkSlicerMarkupsLogic.h>
 #include <vtkSlicerMarkupsModuleLogicExport.h>
 
+// Segmentations Logic includes
+#include <vtkSlicerSegmentationsModuleLogic.h>
+#include <vtkSlicerSegmentationsModuleLogicExport.h>
+
 // Volume Rendering Display Node
 #include <vtkMRMLVolumeRenderingDisplayNode.h>
+
+// Segmentation Display Node
+#include <vtkMRMLSegmentationDisplayNode.h>
 
 // Annotation ROI Node
 #include <vtkMRMLAnnotationROINode.h>
@@ -81,7 +88,7 @@
 #include "vtkSlicerWorkspaceGenerationModuleLogicExport.h"
 
 class vtkMRMLWorkspaceGenerationNode;
-class vtkMRMLModelNode;
+class vtkMRMLSegmentationNode;
 class vtkPolyData;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -121,21 +128,22 @@ public:
   static Eigen::Matrix4d convertToEigenMatrix(vtkMatrix4x4* vtkMat);
 
   // Generate Workspace
-  void GenerateWorkspace(vtkMRMLModelNode* modelNode, Probe probe,
+  void GenerateWorkspace(vtkMRMLSegmentationNode* segmentationNode, Probe probe,
                          vtkMatrix4x4* registrationMatrix);
 
   // Getters
   vtkSlicerVolumeRenderingLogic* getVolumeRenderingLogic();
   qSlicerAbstractCoreModule*     getVolumeRenderingModule();
-  vtkMRMLModelNode*              getWorkspaceMeshModelNode();
+  vtkMRMLSegmentationNode*       getWorkspaceMeshSegmentationNode();
   vtkMRMLVolumeRenderingDisplayNode*
-                           getCurrentInputVolumeRenderingDisplayNode();
-  vtkMRMLModelDisplayNode* getCurrentWorkspaceMeshModelDisplayNode();
+    getCurrentInputVolumeRenderingDisplayNode();
+  vtkMRMLSegmentationDisplayNode*
+    getCurrentWorkspaceMeshSegmentationDisplayNode();
 
   // Setters
   void setWorkspaceGenerationNode(vtkMRMLWorkspaceGenerationNode* wgn);
-  void setWorkspaceMeshModelDisplayNode(
-    vtkMRMLModelDisplayNode* workspaceMeshModelDisplayNode);
+  void setWorkspaceMeshSegmentationDisplayNode(
+    vtkMRMLSegmentationDisplayNode* workspaceMeshSegmentationDisplayNode);
 
 protected:
   vtkSlicerWorkspaceGenerationLogic();
@@ -162,11 +170,11 @@ protected:
   vtkMRMLAnnotationROINode* AnnotationROINode;
 
   // Robot Workspace Nodes
-  vtkMRMLModelNode* WorkspaceMeshModelNode;
+  vtkMRMLSegmentationNode* WorkspaceMeshSegmentationNode;
 
   // Display Nodes
   vtkMRMLVolumeRenderingDisplayNode* InputVolumeRenderingDisplayNode;
-  vtkMRMLModelDisplayNode*           WorkspaceMeshModelDisplayNode;
+  vtkMRMLSegmentationDisplayNode*    WorkspaceMeshSegmentationDisplayNode;
 
   // Volume Rendering Logic
   vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
@@ -179,6 +187,10 @@ protected:
   // Markups Logic
   vtkSlicerMarkupsLogic*     MarkupsLogic;
   qSlicerAbstractCoreModule* MarkupsModule;
+
+  // Segmentations Logic
+  vtkSlicerSegmentationsModuleLogic* SegmentationsLogic;
+  qSlicerAbstractCoreModule*         SegmentationsModule;
 
 private:
   vtkSlicerWorkspaceGenerationLogic(

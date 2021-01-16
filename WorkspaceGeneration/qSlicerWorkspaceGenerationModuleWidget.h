@@ -46,6 +46,8 @@
 #include "qSlicerWorkspaceGenerationModuleExport.h"
 #include <vtkMRMLModelDisplayNode.h>
 #include <vtkMRMLModelNode.h>
+#include <vtkMRMLSegmentationDisplayNode.h>
+#include <vtkMRMLSegmentationNode.h>
 #include <vtkMRMLVolumeNode.h>
 
 // Neurorobot includes
@@ -104,8 +106,8 @@ protected slots:
   void onTargetPointAdded(vtkMRMLNode*);
   void onMarkupChanged(vtkObject*, unsigned long, void*);
   void onPresetOffsetChanged(double, double, bool);
-  void onWorkspaceMeshModelNodeChanged(vtkMRMLNode*);
-  void onWorkspaceMeshModelNodeAdded(vtkMRMLNode*);
+  void onWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode*);
+  void onWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode*);
   void onGenerateWorkspaceClick();
   void onGenerateIsoSurfaceClick();
   void onSceneImportedEvent();

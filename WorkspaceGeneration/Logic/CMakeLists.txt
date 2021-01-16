@@ -13,6 +13,8 @@ set(${KIT}_INCLUDE_DIRECTORIES
   ${vtkVolumeRenderingModuleLogic_SRCS}
   ${vtkSlicerModelsModuleLogic_INCLUDE_DIRECTORIES}
   ${vtkSlicerModelsModuleLogic_SRCS}
+  ${vtkSlicerSegmentationsModuleLogic_INCLUDE_DIRS}
+  ${vtkSlicerSegmentationsModuleLogic_SRCS}
   ${utilities_INCLUDE_DIRS}
   ${neurorobot_INCLUDE_DIRS}
   )
@@ -31,6 +33,7 @@ set(${KIT}_TARGET_LIBRARIES
   vtkSlicerVolumeRenderingModuleLogic
   vtkSlicerMarkupsModuleMRML
   vtkSlicerMarkupsModuleLogic
+  vtkSlicerSegmentationsModuleLogic
   # utilities
   NeuroKinematics
   )
