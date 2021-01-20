@@ -95,7 +95,7 @@
 #include <eigen3/Eigen/Core>
 
 // Neurorobot includes
-#include "WorkspaceVisualization.h"
+#include "../../NeuroRobot/include/WorkspaceGeneration/WorkspaceVisualization.h"
 
 // Isosurface creation
 #include <vtkContourFilter.h>
