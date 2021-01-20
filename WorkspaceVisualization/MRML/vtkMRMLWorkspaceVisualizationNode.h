@@ -15,13 +15,13 @@
 
 ==============================================================================*/
 
-// .NAME vtkMRMLWorkspaceGenerationNode - MRML Node
+// .NAME vtkMRMLWorkspaceVisualizationNode - MRML Node
 // .SECTION Description
 // This class manages the logic associated with reading, saving,
 // and changing propertied of the volumes
 
-#ifndef __vtkMRMLWorkspaceGenerationNode_h
-#define __vtkMRMLWorkspaceGenerationNode_h
+#ifndef __vtkMRMLWorkspaceVisualizationNode_h
+#define __vtkMRMLWorkspaceVisualizationNode_h
 
 // std includes
 #include <iostream>
@@ -54,8 +54,8 @@
 #include "vtkMRMLNode.h"
 #include "vtkMRMLScene.h"
 
-// WorkspaceGeneration includes
-#include "vtkSlicerWorkspaceGenerationModuleMRMLExport.h"
+// WorkspaceVisualization includes
+#include "vtkSlicerWorkspaceVisualizationModuleMRMLExport.h"
 
 class vtkMRMLModelNode;
 
@@ -97,7 +97,7 @@ private:
 };
 
 class VTK_SLICER_WORKSPACEGENERATION_MODULE_MRML_EXPORT
-  vtkMRMLWorkspaceGenerationNode : public vtkMRMLNode
+  vtkMRMLWorkspaceVisualizationNode : public vtkMRMLNode
 {
 public:
   enum Events
@@ -110,15 +110,15 @@ public:
     MarkupsPositionModifiedEvent = vtkCommand::UserEvent + 777
   };
 
-  vtkTypeMacro(vtkMRMLWorkspaceGenerationNode, vtkMRMLNode);
+  vtkTypeMacro(vtkMRMLWorkspaceVisualizationNode, vtkMRMLNode);
 
   // Standard MRML node methods
-  static vtkMRMLWorkspaceGenerationNode* New();
+  static vtkMRMLWorkspaceVisualizationNode* New();
 
   virtual vtkMRMLNode* CreateNodeInstance() VTK_OVERRIDE;
   virtual const char*  GetNodeTagName() VTK_OVERRIDE
   {
-    return "WorkspaceGeneration";
+    return "WorkspaceVisualization";
   };
   void         PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   virtual void ReadXMLAttributes(const char** atts) VTK_OVERRIDE;
@@ -139,10 +139,10 @@ public:
 
 protected:
   // Constructor/destructor methods
-  vtkMRMLWorkspaceGenerationNode();
-  virtual ~vtkMRMLWorkspaceGenerationNode();
-  vtkMRMLWorkspaceGenerationNode(const vtkMRMLWorkspaceGenerationNode&);
-  void operator=(const vtkMRMLWorkspaceGenerationNode&);
+  vtkMRMLWorkspaceVisualizationNode();
+  virtual ~vtkMRMLWorkspaceVisualizationNode();
+  vtkMRMLWorkspaceVisualizationNode(const vtkMRMLWorkspaceVisualizationNode&);
+  void operator=(const vtkMRMLWorkspaceVisualizationNode&);
 
 public:
   void SetBurrHoleParameters(BurrHoleParameters burrHoleParams);
@@ -177,4 +177,4 @@ private:
   // int InputNodeType;
 };
 
-#endif  // __vtkMRMLWorkspaceGenerationNode_h
+#endif  // __vtkMRMLWorkspaceVisualizationNode_h

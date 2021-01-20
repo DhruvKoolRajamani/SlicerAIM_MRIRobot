@@ -15,19 +15,19 @@
 
 ==============================================================================*/
 
-#ifndef __qSlicerWorkspaceGenerationModule_h
-#define __qSlicerWorkspaceGenerationModule_h
+#ifndef __qSlicerWorkspaceVisualizationModule_h
+#define __qSlicerWorkspaceVisualizationModule_h
 
 // Slicer includes
 #include "qSlicerLoadableModule.h"
 
-#include "qSlicerWorkspaceGenerationModuleExport.h"
+#include "qSlicerWorkspaceVisualizationModuleExport.h"
 
-class qSlicerWorkspaceGenerationModulePrivate;
+class qSlicerWorkspaceVisualizationModulePrivate;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class Q_SLICER_QTMODULES_WORKSPACEGENERATION_EXPORT
-  qSlicerWorkspaceGenerationModule : public qSlicerLoadableModule
+  qSlicerWorkspaceVisualizationModule : public qSlicerLoadableModule
 {
   Q_OBJECT
   Q_PLUGIN_METADATA(IID
@@ -37,8 +37,8 @@ class Q_SLICER_QTMODULES_WORKSPACEGENERATION_EXPORT
 
 public:
   typedef qSlicerLoadableModule Superclass;
-  explicit qSlicerWorkspaceGenerationModule(QObject* parent = 0);
-  virtual ~qSlicerWorkspaceGenerationModule();
+  explicit qSlicerWorkspaceVisualizationModule(QObject* parent = 0);
+  virtual ~qSlicerWorkspaceVisualizationModule();
 
   qSlicerGetTitleMacro(QTMODULE_TITLE);
 
@@ -62,15 +62,15 @@ protected:
   virtual vtkMRMLAbstractLogic* createLogic();
 
 protected:
-  QScopedPointer< qSlicerWorkspaceGenerationModulePrivate > d_ptr;
+  QScopedPointer< qSlicerWorkspaceVisualizationModulePrivate > d_ptr;
 
 private:
-  Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationModule);
-  Q_DISABLE_COPY(qSlicerWorkspaceGenerationModule);
+  Q_DECLARE_PRIVATE(qSlicerWorkspaceVisualizationModule);
+  Q_DISABLE_COPY(qSlicerWorkspaceVisualizationModule);
 
   std::string GetClassName()
   {
-    return "qSlicerWorkspaceGenerationModule";
+    return "qSlicerWorkspaceVisualizationModule";
   }
 };
 

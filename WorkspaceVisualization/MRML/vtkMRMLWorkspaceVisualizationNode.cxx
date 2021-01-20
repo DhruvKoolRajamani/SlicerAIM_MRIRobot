@@ -1,7 +1,7 @@
 #include <QDebug>
 
-// WorkspaceGeneration includes
-#include "vtkMRMLWorkspaceGenerationNode.h"
+// WorkspaceVisualization includes
+#include "vtkMRMLWorkspaceVisualizationNode.h"
 
 // slicer includes
 #include "vtkMRMLDisplayNode.h"
@@ -27,17 +27,17 @@ static const char* WORKSPACEMESH_SEGMENTATION_ROLE =
 static const char* ENTRY_POINT_ROLE  = "EntryPoint";
 static const char* TARGET_POINT_ROLE = "TargetPoint";
 
-vtkMRMLNodeNewMacro(vtkMRMLWorkspaceGenerationNode);
+vtkMRMLNodeNewMacro(vtkMRMLWorkspaceVisualizationNode);
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParameters(
+void vtkMRMLWorkspaceVisualizationNode::SetBurrHoleParameters(
   BurrHoleParameters burrHoleParams)
 {
   this->BurrHoleParams = burrHoleParams;
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParameters(
+void vtkMRMLWorkspaceVisualizationNode::SetBurrHoleParameters(
   vtkVector3d center, double radius, vtkMRMLModelNode* drill_bit)
 {
   this->BurrHoleParams = BurrHoleParameters();
@@ -47,7 +47,7 @@ void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParameters(
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParameters(
+void vtkMRMLWorkspaceVisualizationNode::SetBurrHoleParameters(
   double center[], double radius, vtkMRMLModelNode* drill_bit)
 {
   this->BurrHoleParams = BurrHoleParameters();
@@ -57,7 +57,7 @@ void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParameters(
 }
 
 //-----------------------------------------------------------------
-vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
+vtkMRMLWorkspaceVisualizationNode::vtkMRMLWorkspaceVisualizationNode()
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -110,12 +110,12 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
 }
 
 //-----------------------------------------------------------------
-vtkMRMLWorkspaceGenerationNode::~vtkMRMLWorkspaceGenerationNode()
+vtkMRMLWorkspaceVisualizationNode::~vtkMRMLWorkspaceVisualizationNode()
 {
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::WriteXML(ostream& of, int nIndent)
+void vtkMRMLWorkspaceVisualizationNode::WriteXML(ostream& of, int nIndent)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -130,7 +130,7 @@ void vtkMRMLWorkspaceGenerationNode::WriteXML(ostream& of, int nIndent)
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::ReadXMLAttributes(const char** atts)
+void vtkMRMLWorkspaceVisualizationNode::ReadXMLAttributes(const char** atts)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -148,7 +148,7 @@ void vtkMRMLWorkspaceGenerationNode::ReadXMLAttributes(const char** atts)
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::Copy(vtkMRMLNode* anode)
+void vtkMRMLWorkspaceVisualizationNode::Copy(vtkMRMLNode* anode)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -165,7 +165,7 @@ void vtkMRMLWorkspaceGenerationNode::Copy(vtkMRMLNode* anode)
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::PrintSelf(ostream& os, vtkIndent indent)
+void vtkMRMLWorkspaceVisualizationNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -180,9 +180,8 @@ void vtkMRMLWorkspaceGenerationNode::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::ProcessMRMLEvents(vtkObject* caller,
-                                                       unsigned long /*event*/,
-                                                       void* /*callData*/)
+void vtkMRMLWorkspaceVisualizationNode::ProcessMRMLEvents(
+  vtkObject* caller, unsigned long /*event*/, void* /*callData*/)
 {
   vtkMRMLMarkupsFiducialNode* callerNode =
     vtkMRMLMarkupsFiducialNode::SafeDownCast(caller);
@@ -197,7 +196,7 @@ void vtkMRMLWorkspaceGenerationNode::ProcessMRMLEvents(vtkObject* caller,
 }
 
 //-----------------------------------------------------------------
-vtkMRMLVolumeNode* vtkMRMLWorkspaceGenerationNode::GetInputVolumeNode()
+vtkMRMLVolumeNode* vtkMRMLWorkspaceVisualizationNode::GetInputVolumeNode()
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -213,7 +212,8 @@ vtkMRMLVolumeNode* vtkMRMLWorkspaceGenerationNode::GetInputVolumeNode()
 }
 
 //-----------------------------------------------------------------
-vtkMRMLAnnotationROINode* vtkMRMLWorkspaceGenerationNode::GetAnnotationROINode()
+vtkMRMLAnnotationROINode*
+  vtkMRMLWorkspaceVisualizationNode::GetAnnotationROINode()
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -231,7 +231,7 @@ vtkMRMLAnnotationROINode* vtkMRMLWorkspaceGenerationNode::GetAnnotationROINode()
 
 //-----------------------------------------------------------------
 vtkMRMLSegmentationNode*
-  vtkMRMLWorkspaceGenerationNode::GetWorkspaceMeshSegmentationNode()
+  vtkMRMLWorkspaceVisualizationNode::GetWorkspaceMeshSegmentationNode()
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -249,7 +249,8 @@ vtkMRMLSegmentationNode*
 }
 
 //-----------------------------------------------------------------
-vtkMRMLMarkupsFiducialNode* vtkMRMLWorkspaceGenerationNode::GetEntryPointNode()
+vtkMRMLMarkupsFiducialNode*
+  vtkMRMLWorkspaceVisualizationNode::GetEntryPointNode()
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -267,7 +268,8 @@ vtkMRMLMarkupsFiducialNode* vtkMRMLWorkspaceGenerationNode::GetEntryPointNode()
 }
 
 //-----------------------------------------------------------------
-vtkMRMLMarkupsFiducialNode* vtkMRMLWorkspaceGenerationNode::GetTargetPointNode()
+vtkMRMLMarkupsFiducialNode*
+  vtkMRMLWorkspaceVisualizationNode::GetTargetPointNode()
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -285,13 +287,13 @@ vtkMRMLMarkupsFiducialNode* vtkMRMLWorkspaceGenerationNode::GetTargetPointNode()
 }
 
 //-----------------------------------------------------------------
-BurrHoleParameters vtkMRMLWorkspaceGenerationNode::GetBurrHoleParams()
+BurrHoleParameters vtkMRMLWorkspaceVisualizationNode::GetBurrHoleParams()
 {
   return this->BurrHoleParams;
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetAndObserveInputVolumeNodeID(
+void vtkMRMLWorkspaceVisualizationNode::SetAndObserveInputVolumeNodeID(
   const char* inputId)
 {
   qInfo() << Q_FUNC_INFO;
@@ -306,7 +308,7 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveInputVolumeNodeID(
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::
+void vtkMRMLWorkspaceVisualizationNode::
   SetAndObserveWorkspaceMeshSegmentationNodeID(
     const char* workspaceMeshSegmentationNodeId)
 {
@@ -327,7 +329,7 @@ void vtkMRMLWorkspaceGenerationNode::
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetAndObserveAnnotationROINodeID(
+void vtkMRMLWorkspaceVisualizationNode::SetAndObserveAnnotationROINodeID(
   const char* annotationROIId)
 {
   qInfo() << Q_FUNC_INFO;
@@ -346,7 +348,7 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveAnnotationROINodeID(
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetAndObserveEntryPointNodeId(
+void vtkMRMLWorkspaceVisualizationNode::SetAndObserveEntryPointNodeId(
   const char* entryPointNodeId)
 {
   qInfo() << Q_FUNC_INFO;
@@ -370,7 +372,7 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveEntryPointNodeId(
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetAndObserveTargetPointNodeId(
+void vtkMRMLWorkspaceVisualizationNode::SetAndObserveTargetPointNodeId(
   const char* targetPointNodeId)
 {
   qInfo() << Q_FUNC_INFO;

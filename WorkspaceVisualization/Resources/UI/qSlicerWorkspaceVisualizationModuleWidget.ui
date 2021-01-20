@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-  <class>qSlicerWorkspaceGenerationModuleWidget</class>
-  <widget class="qSlicerWidget" name="qSlicerWorkspaceGenerationModuleWidget">
+  <class>qSlicerWorkspaceVisualizationModuleWidget</class>
+  <widget class="qSlicerWidget" name="qSlicerWorkspaceVisualizationModuleWidget">
     <property name="geometry">
       <rect>
         <x>0</x>
@@ -45,7 +45,7 @@
             <widget class="qMRMLNodeComboBox" name="ParameterNodeSelector__1_1">
               <property name="nodeTypes">
                 <stringlist>
-                  <string>vtkMRMLWorkspaceGenerationNode</string>
+                  <string>vtkMRMLWorkspaceVisualizationNode</string>
                 </stringlist>
               </property>
               <property name="renameEnabled">
@@ -362,7 +362,7 @@
                       </property>
                       <layout class="QVBoxLayout" name="ProbeSpecsHelpVerticalLayout">
                         <item>
-                          <widget class="qSlicerWorkspaceGenerationProbeSpecsHelpWidget" name="ProbeSpecsHelpWidget" native="true"/>
+                          <widget class="qSlicerWorkspaceVisualizationProbeSpecsHelpWidget" name="ProbeSpecsHelpWidget" native="true"/>
                         </item>
                       </layout>
                     </widget>
@@ -894,9 +894,9 @@
       <header>ctkPushButton.h</header>
     </customwidget>
     <customwidget>
-      <class>qSlicerWorkspaceGenerationProbeSpecsHelpWidget</class>
+      <class>qSlicerWorkspaceVisualizationProbeSpecsHelpWidget</class>
       <extends>QWidget</extends>
-      <header>qSlicerWorkspaceGenerationProbeSpecsHelpWidget.h</header>
+      <header>qSlicerWorkspaceVisualizationProbeSpecsHelpWidget.h</header>
     </customwidget>
   </customwidgets>
   <resources/>

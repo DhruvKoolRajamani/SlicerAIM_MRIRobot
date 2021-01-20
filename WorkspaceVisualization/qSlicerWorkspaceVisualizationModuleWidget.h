@@ -15,8 +15,8 @@
 
 ==============================================================================*/
 
-#ifndef __qSlicerWorkspaceGenerationModuleWidget_h
-#define __qSlicerWorkspaceGenerationModuleWidget_h
+#ifndef __qSlicerWorkspaceVisualizationModuleWidget_h
+#define __qSlicerWorkspaceVisualizationModuleWidget_h
 
 // Slicer includes
 #include "qSlicerAbstractModuleWidget.h"
@@ -43,7 +43,7 @@
 
 #include "ctkPushButton.h"
 
-#include "qSlicerWorkspaceGenerationModuleExport.h"
+#include "qSlicerWorkspaceVisualizationModuleExport.h"
 #include <vtkMRMLModelDisplayNode.h>
 #include <vtkMRMLModelNode.h>
 #include <vtkMRMLSegmentationDisplayNode.h>
@@ -53,7 +53,7 @@
 // Neurorobot includes
 #include "NeuroKinematics/ForwardKinematics.h"
 
-class qSlicerWorkspaceGenerationModuleWidgetPrivate;
+class qSlicerWorkspaceVisualizationModuleWidgetPrivate;
 class vtkMRMLNode;
 
 struct ProbeSpecifications
@@ -77,20 +77,20 @@ struct ProbeSpecifications
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class Q_SLICER_QTMODULES_WORKSPACEGENERATION_EXPORT
-  qSlicerWorkspaceGenerationModuleWidget : public qSlicerAbstractModuleWidget
+  qSlicerWorkspaceVisualizationModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
 
 public:
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerWorkspaceGenerationModuleWidget(QWidget* parent = 0);
-  virtual ~qSlicerWorkspaceGenerationModuleWidget();
+  qSlicerWorkspaceVisualizationModuleWidget(QWidget* parent = 0);
+  virtual ~qSlicerWorkspaceVisualizationModuleWidget();
 
 public slots:
   void        setMRMLScene(vtkMRMLScene* scene);
   std::string GetClassName()
   {
-    return "WorkspaceGenerationModuleWidget";
+    return "WorkspaceVisualizationModuleWidget";
   }
 
 protected slots:
@@ -139,7 +139,7 @@ protected slots:
 protected:
   QList< QWidget* > allInteractiveWidgets;
 
-  QScopedPointer< qSlicerWorkspaceGenerationModuleWidgetPrivate > d_ptr;
+  QScopedPointer< qSlicerWorkspaceVisualizationModuleWidgetPrivate > d_ptr;
 
   vtkMRMLAnnotationROINode* GetAnnotationROINode();
   vtkMRMLVolumeNode*        GetInputVolumeNode();
@@ -154,8 +154,8 @@ protected:
   void setCheckState(ctkPushButton* btn, bool state);
 
 private:
-  Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationModuleWidget);
-  Q_DISABLE_COPY(qSlicerWorkspaceGenerationModuleWidget);
+  Q_DECLARE_PRIVATE(qSlicerWorkspaceVisualizationModuleWidget);
+  Q_DISABLE_COPY(qSlicerWorkspaceVisualizationModuleWidget);
 };
 
 #endif

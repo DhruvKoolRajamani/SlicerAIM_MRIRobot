@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+  <class>qSlicerWorkspaceVisualizationMarkupsFiducialsWidget</class>
+  <widget class="QWidget" name="qSlicerWorkspaceVisualizationMarkupsFiducialsWidget">
+    <property name="geometry">
+      <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>572</width>
+        <height>148</height>
+      </rect>
+    </property>
+    <property name="windowTitle">
+      <string>Markups Fiducials</string>
+    </property>
+    <layout class="QVBoxLayout" name="MarkupsFiducialsVerticalLayout">
+      <property name="leftMargin">
+        <number>0</number>
+      </property>
+      <property name="topMargin">
+        <number>0</number>
+      </property>
+      <property name="rightMargin">
+        <number>0</number>
+      </property>
+      <property name="bottomMargin">
+        <number>0</number>
+      </property>
+      <item>
+        <layout class="QGridLayout" name="MarkupsFiducialsGridLayout">
+          <item row="0" column="0">
+            <widget class="qSlicerSimpleMarkupsWidget" name="SimpleMarkupsWidget"/>
+          </item>
+        </layout>
+      </item>
+    </layout>
+  </widget>
+  <customwidgets>
+    <customwidget>
+      <class>qSlicerWidget</class>
+      <extends>QWidget</extends>
+      <header>qSlicerWidget.h</header>
+      <container>1</container>
+    </customwidget>
+    <customwidget>
+      <class>qSlicerSimpleMarkupsWidget</class>
+      <extends>qSlicerWidget</extends>
+      <header>qSlicerSimpleMarkupsWidget.h</header>
+    </customwidget>
+  </customwidgets>
+  <resources>
+    <include location="../qSlicerWorkspaceVisualizationModule.qrc"/>
+  </resources>
+  <connections/>
+</ui>

@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/build/**",
-                "${workspaceFolder}/build/WorkspaceGeneration/**",
+                "${workspaceFolder}/build/WorkspaceVisualization/**",
                 "${HOME}/Slicer/build/Slicer-build/**",
                 "${HOME}/Slicer/build/**",
                 "${HOME}/Slicer/build/Slicer-build/**"

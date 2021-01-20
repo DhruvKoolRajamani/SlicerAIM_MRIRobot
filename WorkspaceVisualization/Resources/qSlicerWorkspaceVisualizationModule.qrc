@@ -1,6 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
   <qresource>
-    <file>Icons/WorkspaceGeneration.png</file>
+    <file>Icons/WorkspaceVisualization.png</file>
     <file>Icons/probe_specs_1.jpg</file>
     <file>Icons/probe_specs_2.jpg</file>
   </qresource>

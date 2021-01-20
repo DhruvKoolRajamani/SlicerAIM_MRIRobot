@@ -15,18 +15,22 @@
 
 ==============================================================================*/
 
-// .NAME vtkSlicerWorkspaceGenerationLogic - slicer logic class for volumes
+// .NAME vtkSlicerWorkspaceVisualizationLogic - slicer logic class for volumes
 // manipulation .SECTION Description This class manages the logic associated
 // with reading, saving, and changing propertied of the volumes
 
-#ifndef __vtkSlicerWorkspaceGenerationLogic_h
-#define __vtkSlicerWorkspaceGenerationLogic_h
+#ifndef __vtkSlicerWorkspaceVisualizationLogic_h
+#define __vtkSlicerWorkspaceVisualizationLogic_h
 
 // QT Includes
 #include <QString>
 
 // Slicer includes
 #include "vtkSlicerModuleLogic.h"
+
+// Volumes Logic includes
+#include <vtkSlicerVolumesLogic.h>
+#include <vtkSlicerVolumesModuleLogicExport.h>
 
 // Volume Rendering Logic includes
 #include <vtkSlicerVolumeRenderingLogic.h>
@@ -39,6 +43,11 @@
 // Markups Logic includes
 #include <vtkSlicerMarkupsLogic.h>
 #include <vtkSlicerMarkupsModuleLogicExport.h>
+
+// Crop Volume Logic includes
+#include <vtkMRMLCropVolumeParametersNode.h>
+#include <vtkSlicerCropVolumeLogic.h>
+#include <vtkSlicerCropVolumeModuleLogicExport.h>
 
 // Segmentations Logic includes
 #include <vtkSlicerSegmentationsModuleLogic.h>
@@ -65,7 +74,7 @@
 #include <vtkPolyData.h>
 
 // MRML includes
-#include "vtkMRMLWorkspaceGenerationNode.h"
+#include "vtkMRMLWorkspaceVisualizationNode.h"
 #include <vtkMRMLModelNode.h>
 #include <vtkMRMLVolumeNode.h>
 
@@ -85,19 +94,19 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkStripper.h>
 
-#include "vtkSlicerWorkspaceGenerationModuleLogicExport.h"
+#include "vtkSlicerWorkspaceVisualizationModuleLogicExport.h"
 
-class vtkMRMLWorkspaceGenerationNode;
+class vtkMRMLWorkspaceVisualizationNode;
 class vtkMRMLSegmentationNode;
 class vtkPolyData;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class VTK_SLICER_WORKSPACEGENERATION_MODULE_LOGIC_EXPORT
-  vtkSlicerWorkspaceGenerationLogic : public vtkSlicerModuleLogic
+  vtkSlicerWorkspaceVisualizationLogic : public vtkSlicerModuleLogic
 {
 public:
-  static vtkSlicerWorkspaceGenerationLogic* New();
-  vtkTypeMacro(vtkSlicerWorkspaceGenerationLogic, vtkSlicerModuleLogic);
+  static vtkSlicerWorkspaceVisualizationLogic* New();
+  vtkTypeMacro(vtkSlicerWorkspaceVisualizationLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   void ProcessMRMLNodesEvents(vtkObject* caller, unsigned long event,
@@ -107,7 +116,7 @@ public:
 
   // Updates the mouse selection type to create markups or to navigate the
   // scene.
-  void UpdateSelectionNode(vtkMRMLWorkspaceGenerationNode* moduleNode);
+  void UpdateSelectionNode(vtkMRMLWorkspaceVisualizationNode* moduleNode);
 
   // Updates output model from file?
   void UpdateVolumeRendering();
@@ -116,10 +125,10 @@ public:
   void UpdateMarkupFiducialNodes();
 
   // Update the subworkspace
-  void UpdateSubWorkspace(vtkMRMLWorkspaceGenerationNode*, bool);
+  void UpdateSubWorkspace(vtkMRMLWorkspaceVisualizationNode*, bool);
 
   // Identify the Burr Hole
-  bool IdentifyBurrHole(vtkMRMLWorkspaceGenerationNode*);
+  bool IdentifyBurrHole(vtkMRMLWorkspaceVisualizationNode*);
 
   // Load workspace mesh
   bool LoadWorkspace(QString workspaceMeshFilePath);
@@ -141,13 +150,13 @@ public:
     getCurrentWorkspaceMeshSegmentationDisplayNode();
 
   // Setters
-  void setWorkspaceGenerationNode(vtkMRMLWorkspaceGenerationNode* wgn);
+  void setWorkspaceVisualizationNode(vtkMRMLWorkspaceVisualizationNode* wgn);
   void setWorkspaceMeshSegmentationDisplayNode(
     vtkMRMLSegmentationDisplayNode* workspaceMeshSegmentationDisplayNode);
 
 protected:
-  vtkSlicerWorkspaceGenerationLogic();
-  virtual ~vtkSlicerWorkspaceGenerationLogic();
+  vtkSlicerWorkspaceVisualizationLogic();
+  virtual ~vtkSlicerWorkspaceVisualizationLogic();
 
   virtual void SetMRMLSceneInternal(vtkMRMLScene* newScene);
   /// Register MRML Node classes to Scene. Gets called automatically when the
@@ -163,7 +172,7 @@ protected:
   void PruneExcessMarkups(vtkMRMLMarkupsFiducialNode* mfn);
 
   // Parameter Nodes
-  vtkMRMLWorkspaceGenerationNode* WorkspaceGenerationNode;
+  vtkMRMLWorkspaceVisualizationNode* WorkspaceVisualizationNode;
 
   // Input Nodes
   vtkMRMLVolumeNode*        InputVolumeNode;
@@ -180,9 +189,17 @@ protected:
   vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
   qSlicerAbstractCoreModule*     VolumeRenderingModule;
 
+  // Volumes Logic
+  qSlicerAbstractCoreModule* VolumesModule;
+  vtkSlicerVolumesLogic*     VolumesLogic;
+
   // Models Logic
   vtkSlicerModelsLogic*      ModelsLogic;
   qSlicerAbstractCoreModule* ModelsModule;
+
+  // Crop Volume Logic
+  vtkSlicerCropVolumeLogic*  CropVolumeLogic;
+  qSlicerAbstractCoreModule* CropVolumeModule;
 
   // Markups Logic
   vtkSlicerMarkupsLogic*     MarkupsLogic;
@@ -193,9 +210,10 @@ protected:
   qSlicerAbstractCoreModule*         SegmentationsModule;
 
 private:
-  vtkSlicerWorkspaceGenerationLogic(
-    const vtkSlicerWorkspaceGenerationLogic&);               // Not implemented
-  void operator=(const vtkSlicerWorkspaceGenerationLogic&);  // Not implemented
+  vtkSlicerWorkspaceVisualizationLogic(
+    const vtkSlicerWorkspaceVisualizationLogic&);  // Not implemented
+  void operator=(const vtkSlicerWorkspaceVisualizationLogic&);  // Not
+                                                                // implemented
 };
 
 #endif

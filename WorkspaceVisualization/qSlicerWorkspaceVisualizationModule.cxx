@@ -37,59 +37,59 @@
 #include <vtkMRMLVolumeNode.h>
 #include <vtkMRMLVolumeRenderingDisplayNode.h>
 
-// WorkspaceGeneration Logic includes
-#include <vtkSlicerWorkspaceGenerationLogic.h>
+// WorkspaceVisualization Logic includes
+#include <vtkSlicerWorkspaceVisualizationLogic.h>
 
-// WorkspaceGeneration includes
-#include "qSlicerWorkspaceGenerationModule.h"
-#include "qSlicerWorkspaceGenerationModuleWidget.h"
+// WorkspaceVisualization includes
+#include "qSlicerWorkspaceVisualizationModule.h"
+#include "qSlicerWorkspaceVisualizationModuleWidget.h"
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class qSlicerWorkspaceGenerationModulePrivate
+class qSlicerWorkspaceVisualizationModulePrivate
 {
 public:
-  qSlicerWorkspaceGenerationModulePrivate();
+  qSlicerWorkspaceVisualizationModulePrivate();
 };
 
 //-----------------------------------------------------------------------------
-// qSlicerWorkspaceGenerationModulePrivate methods
+// qSlicerWorkspaceVisualizationModulePrivate methods
 
 //-----------------------------------------------------------------------------
-qSlicerWorkspaceGenerationModulePrivate::
-  qSlicerWorkspaceGenerationModulePrivate()
+qSlicerWorkspaceVisualizationModulePrivate::
+  qSlicerWorkspaceVisualizationModulePrivate()
 {
 }
 
 //-----------------------------------------------------------------------------
-// qSlicerWorkspaceGenerationModule methods
+// qSlicerWorkspaceVisualizationModule methods
 
 //-----------------------------------------------------------------------------
-qSlicerWorkspaceGenerationModule::qSlicerWorkspaceGenerationModule(
+qSlicerWorkspaceVisualizationModule::qSlicerWorkspaceVisualizationModule(
   QObject* _parent)
-  : Superclass(_parent), d_ptr(new qSlicerWorkspaceGenerationModulePrivate)
+  : Superclass(_parent), d_ptr(new qSlicerWorkspaceVisualizationModulePrivate)
 {
 }
 
 //-----------------------------------------------------------------------------
-qSlicerWorkspaceGenerationModule::~qSlicerWorkspaceGenerationModule()
+qSlicerWorkspaceVisualizationModule::~qSlicerWorkspaceVisualizationModule()
 {
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerWorkspaceGenerationModule::helpText() const
+QString qSlicerWorkspaceVisualizationModule::helpText() const
 {
   return "This is a loadable module that can be bundled in an extension";
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerWorkspaceGenerationModule::acknowledgementText() const
+QString qSlicerWorkspaceVisualizationModule::acknowledgementText() const
 {
   return "This work was partially funded by NIH grant NXNNXXNNNNNN-NNXN";
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerWorkspaceGenerationModule::contributors() const
+QStringList qSlicerWorkspaceVisualizationModule::contributors() const
 {
   QStringList moduleContributors;
   moduleContributors << QString("Dhruv Kool Rajamani (AIM Lab WPI)");
@@ -97,26 +97,26 @@ QStringList qSlicerWorkspaceGenerationModule::contributors() const
 }
 
 //-----------------------------------------------------------------------------
-QIcon qSlicerWorkspaceGenerationModule::icon() const
+QIcon qSlicerWorkspaceVisualizationModule::icon() const
 {
-  return QIcon(":/Icons/WorkspaceGeneration.png");
+  return QIcon(":/Icons/WorkspaceVisualization.png");
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerWorkspaceGenerationModule::categories() const
+QStringList qSlicerWorkspaceVisualizationModule::categories() const
 {
   return QStringList() << "MRIRobot";
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerWorkspaceGenerationModule::dependencies() const
+QStringList qSlicerWorkspaceVisualizationModule::dependencies() const
 {
   return QStringList() << "Volumes"
                        << "Models";
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModule::setup()
+void qSlicerWorkspaceVisualizationModule::setup()
 {
   qInstallMessageHandler(errorHandler);
   this->Superclass::setup();
@@ -124,14 +124,14 @@ void qSlicerWorkspaceGenerationModule::setup()
 
 //-----------------------------------------------------------------------------
 qSlicerAbstractModuleRepresentation*
-  qSlicerWorkspaceGenerationModule ::createWidgetRepresentation()
+  qSlicerWorkspaceVisualizationModule ::createWidgetRepresentation()
 {
   vtkInfoMacro("Creating new Workspace Generation Module Widget");
-  return new qSlicerWorkspaceGenerationModuleWidget;
+  return new qSlicerWorkspaceVisualizationModuleWidget;
 }
 
 //-----------------------------------------------------------------------------
-vtkMRMLAbstractLogic* qSlicerWorkspaceGenerationModule::createLogic()
+vtkMRMLAbstractLogic* qSlicerWorkspaceVisualizationModule::createLogic()
 {
-  return vtkSlicerWorkspaceGenerationLogic::New();
+  return vtkSlicerWorkspaceVisualizationLogic::New();
 }

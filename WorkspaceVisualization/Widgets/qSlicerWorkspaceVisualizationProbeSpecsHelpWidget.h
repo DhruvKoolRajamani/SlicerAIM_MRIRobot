@@ -18,35 +18,35 @@ Inc. and was partially funded by NIH grant 3P41RR013218-12S1
 
 ==============================================================================*/
 
-#ifndef __qSlicerWorkspaceGenerationProbeSpecsHelpWidget_h
-#define __qSlicerWorkspaceGenerationProbeSpecsHelpWidget_h
+#ifndef __qSlicerWorkspaceVisualizationProbeSpecsHelpWidget_h
+#define __qSlicerWorkspaceVisualizationProbeSpecsHelpWidget_h
 
 // Qt includes
 #include <QWidget>
 
 // ProbeSpecs Widgets includes
-#include "qSlicerWorkspaceGenerationModuleWidgetsExport.h"
+#include "qSlicerWorkspaceVisualizationModuleWidgetsExport.h"
 
-class qSlicerWorkspaceGenerationProbeSpecsHelpWidgetPrivate;
+class qSlicerWorkspaceVisualizationProbeSpecsHelpWidgetPrivate;
 
-/// \ingroup Slicer_QtModules_WorkspaceGeneration
+/// \ingroup Slicer_QtModules_WorkspaceVisualization
 class Q_SLICER_MODULE_WORKSPACEGENERATION_WIDGETS_EXPORT
-  qSlicerWorkspaceGenerationProbeSpecsHelpWidget : public QWidget
+  qSlicerWorkspaceVisualizationProbeSpecsHelpWidget : public QWidget
 {
   Q_OBJECT
 public:
   typedef QWidget Superclass;
-  qSlicerWorkspaceGenerationProbeSpecsHelpWidget(QWidget* parent = 0);
-  virtual ~qSlicerWorkspaceGenerationProbeSpecsHelpWidget();
+  qSlicerWorkspaceVisualizationProbeSpecsHelpWidget(QWidget* parent = 0);
+  virtual ~qSlicerWorkspaceVisualizationProbeSpecsHelpWidget();
 
 protected slots:
 
 protected:
-  QScopedPointer< qSlicerWorkspaceGenerationProbeSpecsHelpWidgetPrivate > d_ptr;
+  QScopedPointer< qSlicerWorkspaceVisualizationProbeSpecsHelpWidgetPrivate > d_ptr;
 
 private:
-  Q_DECLARE_PRIVATE(qSlicerWorkspaceGenerationProbeSpecsHelpWidget);
-  Q_DISABLE_COPY(qSlicerWorkspaceGenerationProbeSpecsHelpWidget);
+  Q_DECLARE_PRIVATE(qSlicerWorkspaceVisualizationProbeSpecsHelpWidget);
+  Q_DISABLE_COPY(qSlicerWorkspaceVisualizationProbeSpecsHelpWidget);
 };
 
 #endif

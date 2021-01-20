@@ -8,7 +8,7 @@
       "name": "(Linux) Launch Extension Without prebuild",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/SlicerWithSlicerAIM_MRIRobot",
+      "program": "${workspaceFolder}/build/SlicerWithSlicerRIGT",
       "args": [
         // "--attach-process"
       ],
@@ -31,7 +31,7 @@
       "name": "(Linux) Launch Extension Without Pre Build with debugger",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/SlicerWithSlicerAIM_MRIRobot",
+      "program": "${workspaceFolder}/build/SlicerWithSlicerRIGT",
       "args": [
         "--attach-process"
       ],
@@ -59,7 +59,7 @@
       "name": "(Linux) Launch Extension",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/SlicerWithSlicerAIM_MRIRobot",
+      "program": "${workspaceFolder}/build/SlicerWithSlicerRIGT",
       "args": [
         // "--attach-process"
       ],
@@ -83,7 +83,7 @@
       "name": "(Linux) Launch Extension with debugger",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/SlicerWithSlicerAIM_MRIRobot",
+      "program": "${workspaceFolder}/build/SlicerWithSlicerRIGT",
       "args": [
         "--attach-process"
       ],
@@ -120,7 +120,7 @@
       "name": "(Win) Launch Extension",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/SlicerWithSlicerAIM_MRIRobot.exe",
+      "program": "${workspaceFolder}/build/SlicerWithSlicerRIGT.exe",
       "args": [],
       "preLaunchTask": "(Win) build",
       "stopAtEntry": false,

@@ -18,8 +18,8 @@
 // QT includes
 #include <QDebug>
 
-// WorkspaceGeneration Logic includes
-#include "vtkSlicerWorkspaceGenerationLogic.h"
+// WorkspaceVisualization Logic includes
+#include "vtkSlicerWorkspaceVisualizationLogic.h"
 
 // Slicer Module includes
 #include <qSlicerAbstractModule.h>
@@ -34,6 +34,7 @@
 #include <vtkMRMLScene.h>
 
 // Volume Rendering MRML includes
+#include <vtkMRMLScalarVolumeNode.h>
 #include <vtkMRMLScene.h>
 #include <vtkMRMLVolumeNode.h>
 #include <vtkMRMLVolumeRenderingDisplayNode.h>
@@ -44,6 +45,7 @@
 #include <vtkCollectionIterator.h>
 #include <vtkDelaunay3D.h>
 #include <vtkGeometryFilter.h>
+#include <vtkImageData.h>
 #include <vtkMath.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
@@ -62,13 +64,21 @@
 class qSlicerAbstractCoreModule;
 class vtkSlicerVolumeRenderingLogic;
 class vtkMRMLVolumeRenderingDisplayNode;
+class vtkMRMLVolumeNode;
 
 //----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkSlicerWorkspaceGenerationLogic);
+vtkStandardNewMacro(vtkSlicerWorkspaceVisualizationLogic);
 
 //----------------------------------------------------------------------------
-vtkSlicerWorkspaceGenerationLogic::vtkSlicerWorkspaceGenerationLogic()
+vtkSlicerWorkspaceVisualizationLogic::vtkSlicerWorkspaceVisualizationLogic()
 {
+  this->VolumesModule =
+    qSlicerCoreApplication::application()->moduleManager()->module("Volumes");
+  this->VolumesLogic =
+    this->VolumesModule ?
+      vtkSlicerVolumesLogic::SafeDownCast(VolumesModule->logic()) :
+      0;
+
   this->VolumeRenderingModule =
     qSlicerCoreApplication::application()->moduleManager()->module(
       "VolumeRendering");
@@ -84,6 +94,7 @@ vtkSlicerWorkspaceGenerationLogic::vtkSlicerWorkspaceGenerationLogic()
       "vtkMRMLGPURayCastVolumeRenderingDisplayNode");
   }
 
+  // Models module and logic
   this->ModelsModule =
     qSlicerCoreApplication::application()->moduleManager()->module("Models");
   this->ModelsLogic =
@@ -91,6 +102,7 @@ vtkSlicerWorkspaceGenerationLogic::vtkSlicerWorkspaceGenerationLogic()
       vtkSlicerModelsLogic::SafeDownCast(this->ModelsModule->logic()) :
       0;
 
+  // Markups module and logic
   this->MarkupsModule =
     qSlicerCoreApplication::application()->moduleManager()->module("Markups");
   this->MarkupsLogic =
@@ -98,36 +110,46 @@ vtkSlicerWorkspaceGenerationLogic::vtkSlicerWorkspaceGenerationLogic()
       vtkSlicerMarkupsLogic::SafeDownCast(this->MarkupsModule->logic()) :
       0;
 
+  // Segmentations module and logic
   this->SegmentationsModule =
     qSlicerCoreApplication::application()->moduleManager()->module(
-      "Segmentation");
+      "Segmentations");
   this->SegmentationsLogic = this->SegmentationsModule ?
                                vtkSlicerSegmentationsModuleLogic::SafeDownCast(
                                  this->SegmentationsModule->logic()) :
                                0;
+
+  // CropVolume module and logic
+  this->CropVolumeModule =
+    qSlicerCoreApplication::application()->moduleManager()->module(
+      "CropVolume");
+  this->CropVolumeLogic =
+    this->CropVolumeModule ?
+      vtkSlicerCropVolumeLogic::SafeDownCast(this->CropVolumeModule->logic()) :
+      0;
 }
 
 //----------------------------------------------------------------------------
-vtkSlicerWorkspaceGenerationLogic::~vtkSlicerWorkspaceGenerationLogic()
+vtkSlicerWorkspaceVisualizationLogic::~vtkSlicerWorkspaceVisualizationLogic()
 {
 }
 
 //----------------------------------------------------------------------------
 vtkSlicerVolumeRenderingLogic*
-  vtkSlicerWorkspaceGenerationLogic::getVolumeRenderingLogic()
+  vtkSlicerWorkspaceVisualizationLogic::getVolumeRenderingLogic()
 {
   return this->VolumeRenderingLogic;
 }
 
 //----------------------------------------------------------------------------
 qSlicerAbstractCoreModule*
-  vtkSlicerWorkspaceGenerationLogic::getVolumeRenderingModule()
+  vtkSlicerWorkspaceVisualizationLogic::getVolumeRenderingModule()
 {
   return this->VolumeRenderingModule;
 }
 
 //----------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::setWorkspaceMeshSegmentationDisplayNode(
+void vtkSlicerWorkspaceVisualizationLogic::setWorkspaceMeshSegmentationDisplayNode(
   vtkMRMLSegmentationDisplayNode* workspaceMeshSegmentationDisplayNode)
 {
   if (!workspaceMeshSegmentationDisplayNode)
@@ -141,8 +163,8 @@ void vtkSlicerWorkspaceGenerationLogic::setWorkspaceMeshSegmentationDisplayNode(
 }
 
 //----------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::setWorkspaceGenerationNode(
-  vtkMRMLWorkspaceGenerationNode* wgn)
+void vtkSlicerWorkspaceVisualizationLogic::setWorkspaceVisualizationNode(
+  vtkMRMLWorkspaceVisualizationNode* wgn)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -152,11 +174,11 @@ void vtkSlicerWorkspaceGenerationLogic::setWorkspaceGenerationNode(
     return;
   }
 
-  this->WorkspaceGenerationNode = wgn;
+  this->WorkspaceVisualizationNode = wgn;
 }
 
 //----------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSlicerWorkspaceVisualizationLogic::PrintSelf(ostream& os, vtkIndent indent)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -164,7 +186,7 @@ void vtkSlicerWorkspaceGenerationLogic::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::SetMRMLSceneInternal(
+void vtkSlicerWorkspaceVisualizationLogic::SetMRMLSceneInternal(
   vtkMRMLScene* newScene)
 {
   qInfo() << Q_FUNC_INFO;
@@ -180,7 +202,7 @@ void vtkSlicerWorkspaceGenerationLogic::SetMRMLSceneInternal(
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::RegisterNodes()
+void vtkSlicerWorkspaceVisualizationLogic::RegisterNodes()
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -191,11 +213,11 @@ void vtkSlicerWorkspaceGenerationLogic::RegisterNodes()
   }
 
   this->GetMRMLScene()->RegisterNodeClass(
-    vtkSmartPointer< vtkMRMLWorkspaceGenerationNode >::New());
+    vtkSmartPointer< vtkMRMLWorkspaceVisualizationNode >::New());
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::UpdateFromMRMLScene()
+void vtkSlicerWorkspaceVisualizationLogic::UpdateFromMRMLScene()
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -203,7 +225,7 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateFromMRMLScene()
 }
 
 //------------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::ProcessMRMLNodesEvents(
+void vtkSlicerWorkspaceVisualizationLogic::ProcessMRMLNodesEvents(
   vtkObject* caller, unsigned long event, void* vtkNotUsed(callData))
 {
   qInfo() << Q_FUNC_INFO;
@@ -214,8 +236,8 @@ void vtkSlicerWorkspaceGenerationLogic::ProcessMRMLNodesEvents(
     return;
   }
 
-  vtkMRMLWorkspaceGenerationNode* workspaceGenerationModuleNode =
-    vtkMRMLWorkspaceGenerationNode::SafeDownCast(callerNode);
+  vtkMRMLWorkspaceVisualizationNode* workspaceGenerationModuleNode =
+    vtkMRMLWorkspaceVisualizationNode::SafeDownCast(callerNode);
   if (workspaceGenerationModuleNode == NULL ||
       !workspaceGenerationModuleNode->GetAutoUpdateOutput())
   {
@@ -231,44 +253,44 @@ void vtkSlicerWorkspaceGenerationLogic::ProcessMRMLNodesEvents(
 
   if (event == vtkCommand::ModifiedEvent)
   {
-    this->setWorkspaceGenerationNode(workspaceGenerationModuleNode);
+    this->setWorkspaceVisualizationNode(workspaceGenerationModuleNode);
     this->UpdateVolumeRendering();
   }
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::OnMRMLSceneEndImport()
+void vtkSlicerWorkspaceVisualizationLogic::OnMRMLSceneEndImport()
 {
   qInfo() << Q_FUNC_INFO;
 
   vtkSmartPointer< vtkCollection > workspaceGenerationNodes =
     vtkSmartPointer< vtkCollection >::Take(
-      this->GetMRMLScene()->GetNodesByClass("vtkMRMLWorkspaceGenerationNode"));
+      this->GetMRMLScene()->GetNodesByClass("vtkMRMLWorkspaceVisualizationNode"));
   vtkNew< vtkCollectionIterator > workspaceGenerationNodeIt;
   workspaceGenerationNodeIt->SetCollection(workspaceGenerationNodes);
   for (workspaceGenerationNodeIt->InitTraversal();
        !workspaceGenerationNodeIt->IsDoneWithTraversal();
        workspaceGenerationNodeIt->GoToNextItem())
   {
-    vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
-      vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+    vtkMRMLWorkspaceVisualizationNode* workspaceGenerationNode =
+      vtkMRMLWorkspaceVisualizationNode::SafeDownCast(
         workspaceGenerationNodeIt->GetCurrentObject());
     if (workspaceGenerationNode != NULL)
     {
-      this->setWorkspaceGenerationNode(workspaceGenerationNode);
+      this->setWorkspaceVisualizationNode(workspaceGenerationNode);
       this->UpdateVolumeRendering();
     }
   }
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::OnMRMLSceneStartImport()
+void vtkSlicerWorkspaceVisualizationLogic::OnMRMLSceneStartImport()
 {
   qInfo() << Q_FUNC_INFO;
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::OnMRMLSceneNodeAdded(vtkMRMLNode* node)
+void vtkSlicerWorkspaceVisualizationLogic::OnMRMLSceneNodeAdded(vtkMRMLNode* node)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -278,8 +300,8 @@ void vtkSlicerWorkspaceGenerationLogic::OnMRMLSceneNodeAdded(vtkMRMLNode* node)
     return;
   }
 
-  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
-    vtkMRMLWorkspaceGenerationNode::SafeDownCast(node);
+  vtkMRMLWorkspaceVisualizationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceVisualizationNode::SafeDownCast(node);
   if (workspaceGenerationNode)
   {
     // qDebug() << Q_FUNC_INFO << ": Module node added.";
@@ -293,7 +315,7 @@ void vtkSlicerWorkspaceGenerationLogic::OnMRMLSceneNodeAdded(vtkMRMLNode* node)
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::OnMRMLSceneNodeRemoved(
+void vtkSlicerWorkspaceVisualizationLogic::OnMRMLSceneNodeRemoved(
   vtkMRMLNode* node)
 {
   qInfo() << Q_FUNC_INFO;
@@ -304,18 +326,18 @@ void vtkSlicerWorkspaceGenerationLogic::OnMRMLSceneNodeRemoved(
     return;
   }
 
-  if (node->IsA("vtkSlicerWorkspaceGenerationNode"))
+  if (node->IsA("vtkSlicerWorkspaceVisualizationNode"))
   {
     vtkUnObserveMRMLNodeMacro(node);
   }
 }
 
 //------------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::UpdateVolumeRendering()
+void vtkSlicerWorkspaceVisualizationLogic::UpdateVolumeRendering()
 {
   qInfo() << Q_FUNC_INFO;
 
-  if (this->WorkspaceGenerationNode == NULL)
+  if (this->WorkspaceVisualizationNode == NULL)
   {
     qCritical() << Q_FUNC_INFO
                 << ": No workspaceGenerationNode provided to "
@@ -324,7 +346,7 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateVolumeRendering()
   }
 
   vtkMRMLVolumeNode* inputVolumeNode =
-    this->WorkspaceGenerationNode->GetInputVolumeNode();
+    this->WorkspaceVisualizationNode->GetInputVolumeNode();
   if (inputVolumeNode == NULL)
   {
     qWarning() << Q_FUNC_INFO << ": Input Node is null";
@@ -340,11 +362,11 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateVolumeRendering()
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::UpdateMarkupFiducialNodes()
+void vtkSlicerWorkspaceVisualizationLogic::UpdateMarkupFiducialNodes()
 {
   qInfo() << Q_FUNC_INFO;
 
-  if (this->WorkspaceGenerationNode == NULL)
+  if (this->WorkspaceVisualizationNode == NULL)
   {
     qCritical() << Q_FUNC_INFO
                 << ": No workspaceGenerationNode provided. No operation "
@@ -353,14 +375,14 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateMarkupFiducialNodes()
   }
 
   vtkMRMLMarkupsFiducialNode* entryPoint =
-    this->WorkspaceGenerationNode->GetEntryPointNode();
+    this->WorkspaceVisualizationNode->GetEntryPointNode();
   if (entryPoint != NULL)
   {
     this->PruneExcessMarkups(entryPoint);
   }
 
   vtkMRMLMarkupsFiducialNode* targetPoint =
-    this->WorkspaceGenerationNode->GetTargetPointNode();
+    this->WorkspaceVisualizationNode->GetTargetPointNode();
   if (targetPoint != NULL)
   {
     this->PruneExcessMarkups(targetPoint);
@@ -368,7 +390,7 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateMarkupFiducialNodes()
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::PruneExcessMarkups(
+void vtkSlicerWorkspaceVisualizationLogic::PruneExcessMarkups(
   vtkMRMLMarkupsFiducialNode* mfn)
 {
   qInfo() << Q_FUNC_INFO;
@@ -399,8 +421,8 @@ void vtkSlicerWorkspaceGenerationLogic::PruneExcessMarkups(
 }
 
 //-----------------------------------------------------------------------------
-bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
-  vtkMRMLWorkspaceGenerationNode* wsgn)
+bool vtkSlicerWorkspaceVisualizationLogic::IdentifyBurrHole(
+  vtkMRMLWorkspaceVisualizationNode* wsgn)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -432,6 +454,71 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   double      bAxisLineArr[3];
   vtkMath::Subtract(tp.GetData(), ep.GetData(), bAxisLineArr);
   vtkVector3d bAxisLine = vtkVector3d(bAxisLineArr);
+
+  // Checking if BurrHoleROI node already exists.
+  // TODO: Is this correct - Logic: If ROI exists and EP and TP have moved then
+  // a new ROI should be drawn always?
+
+  // vtkCollection* nodes = this->GetMRMLScene()->GetNodesByName("BurrHoleROI");
+  // qDebug() << Q_FUNC_INFO << ": " << nodes;
+  // if (nodes != nullptr && nodes->GetNumberOfItems() > 0)
+  // {
+  //   qDebug() << Q_FUNC_INFO << ": Entered node removal logic";
+  //   std::vector< std::string > node_ids;
+  //   for (int i = 0; i < nodes->GetNumberOfItems(); i++)
+  //   {
+  //     vtkMRMLNode* node =
+  //     vtkMRMLNode::SafeDownCast(nodes->GetItemAsObject(i));
+  //     node_ids.push_back(node->GetID());
+  //   }
+
+  //   for (const auto& node_id : node_ids)
+  //   {
+  //     qDebug() << Q_FUNC_INFO << ": Removing node with id: " << node_id;
+  //     auto node = this->GetMRMLScene()->GetNodeByID(node_id);
+  //     this->GetMRMLScene()->RemoveNode(node);
+  //   }
+  // }
+
+  qDebug() << Q_FUNC_INFO << ": Cloning input volume";
+  vtkMRMLScalarVolumeNode* scalarVolumeNode =
+    vtkSlicerVolumesLogic::CloneVolume(
+      this->GetMRMLScene(), wsgn->GetInputVolumeNode(), "BurrHoleROI");
+
+  qDebug() << Q_FUNC_INFO << ": Created new segmentation node";
+  vtkMRMLSegmentationNode* burrHoleSegmentationNode =
+    vtkMRMLSegmentationNode::New();
+  qDebug() << Q_FUNC_INFO << ": Set name of segmentation node";
+  burrHoleSegmentationNode->SetName("BurrHoleSegmentation");
+
+  qDebug() << Q_FUNC_INFO << ": Get and Set any dimensions";
+  int* dimensions = scalarVolumeNode->GetImageData()->GetDimensions();
+  int  inputDimensionsWidget[3] = {dimensions[0], dimensions[1], dimensions[2]};
+  auto inputSpacingWidget       = scalarVolumeNode->GetSpacing();
+
+  int    outputExtent[6]  = {0, -1, -0, -1, 0, -1};
+  double outputSpacing[3] = {0};
+
+  qDebug() << Q_FUNC_INFO << ": Create annotationROI node of Drill Bit Size";
+  vtkMRMLAnnotationROINode* annotationROINode = vtkMRMLAnnotationROINode::New();
+  // qDebug() << Q_FUNC_INFO << ": Setting name of annotationROI node";
+  // annotationROINode->SetName("BurrHoleBitROI");
+  qDebug() << Q_FUNC_INFO << ": Setting scale of annotationROI node";
+  annotationROINode->SetROIAnnotationScale(1.0);
+  double ep_Control_point[3] = {ep.GetX(), ep.GetY(), ep.GetZ()};
+  double radius_Control_point[3];
+  for (int i = 0; i < 3; i++)
+  {
+    radius_Control_point[i] = ep_Control_point[i] + 3;
+  }
+  qDebug() << Q_FUNC_INFO
+           << ": Setting center control point of annotationROI node";
+  annotationROINode->SetXYZ(ep_Control_point);
+  qDebug() << Q_FUNC_INFO
+           << ": Setting radius control point of annotationROI node";
+  annotationROINode->SetRadiusXYZ(radius_Control_point);
+  qDebug() << Q_FUNC_INFO << ": Adding annotationROI node to scene";
+  this->GetMRMLScene()->AddNode(annotationROINode);
 
   // Get a ROI of slices from around the EP
   // vtkSmartPointer< vtkExtractVOI > voiHead =
@@ -468,13 +555,14 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   // skinMapper->SetInputConnection(skinStripper->GetOutputPort());
   // skinMapper->ScalarVisibilityOn();
 
+  qDebug() << Q_FUNC_INFO << ": Exiting burr hole identification";
   return true;
 }
 
 // feature: #18 Generate subworkspace given markup points. @FaridTavakol
 //------------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::UpdateSubWorkspace(
-  vtkMRMLWorkspaceGenerationNode* wsgn, bool apriori)
+void vtkSlicerWorkspaceVisualizationLogic::UpdateSubWorkspace(
+  vtkMRMLWorkspaceVisualizationNode* wsgn, bool apriori)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -490,7 +578,7 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSubWorkspace(
 
 //------------------------------------------------------------------------------
 vtkMRMLVolumeNode*
-  vtkSlicerWorkspaceGenerationLogic::RenderVolume(vtkMRMLVolumeNode* volumeNode)
+  vtkSlicerWorkspaceVisualizationLogic::RenderVolume(vtkMRMLVolumeNode* volumeNode)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -528,7 +616,7 @@ vtkMRMLVolumeNode*
   }
 
   this->AnnotationROINode = this->InputVolumeRenderingDisplayNode->GetROINode();
-  this->WorkspaceGenerationNode->SetAndObserveAnnotationROINodeID(
+  this->WorkspaceVisualizationNode->SetAndObserveAnnotationROINodeID(
     this->AnnotationROINode->GetID());
 
   return volumeNode;
@@ -536,7 +624,7 @@ vtkMRMLVolumeNode*
 
 /** ------------------------------- DEPRECATED ---------------------------------
 //------------------------------------------------------------------------------
-bool vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
+bool vtkSlicerWorkspaceVisualizationLogic::LoadWorkspace(
   QString workspaceMeshFilePath)
 {
   qInfo() << Q_FUNC_INFO;
@@ -558,7 +646,7 @@ bool vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
 
 //------------------------------------------------------------------------------
 Eigen::Matrix4d
-  vtkSlicerWorkspaceGenerationLogic::convertToEigenMatrix(vtkMatrix4x4* vtkMat)
+  vtkSlicerWorkspaceVisualizationLogic::convertToEigenMatrix(vtkMatrix4x4* vtkMat)
 {
   Eigen::Matrix4d eigMat;
 
@@ -574,7 +662,7 @@ Eigen::Matrix4d
 }
 
 //------------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
+void vtkSlicerWorkspaceVisualizationLogic::GenerateWorkspace(
   vtkMRMLSegmentationNode* segmentationNode, Probe probe,
   vtkMatrix4x4* registrationMatrix)
 {
@@ -593,7 +681,7 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   vtkSmartPointer< vtkPoints > workspacePointCloud =
     vtkSmartPointer< vtkPoints >::New();
   workspacePointCloud = fk.get_General_Workspace(
-    vtkSlicerWorkspaceGenerationLogic::convertToEigenMatrix(registrationMatrix),
+    vtkSlicerWorkspaceVisualizationLogic::convertToEigenMatrix(registrationMatrix),
     workspacePointCloud);
   vtkSmartPointer< vtkPolyData > polyDataWorkspace =
     vtkSmartPointer< vtkPolyData >::New();
@@ -603,7 +691,7 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   vtkSmartPointer< vtkDelaunay3D > delaunay =
     vtkSmartPointer< vtkDelaunay3D >::New();
   delaunay->SetInputData(polyDataWorkspace);
-  delaunay->SetAlpha(6);
+  delaunay->SetAlpha(5);
   delaunay->SetTolerance(0.3);
   delaunay->SetOffset(5.0);
   delaunay->Update();
@@ -659,22 +747,22 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
 
 //------------------------------------------------------------------------------
 vtkMRMLSegmentationNode*
-  vtkSlicerWorkspaceGenerationLogic::getWorkspaceMeshSegmentationNode()
+  vtkSlicerWorkspaceVisualizationLogic::getWorkspaceMeshSegmentationNode()
 {
   qInfo() << Q_FUNC_INFO;
 
   if (!this->WorkspaceMeshSegmentationNode &&
-      !WorkspaceGenerationNode->GetWorkspaceMeshSegmentationNode())
+      !WorkspaceVisualizationNode->GetWorkspaceMeshSegmentationNode())
   {
     qCritical() << Q_FUNC_INFO << ": No workspace mesh model node available";
     return NULL;
   }
 
   if (this->WorkspaceMeshSegmentationNode !=
-      this->WorkspaceGenerationNode->GetWorkspaceMeshSegmentationNode())
+      this->WorkspaceVisualizationNode->GetWorkspaceMeshSegmentationNode())
   {
     this->WorkspaceMeshSegmentationNode =
-      this->WorkspaceGenerationNode->GetWorkspaceMeshSegmentationNode();
+      this->WorkspaceVisualizationNode->GetWorkspaceMeshSegmentationNode();
   }
 
   return this->WorkspaceMeshSegmentationNode;
@@ -682,21 +770,21 @@ vtkMRMLSegmentationNode*
 
 //------------------------------------------------------------------------------
 vtkMRMLVolumeRenderingDisplayNode*
-  vtkSlicerWorkspaceGenerationLogic::getCurrentInputVolumeRenderingDisplayNode()
+  vtkSlicerWorkspaceVisualizationLogic::getCurrentInputVolumeRenderingDisplayNode()
 {
   return this->InputVolumeRenderingDisplayNode;
 }
 
 //------------------------------------------------------------------------------
-vtkMRMLSegmentationDisplayNode* vtkSlicerWorkspaceGenerationLogic::
+vtkMRMLSegmentationDisplayNode* vtkSlicerWorkspaceVisualizationLogic::
   getCurrentWorkspaceMeshSegmentationDisplayNode()
 {
   return this->WorkspaceMeshSegmentationDisplayNode;
 }
 
 //------------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::UpdateSelectionNode(
-  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode)
+void vtkSlicerWorkspaceVisualizationLogic::UpdateSelectionNode(
+  vtkMRMLWorkspaceVisualizationNode* workspaceGenerationNode)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -706,13 +794,13 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSelectionNode(
     return;
   }
 
-  if (this->WorkspaceGenerationNode != workspaceGenerationNode)
+  if (this->WorkspaceVisualizationNode != workspaceGenerationNode)
   {
-    this->WorkspaceGenerationNode = workspaceGenerationNode;
+    this->WorkspaceVisualizationNode = workspaceGenerationNode;
   }
 
   vtkMRMLVolumeNode* inputVolumeNode =
-    this->WorkspaceGenerationNode->GetInputVolumeNode();
+    this->WorkspaceVisualizationNode->GetInputVolumeNode();
 
   if (inputVolumeNode == NULL)
   {
@@ -721,7 +809,7 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSelectionNode(
   }
 
   vtkMRMLSegmentationNode* workspaceMeshNode =
-    this->WorkspaceGenerationNode->GetWorkspaceMeshSegmentationNode();
+    this->WorkspaceVisualizationNode->GetWorkspaceMeshSegmentationNode();
   if (workspaceMeshNode == NULL)
   {
     qWarning() << Q_FUNC_INFO << ": Workspace Mesh Node is null";
@@ -729,9 +817,9 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSelectionNode(
   }
 
   vtkMRMLMarkupsFiducialNode* entryPoint =
-    this->WorkspaceGenerationNode->GetEntryPointNode();
+    this->WorkspaceVisualizationNode->GetEntryPointNode();
   vtkMRMLMarkupsFiducialNode* targetPoint =
-    this->WorkspaceGenerationNode->GetTargetPointNode();
+    this->WorkspaceVisualizationNode->GetTargetPointNode();
   if (!entryPoint || !targetPoint)
   {
     qWarning() << Q_FUNC_INFO << ": Entry or Target Points are null";
