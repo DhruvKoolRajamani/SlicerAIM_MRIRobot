@@ -8,6 +8,9 @@
  *
  */
 
+#ifndef NEUROROBOTKINEMATICS_HPP_
+#define NEUROROBOTKINEMATICS_HPP_
+
 #include <NeuroKinematics/NeuroKinematics.hpp>
 #include <eigen3/Eigen/Core>
 #include <map>
@@ -44,3 +47,5 @@ private:
   int NumberOfJoints;
   int SolverType;
 };
+
+#endif  // NEUROROBOTKINEMATICS_HPP_

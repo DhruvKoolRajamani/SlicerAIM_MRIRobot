@@ -1,3 +1,13 @@
+/**
+ * @file vtkSlicerWorkspaceVisualizationLogic.h
+ * @author Dhruv Kool Rajamani (dkoolrajamani@wpi.edu)
+ * @brief
+ * @version 0.1
+ * @date 2021-01-20
+ *
+ *
+ */
+
 /*==============================================================================
 
   Program: 3D Slicer
@@ -85,7 +95,7 @@
 #include <eigen3/Eigen/Core>
 
 // Neurorobot includes
-#include "NeuroKinematics/ForwardKinematics.h"
+#include "WorkspaceVisualization.h"
 
 // Isosurface creation
 #include <vtkContourFilter.h>
@@ -101,7 +111,7 @@ class vtkMRMLSegmentationNode;
 class vtkPolyData;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class VTK_SLICER_WORKSPACEGENERATION_MODULE_LOGIC_EXPORT
+class VTK_SLICER_WORKSPACEVISUALIZATION_MODULE_LOGIC_EXPORT
   vtkSlicerWorkspaceVisualizationLogic : public vtkSlicerModuleLogic
 {
 public:

@@ -30,7 +30,7 @@ Inc. and was partially funded by NIH grant 3P41RR013218-12S1
 class qSlicerWorkspaceVisualizationMarkupsFiducialsWidgetPrivate;
 
 /// \ingroup Slicer_QtModules_WorkspaceVisualization
-class Q_SLICER_MODULE_WORKSPACEGENERATION_WIDGETS_EXPORT
+class Q_SLICER_MODULE_WORKSPACEVISUALIZATION_WIDGETS_EXPORT
   qSlicerWorkspaceVisualizationMarkupsFiducialsWidget : public QWidget
 {
   Q_OBJECT

@@ -96,7 +96,7 @@ private:
   vtkMRMLModelNode* _drill_bit;
 };
 
-class VTK_SLICER_WORKSPACEGENERATION_MODULE_MRML_EXPORT
+class VTK_SLICER_WORKSPACEVISUALIZATION_MODULE_MRML_EXPORT
   vtkMRMLWorkspaceVisualizationNode : public vtkMRMLNode
 {
 public:

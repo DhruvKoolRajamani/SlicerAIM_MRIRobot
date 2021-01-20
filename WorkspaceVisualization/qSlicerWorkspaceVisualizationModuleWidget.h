@@ -51,7 +51,7 @@
 #include <vtkMRMLVolumeNode.h>
 
 // Neurorobot includes
-#include "NeuroKinematics/ForwardKinematics.h"
+#include "Logic/WorkspaceVisualization.h"
 
 class qSlicerWorkspaceVisualizationModuleWidgetPrivate;
 class vtkMRMLNode;
@@ -76,7 +76,7 @@ struct ProbeSpecifications
 };
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class Q_SLICER_QTMODULES_WORKSPACEGENERATION_EXPORT
+class Q_SLICER_QTMODULES_WORKSPACEVISUALIZATION_EXPORT
   qSlicerWorkspaceVisualizationModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT

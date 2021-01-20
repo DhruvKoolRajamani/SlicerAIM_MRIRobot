@@ -30,7 +30,7 @@ Inc. and was partially funded by NIH grant 3P41RR013218-12S1
 class qSlicerWorkspaceVisualizationProbeSpecsHelpWidgetPrivate;
 
 /// \ingroup Slicer_QtModules_WorkspaceVisualization
-class Q_SLICER_MODULE_WORKSPACEGENERATION_WIDGETS_EXPORT
+class Q_SLICER_MODULE_WORKSPACEVISUALIZATION_WIDGETS_EXPORT
   qSlicerWorkspaceVisualizationProbeSpecsHelpWidget : public QWidget
 {
   Q_OBJECT
@@ -42,7 +42,8 @@ public:
 protected slots:
 
 protected:
-  QScopedPointer< qSlicerWorkspaceVisualizationProbeSpecsHelpWidgetPrivate > d_ptr;
+  QScopedPointer< qSlicerWorkspaceVisualizationProbeSpecsHelpWidgetPrivate >
+    d_ptr;
 
 private:
   Q_DECLARE_PRIVATE(qSlicerWorkspaceVisualizationProbeSpecsHelpWidget);

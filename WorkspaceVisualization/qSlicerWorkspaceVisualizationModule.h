@@ -26,7 +26,7 @@
 class qSlicerWorkspaceVisualizationModulePrivate;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class Q_SLICER_QTMODULES_WORKSPACEGENERATION_EXPORT
+class Q_SLICER_QTMODULES_WORKSPACEVISUALIZATION_EXPORT
   qSlicerWorkspaceVisualizationModule : public qSlicerLoadableModule
 {
   Q_OBJECT
@@ -42,8 +42,8 @@ public:
 
   qSlicerGetTitleMacro(QTMODULE_TITLE);
 
-  virtual QString helpText() const;
-  virtual QString acknowledgementText() const;
+  virtual QString     helpText() const;
+  virtual QString     acknowledgementText() const;
   virtual QStringList contributors() const;
 
   virtual QIcon icon() const;

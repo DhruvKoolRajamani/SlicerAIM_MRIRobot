@@ -105,7 +105,7 @@ QIcon qSlicerWorkspaceVisualizationModule::icon() const
 //-----------------------------------------------------------------------------
 QStringList qSlicerWorkspaceVisualizationModule::categories() const
 {
-  return QStringList() << "MRIRobot";
+  return QStringList() << "SlicerRIGT";
 }
 
 //-----------------------------------------------------------------------------
@@ -126,7 +126,7 @@ void qSlicerWorkspaceVisualizationModule::setup()
 qSlicerAbstractModuleRepresentation*
   qSlicerWorkspaceVisualizationModule ::createWidgetRepresentation()
 {
-  vtkInfoMacro("Creating new Workspace Generation Module Widget");
+  vtkInfoMacro("Creating new WorkspaceVisualization Module Widget");
   return new qSlicerWorkspaceVisualizationModuleWidget;
 }
 

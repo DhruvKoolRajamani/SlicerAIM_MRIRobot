@@ -24,6 +24,8 @@ set(${KIT}_INCLUDE_DIRECTORIES
 set(${KIT}_SRCS
   vtkSlicer${MODULE_NAME}Logic.cxx
   vtkSlicer${MODULE_NAME}Logic.h
+  ${MODULE_NAME}.cxx
+  ${MODULE_NAME}.h
   )
 
 set(${KIT}_TARGET_LIBRARIES
@@ -39,7 +41,7 @@ set(${KIT}_TARGET_LIBRARIES
   vtkSlicerCropVolumeModuleLogic
   vtkSlicerVolumesModuleLogic
   # utilities
-  NeuroKinematics
+  NeuroRobotKinematics
   )
 
 #-----------------------------------------------------------------------------

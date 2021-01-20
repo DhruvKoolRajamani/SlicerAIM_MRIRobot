@@ -1,4 +1,14 @@
-#include "NeuroKinematics/ForwardKinematics.h"
+/**
+ * @file WorkspaceVisualization.cxx
+ * @author Dhruv Kool Rajamani (dkoolrajamani@wpi.edu)
+ * @brief
+ * @version 0.1
+ * @date 2021-01-20
+ *
+ *
+ */
+
+#include "WorkspaceVisualization.h"
 using std::endl;
 using std::ofstream;
 
@@ -9,40 +19,40 @@ using std::ofstream;
 // treatment distance,// D = 41mm Creating an object called Forward for FK In
 // the neuroRobot.cpp the specs for the  probe are: 0,0,5,41
 
-ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
+WorkspaceVisualization::WorkspaceVisualization(NeuroKinematics& NeuroKinematics)
   : Diff(68), pi(3.141)
 {
   // counters
-  i = 0.0;
-  j = 0.0;
-  k = 0.0;
-  l = 0.0;
-  ii = 0.0;
+  i       = 0.0;
+  j       = 0.0;
+  k       = 0.0;
+  l       = 0.0;
+  ii      = 0.0;
   counter = 0;
   // Min allowed seperation 75mm
   // Max allowed seperatio1f46mm
-  Ry = 0.0;                    // Initializing the PitchRotation counter
-  RyF_max = -37.0 * pi / 180;  // in paper is 37.2
+  Ry             = 0.0;               // Initializing the PitchRotation counter
+  RyF_max        = -37.0 * pi / 180;  // in paper is 37.2
   RyF_max_degree = -37.0;
-  RyB_max = +26.0 * pi / 180;  // in paper is  30.6
+  RyB_max        = +26.0 * pi / 180;  // in paper is  30.6
   RyB_max_degree = 26.0;
-  Rx = 0.0;                   // Initializing the YawRotation counter
-  Rx_max = -88.0 * pi / 180;  // Max YawRotation
-  Rx_max_degree = -88.0;
+  Rx             = 0.0;               // Initializing the YawRotation counter
+  Rx_max         = -88.0 * pi / 180;  // Max YawRotation
+  Rx_max_degree  = -88.0;
   // Robot axis
   AxialHeadTranslation = 0.0;
   AxialFeetTranslation = 0.0;
-  LateralTranslation = 0.0;
-  PitchRotation = 0.0;
-  YawRotation = 0.0;
-  ProbeInsertion = 0.0;
-  ProbeRotation = 0.0;
+  LateralTranslation   = 0.0;
+  PitchRotation        = 0.0;
+  YawRotation          = 0.0;
+  ProbeInsertion       = 0.0;
+  ProbeRotation        = 0.0;
 
   NeuroKinematics_ = NeuroKinematics;
   std::cout << "Constructor Called\n";
 }
 
-vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
+vtkSmartPointer< vtkPoints > WorkspaceVisualization::get_General_Workspace(
   Eigen::Matrix4d registration, vtkSmartPointer< vtkPoints > points)
 {
   // To visualize the transferred points in the slicer without using the
@@ -56,7 +66,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
 
   // Object containing the 4x4 transformation matrix
   Neuro_FK_outputs FK{};
-  ofstream myout("General_workspace.xyz");
+  ofstream         myout("General_workspace.xyz");
   /*============================================================================================================
      =============================================FK
      computation============================================
@@ -77,7 +87,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
                                                        // -49)
     {
       LateralTranslation = k;
-      FK = NeuroKinematics_.ForwardKinematics(
+      FK                 = NeuroKinematics_.ForwardKinematics(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
       nan_checker(FK, counter);
@@ -102,9 +112,9 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
       if (k >= -28 - 49.0)
       {
 
-        YawRotation = Rx_max;
+        YawRotation   = Rx_max;
         PitchRotation = RyB_max;
-        FK = NeuroKinematics_.ForwardKinematics(
+        FK            = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
         nan_checker(FK, counter);
@@ -117,9 +127,9 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
       }
       if (k <= -7 - 49.0)
       {
-        YawRotation = Rx_max;
+        YawRotation   = Rx_max;
         PitchRotation = RyF_max;
-        FK = NeuroKinematics_.ForwardKinematics(
+        FK            = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
         nan_checker(FK, counter);
@@ -133,8 +143,8 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
     }
   }
 
-  YawRotation = 0;
-  PitchRotation = 0;
+  YawRotation          = 0;
+  PitchRotation        = 0;
   AxialFeetTranslation = -3;
   AxialHeadTranslation = 0;
 
@@ -158,7 +168,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
             for (ii = 0; ii >= Rx_max_degree; ii += Rx_max_degree / 10)
             {
               YawRotation = ii * pi / 180;
-              FK = NeuroKinematics_.ForwardKinematics(
+              FK          = NeuroKinematics_.ForwardKinematics(
                 AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
                 ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
               nan_checker(FK, counter);
@@ -180,7 +190,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
             for (ii = 0; ii >= Rx_max_degree; ii += Rx_max_degree / 10)
             {
               YawRotation = ii * pi / 180;
-              FK = NeuroKinematics_.ForwardKinematics(
+              FK          = NeuroKinematics_.ForwardKinematics(
                 AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
                 ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
               nan_checker(FK, counter);
@@ -200,8 +210,8 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
                l += Rx_max_degree / 8.8)
           {
             PitchRotation = 0;
-            YawRotation = l * pi / 180;
-            FK = NeuroKinematics_.ForwardKinematics(
+            YawRotation   = l * pi / 180;
+            FK            = NeuroKinematics_.ForwardKinematics(
               AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
               ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
             nan_checker(FK, counter);
@@ -223,7 +233,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
                                                       // lowered pitch lowering
           {
             PitchRotation = l * pi / 180;
-            FK = NeuroKinematics_.ForwardKinematics(
+            FK            = NeuroKinematics_.ForwardKinematics(
               AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
               ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
             nan_checker(FK, counter);
@@ -244,7 +254,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
                                                       // increasing
           {
             PitchRotation = l * pi / 180;
-            FK = NeuroKinematics_.ForwardKinematics(
+            FK            = NeuroKinematics_.ForwardKinematics(
               AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
               ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
             nan_checker(FK, counter);
@@ -259,9 +269,9 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
 
         else  // Space between two corners
         {
-          YawRotation = Rx_max;
+          YawRotation   = Rx_max;
           PitchRotation = 0;
-          FK = NeuroKinematics_.ForwardKinematics(
+          FK            = NeuroKinematics_.ForwardKinematics(
             AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
             ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
           nan_checker(FK, counter);
@@ -275,8 +285,8 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
       }
     }
   }
-  YawRotation = 0;
-  PitchRotation = 0;
+  YawRotation          = 0;
+  PitchRotation        = 0;
   AxialFeetTranslation = -89;
   AxialHeadTranslation = -86;
 
@@ -293,7 +303,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
       for (i = 0; i >= Rx_max_degree; i -= 8.8)
       {
         YawRotation = i * pi / 180;
-        FK = NeuroKinematics_.ForwardKinematics(
+        FK          = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
         nan_checker(FK, counter);
@@ -311,7 +321,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
       for (i = 0; i >= Rx_max_degree; i -= 8.8)
       {
         YawRotation = i * pi / 180;
-        FK = NeuroKinematics_.ForwardKinematics(
+        FK          = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
         nan_checker(FK, counter);
@@ -325,7 +335,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
     }
   }
 
-  YawRotation = 0;
+  YawRotation   = 0;
   PitchRotation = 0;
   ++counter;
   // Feet face for levels other than the first
@@ -340,8 +350,8 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
       if (k >= -28 - 49.0)
       {
         PitchRotation = RyB_max;
-        YawRotation = 0;
-        FK = NeuroKinematics_.ForwardKinematics(
+        YawRotation   = 0;
+        FK            = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
         nan_checker(FK, counter);
@@ -355,8 +365,8 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
       if (k <= -7 - 49.0)
       {
         PitchRotation = RyF_max;
-        YawRotation = 0;
-        FK = NeuroKinematics_.ForwardKinematics(
+        YawRotation   = 0;
+        FK            = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
         nan_checker(FK, counter);
@@ -374,9 +384,9 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
   ++counter;
   AxialFeetTranslation = -3;
   AxialHeadTranslation = 0;
-  LateralTranslation = 0;
-  YawRotation = 0;
-  PitchRotation = 0;
+  LateralTranslation   = 0;
+  YawRotation          = 0;
+  PitchRotation        = 0;
   double AxialHeadTranslation_old{};
   double AxialFeetTranslation_old{};
   double min_travel{-86};  // The max that the robot can move in z direction
@@ -422,7 +432,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
               for (i = 0; i > Rx_max_degree; i += Rx_max_degree / 10)
               {
                 YawRotation = i * pi / 180;
-                FK = NeuroKinematics_.ForwardKinematics(
+                FK          = NeuroKinematics_.ForwardKinematics(
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
@@ -441,7 +451,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
             else if (ii == min_travel)
             {
               YawRotation = 0;
-              FK = NeuroKinematics_.ForwardKinematics(
+              FK          = NeuroKinematics_.ForwardKinematics(
                 AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
                 ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
               nan_checker(FK, counter);
@@ -459,7 +469,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
               for (i = 0; i > Rx_max_degree; i += Rx_max_degree / 10)
               {
                 YawRotation = i * pi / 180;
-                FK = NeuroKinematics_.ForwardKinematics(
+                FK          = NeuroKinematics_.ForwardKinematics(
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
@@ -486,7 +496,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
                    l += RyB_max_degree / 5)
               {
                 PitchRotation = l * pi / 180;
-                YawRotation = 0;
+                YawRotation   = 0;
 
                 FK = NeuroKinematics_.ForwardKinematics(
                   AxialHeadTranslation, AxialFeetTranslation,
@@ -516,7 +526,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
               for (i = 0; i > Rx_max_degree; i += Rx_max_degree / 10)
               {
                 YawRotation = i * pi / 180;
-                FK = NeuroKinematics_.ForwardKinematics(
+                FK          = NeuroKinematics_.ForwardKinematics(
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
@@ -538,7 +548,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
               for (i = 0; i >= Rx_max_degree; i += Rx_max_degree / 10)
               {
                 YawRotation = i * pi / 180;
-                FK = NeuroKinematics_.ForwardKinematics(
+                FK          = NeuroKinematics_.ForwardKinematics(
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
@@ -570,7 +580,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
               for (i = 0; i > Rx_max_degree; i += Rx_max_degree / 11)
               {
                 YawRotation = i * pi / 180;
-                FK = NeuroKinematics_.ForwardKinematics(
+                FK          = NeuroKinematics_.ForwardKinematics(
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
@@ -589,7 +599,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
             else if (ii == min_travel)
             {
               YawRotation = 0;
-              FK = NeuroKinematics_.ForwardKinematics(
+              FK          = NeuroKinematics_.ForwardKinematics(
                 AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
                 ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
               nan_checker(FK, counter);
@@ -607,7 +617,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
               for (i = 0; i > Rx_max_degree; i += Rx_max_degree / 10)
               {
                 YawRotation = i * pi / 180;
-                FK = NeuroKinematics_.ForwardKinematics(
+                FK          = NeuroKinematics_.ForwardKinematics(
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
@@ -634,7 +644,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
                    l += RyF_max_degree / 3)
               {
                 PitchRotation = l * pi / 180;
-                YawRotation = 0;
+                YawRotation   = 0;
 
                 FK = NeuroKinematics_.ForwardKinematics(
                   AxialHeadTranslation, AxialFeetTranslation,
@@ -664,7 +674,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
               for (i = 0; i > Rx_max_degree; i += Rx_max_degree / 10)
               {
                 YawRotation = i * pi / 180;
-                FK = NeuroKinematics_.ForwardKinematics(
+                FK          = NeuroKinematics_.ForwardKinematics(
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
@@ -686,7 +696,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
               for (i = 0; i >= Rx_max_degree; i += Rx_max_degree / 10)
               {
                 YawRotation = i * pi / 180;
-                FK = NeuroKinematics_.ForwardKinematics(
+                FK          = NeuroKinematics_.ForwardKinematics(
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
@@ -711,14 +721,14 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_General_Workspace(
     // resetting the location of the Axial Head and Feet to the home position
     AxialHeadTranslation = 0;
     AxialFeetTranslation = -3;
-    min_travel = -86;
+    min_travel           = -86;
   }
   std::cout << "# of points: " << points->GetNumberOfPoints();
   myout.close();
   return points;
 }
 
-vtkSmartPointer< vtkPoints > ForwardKinematics::get_Sub_Workspace(
+vtkSmartPointer< vtkPoints > WorkspaceVisualization::get_Sub_Workspace(
   Eigen::Matrix4d registration, Eigen::Vector4d entryPointScanner)
 {
   // Create points.
@@ -729,11 +739,11 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_Sub_Workspace(
   //--------------------------------------------------------
   AxialHeadTranslation = 0.0;
   AxialFeetTranslation = 0.0;
-  LateralTranslation = 0.0;
-  PitchRotation = 0.0;
-  YawRotation = 0.0;
-  ProbeInsertion = 31.5;
-  ProbeRotation = 0.0;
+  LateralTranslation   = 0.0;
+  PitchRotation        = 0.0;
+  YawRotation          = 0.0;
+  ProbeInsertion       = 31.5;
+  ProbeRotation        = 0.0;
   // loop for visualizing the bottom
   double i{}, j{}, k{}, l{};                      // initializing the counters
   for (i = 0, j = 0; i < 87; i += 8.6, j += 8.6)  // 75
@@ -743,7 +753,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_Sub_Workspace(
     for (k = 0; k <= 37.5; k += 7.5)
     {
       LateralTranslation = k;
-      FK = NeuroKinematics_.ForwardKinematics(
+      FK                 = NeuroKinematics_.ForwardKinematics(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
       points_RCM->InsertNextPoint(FK.zFrameToTreatment(0, 3),
@@ -760,7 +770,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_Sub_Workspace(
     for (k = 0; k <= 37.5; k += 7.5)
     {
       LateralTranslation = k;
-      FK = NeuroKinematics_.ForwardKinematics(
+      FK                 = NeuroKinematics_.ForwardKinematics(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
       points_RCM->InsertNextPoint(FK.zFrameToTreatment(0, 3),
@@ -784,7 +794,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_Sub_Workspace(
     for (k = 0; k <= 37.5; k += 7.5)
     {
       LateralTranslation = k;
-      FK = NeuroKinematics_.ForwardKinematics(
+      FK                 = NeuroKinematics_.ForwardKinematics(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
       points_RCM->InsertNextPoint(FK.zFrameToTreatment(0, 3),
@@ -796,11 +806,11 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_Sub_Workspace(
   // Loop for creating the Head face
   AxialHeadTranslation = 86;
   AxialFeetTranslation = 86;
-  nan_checker_row = 0;
-  nan_checker_col = 0;
-  i = 86;
-  j = 86;
-  k = 0;
+  nan_checker_row      = 0;
+  nan_checker_col      = 0;
+  i                    = 86;
+  j                    = 86;
+  k                    = 0;
 
   for (i = 87; Diff > abs(AxialHeadTranslation - AxialFeetTranslation); i += 2)
   {
@@ -808,7 +818,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_Sub_Workspace(
     for (k = 0; k <= 37.5; k += 7.5)
     {
       LateralTranslation = k;
-      FK = NeuroKinematics_.ForwardKinematics(
+      FK                 = NeuroKinematics_.ForwardKinematics(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
       points_RCM->InsertNextPoint(FK.zFrameToTreatment(0, 3),
@@ -820,12 +830,12 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_Sub_Workspace(
   // loop for creating the sides
   AxialFeetTranslation = 0;
   AxialHeadTranslation = 0;
-  LateralTranslation = 0;
-  nan_checker_row = 0;
-  nan_checker_col = 0;
-  i = 0;
-  j = -1;
-  k = 0;
+  LateralTranslation   = 0;
+  nan_checker_row      = 0;
+  nan_checker_col      = 0;
+  i                    = 0;
+  j                    = -1;
+  k                    = 0;
 
   // double jj{};
   double min_travel{86};
@@ -844,7 +854,7 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_Sub_Workspace(
       for (k = 0; k <= 37.5; k += 37.5)
       {
         LateralTranslation = k;
-        FK = NeuroKinematics_.ForwardKinematics(
+        FK                 = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
         points_RCM->InsertNextPoint(FK.zFrameToTreatment(0, 3),
@@ -854,18 +864,18 @@ vtkSmartPointer< vtkPoints > ForwardKinematics::get_Sub_Workspace(
     }
     AxialHeadTranslation = 0;
     AxialFeetTranslation = 0;
-    LateralTranslation = 0;
+    LateralTranslation   = 0;
   }
 
   return points_RCM;
 }
 
 // Method to search for NaN values in the FK output
-void ForwardKinematics::nan_checker(Neuro_FK_outputs FK, int& counter)
+void WorkspaceVisualization::nan_checker(Neuro_FK_outputs FK, int& counter)
 {
   bool Flag{false};
-  int nan_checker_row{};
-  int nan_checker_col{};
+  int  nan_checker_row{};
+  int  nan_checker_col{};
   for (nan_checker_row = 0; nan_checker_row < 4; ++nan_checker_row)  // Loop for
                                                                      // checking
                                                                      // NaN
@@ -897,7 +907,7 @@ void ForwardKinematics::nan_checker(Neuro_FK_outputs FK, int& counter)
   }
 }
 
-Eigen::Vector4d ForwardKinematics::get_Transform(
+Eigen::Vector4d WorkspaceVisualization::get_Transform(
   Eigen::Matrix4d registration_inv, Neuro_FK_outputs FK)
 {
   // Vector that stores the End effector's position defined in the robot's
