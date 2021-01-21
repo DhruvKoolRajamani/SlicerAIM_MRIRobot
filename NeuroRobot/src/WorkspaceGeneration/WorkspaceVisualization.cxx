@@ -689,7 +689,8 @@ vtkSmartPointer< vtkPoints >
   return points;
 }
 
-// Method to Create the RCM surface mesh for RCM visualization
+// Method to Create the RCM surface mesh for RCM visualization.
+
 vtkSmartPointer< vtkPoints >
   ForwardKinematics::GetRcmWorkSpace(vtkSmartPointer< vtkPoints > points)
 {
