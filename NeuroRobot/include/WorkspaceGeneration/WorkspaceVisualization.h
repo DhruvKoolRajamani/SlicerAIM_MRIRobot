@@ -36,26 +36,42 @@ public:
   NeuroKinematics NeuroKinematics_;
 
   // methods
-  vtkSmartPointer< vtkPoints > get_General_Workspace(
+
+  // Method to calculate the Point cloud for the suface of the WS
+  vtkSmartPointer< vtkPoints >
+    GetGeneralWorkspace(vtkSmartPointer< vtkPoints > points);
+
+  // Method to calculate the Point cloud for the suface of the RCM
+  vtkSmartPointer< vtkPoints > GetRcmWorkSpace(
     Eigen::Matrix4d registration, vtkSmartPointer< vtkPoints > points);
-  vtkSmartPointer< vtkPoints > get_RCM_Workspace(
-    Eigen::Matrix4d registration, vtkSmartPointer< vtkPoints > points);
-  Eigen::Matrix3Xf get_RCM_PC(Eigen::Matrix4d registration);
-  Eigen::Matrix3Xf get_SubWorkspace(Eigen::Matrix3Xf RCM_PC,
-                                    Eigen::Vector3d  EP_inImagerCoordinate,
-                                    Eigen::Matrix4d  registration,
-                                    double           probe_init);
-  Eigen::Vector4d  get_Transform(Eigen::Matrix4d  registration_inv,
-                                 Neuro_FK_outputs FK);
-  void             calc_Transform(Eigen::Matrix4d  registration_inv,
-                                  Eigen::Vector3d  EP_inImagerCoordinate,
-                                  Eigen::Vector3d& EP_inRobotCoordinate);
-  void             store_Point(Eigen::Matrix3Xf& RCM_Point_cloud,
-                               Eigen::Vector4d& transferred_Point, int counter);
-  bool             check_Sphere(Eigen::Vector3d EP_inRobotCoordinate,
-                                Eigen::Vector3f RCM_point, double probe_init);
-  Eigen::Matrix3Xf get_PointCloud_IK(Eigen::Matrix3Xf Validated_PC,
-                                     Eigen::Vector3d  EP_inRobotCoordinate);
-  Eigen::Matrix3Xf create_3D_Mesh(Eigen::Matrix3Xf Sub_Workspace_RCM,
-                                  Eigen::Vector3d  EP_inRobotCoordinate);
+
+  // Method to generate a point set from the RCM WS
+  Eigen::Matrix3Xf GetRcmPointCloud(Eigen::Matrix4d registration);
+
+  // Method to return a point set based on a given EP
+  Eigen::Matrix3Xf GetSubWorkspace(Eigen::Vector3d ep_in_imager_coordinate,
+                                   Eigen::Matrix4d registration,
+                                   double          probe_init);
+
+  void StorePoints(Eigen::Matrix3Xf& rcm_point_cloud,
+                   Eigen::Vector4d& transferred_point, int counter);
+
+  bool CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
+                   Eigen::Vector3f rcm_point, double probe_init);
+
+  Eigen::Matrix3Xf GetPointCloudInverseKinematics(
+    Eigen::Matrix3Xf validated_pc, Eigen::Vector3d ep_in_robot_coordinate);
+
+  Eigen::Matrix3Xf Create3DMesh(Eigen::Matrix3Xf subworkspace_rcm,
+                                Eigen::Vector3d  ep_in_robot_coordinate);
+
+  Eigen::Vector3d
+    ExtractPositionVectorFrom4X4Matrix(Eigen::Matrix4d transformation_matrix);
+
+  void CalcTransform(Eigen::Matrix4d  registration_inv,
+                     Eigen::Vector3d  ep_in_imager_coordinate,
+                     Eigen::Vector3d& ep_in_robot_coordinate);
+
+  Eigen::Vector4d GetTransform(Eigen::Matrix4d  registration_inv,
+                               Neuro_FK_outputs forward_kinematic);
 };
