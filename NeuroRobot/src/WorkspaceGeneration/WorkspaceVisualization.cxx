@@ -1056,7 +1056,7 @@ Eigen::Matrix3Xf
   return Point_cloud;
 }
 
-// Method to return a point set based on a given EP.
+// Method to return a point set based on a given EP
 Eigen::Matrix3Xf ForwardKinematics::GetSubWorkspace(
   Eigen::Vector3d ep_in_imager_coordinate, Eigen::Matrix4d registration,
   double probe_init)
