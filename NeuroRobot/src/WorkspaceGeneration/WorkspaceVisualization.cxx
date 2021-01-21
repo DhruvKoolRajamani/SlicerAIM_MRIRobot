@@ -869,7 +869,7 @@ vtkSmartPointer< vtkPoints >
   return points;
 }
 
-// Method to create a point set containing all RCM points.
+// Method to create a point set containing all RCM points
 Eigen::Matrix3Xf
   ForwardKinematics::GetRcmPointCloud(Eigen::Matrix4d registration)
 {  // To visualize the transferred points in the slicer without using the
