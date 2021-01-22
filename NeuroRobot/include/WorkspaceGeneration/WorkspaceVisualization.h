@@ -38,19 +38,16 @@ public:
   // methods
 
   // Method to calculate the Point cloud for the suface of the WS
-  vtkSmartPointer< vtkPoints >
-    GetGeneralWorkspace(vtkSmartPointer< vtkPoints > points);
+  Eigen::Matrix3Xf GetGeneralWorkspace();
 
   // Method to calculate the Point cloud for the suface of the RCM
-  vtkSmartPointer< vtkPoints > GetRcmWorkSpace(
-    Eigen::Matrix4d registration, vtkSmartPointer< vtkPoints > points);
+  Eigen::Matrix3Xf GetRcmWorkSpace();
 
   // Method to generate a point set from the RCM WS.
-  Eigen::Matrix3Xf GetRcmPointCloud(Eigen::Matrix4d registration);
+  Eigen::Matrix3Xf GetRcmPointCloud();
 
   // Method to return a point set based on a given EP.
   Eigen::Matrix3Xf GetSubWorkspace(Eigen::Vector3d ep_in_imager_coordinate,
-                                   Eigen::Matrix4d registration,
                                    double          probe_init);
 
   void StorePoints(Eigen::Matrix3Xf& rcm_point_cloud,

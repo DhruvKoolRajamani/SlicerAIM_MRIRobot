@@ -1,6 +1,5 @@
 #include "../../include/WorkspaceGeneration/WorkspaceVisualization.h"
 using std::endl;
-using std::ofstream;
 
 // A is treatment to tip, where treatment is the piezoelectric element,// A =
 // 10mm B is robot to entry, this allows us to specify how close to the patient
@@ -9,7 +8,6 @@ using std::ofstream;
 // treatment distance,// D = 41mm Creating an object called Forward for FK In
 // the neuroRobot.cpp the specs for the  probe are: 0,0,5,41
 
-// Constructor
 ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   : Diff(68), pi(3.141)
 {
@@ -42,34 +40,21 @@ ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   NeuroKinematics_ = NeuroKinematics;
 }
 
-// Method to Create the surface mesh for General reachable Workspace
-// visualization
-vtkSmartPointer< vtkPoints >
-  ForwardKinematics::GetGeneralWorkspace(vtkSmartPointer< vtkPoints > points)
+// Method to Create the surface mesh of General reachable Workspace
+Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
 {
-  // To visualize the transferred points in the slicer without using the
-  // Transform Module
-  Eigen::Matrix4d registration_inv = registration.inverse();
-  std::cerr << "Inverse of the registration matrix is: \n"
-            << registration_inv << std::endl;
-
-  // Vector to store points before transformation
-  Eigen::Vector4d point(0.0, 0.0, 0.0, 0.0);
-
   // Object containing the 4x4 transformation matrix
   Neuro_FK_outputs FK{};
-  ofstream         myout("General_workspace.xyz");
-  /*============================================================================================================
-     =============================================FK
-     computation============================================
-      ==================================================================================================*/
-  // Loop for visualizing the top
+
+  // Code below is the computation of the general workspace
+
+  // Loop for visualization of the top of the Workspace
   AxialFeetTranslation = 68;
   AxialHeadTranslation = 0;
   double Top_max_travel{-146};
-  for (i = Top_max_travel / 100; i > Top_max_travel;
-       i += Top_max_travel / 100)  // initial separation 143, min separation 75
-                                   // => 143-75 = 68 mm
+  // initial separation 143, min separation 75=> 143-75 = 68 mm
+  for (i = Top_max_travel / 100; i > Top_max_travel; i += Top_max_travel / 100)
+
   {
     AxialHeadTranslation += Top_max_travel / 100;
     AxialFeetTranslation += Top_max_travel / 100;
@@ -81,12 +66,9 @@ vtkSmartPointer< vtkPoints >
       FK                 = NeuroKinematics_.ForwardKinematics(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-      Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-      transferred_point = get_Transform(registration_inv, FK);
-      points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                              transferred_point(2));
-      myout << transferred_point(0) << " " << transferred_point(1) << " "
-            << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+      points->InsertNextPoint(FK.zFrameToTreatment(0, 3),
+                              FK.zFrameToTreatment(1, 3),
+                              FK.zFrameToTreatment(2, 3));
     }
   }
 

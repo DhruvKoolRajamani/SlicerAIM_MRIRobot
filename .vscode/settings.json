@@ -1,6 +1,6 @@
 {
   "editor.rulers": [
-    100
+    80
   ],
   "files.associations": {
     "*.txx": "cpp",
@@ -97,5 +97,5 @@
       "label": "Issues",
       "query": "repo:${owner}/${repository} state:open" //  sort:created-desc
     }
-  ]
+  ],
 }
