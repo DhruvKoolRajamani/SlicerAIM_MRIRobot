@@ -45,7 +45,7 @@ public:
   vtkSmartPointer< vtkPoints > GetRcmWorkSpace(
     Eigen::Matrix4d registration, vtkSmartPointer< vtkPoints > points);
 
-  // Method to generate a point set from the RCM WS
+  // Method to generate a point set from the RCM WS.
   Eigen::Matrix3Xf GetRcmPointCloud(Eigen::Matrix4d registration);
 
   // Method to return a point set based on a given EP
