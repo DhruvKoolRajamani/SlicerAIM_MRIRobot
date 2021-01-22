@@ -48,7 +48,7 @@ public:
   // Method to generate a point set from the RCM WS.
   Eigen::Matrix3Xf GetRcmPointCloud(Eigen::Matrix4d registration);
 
-  // Method to return a point set based on a given EP
+  // Method to return a point set based on a given EP.
   Eigen::Matrix3Xf GetSubWorkspace(Eigen::Vector3d ep_in_imager_coordinate,
                                    Eigen::Matrix4d registration,
                                    double          probe_init);
