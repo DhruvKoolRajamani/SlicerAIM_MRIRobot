@@ -35,7 +35,7 @@ ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   ProbeRotation        = 0.0;
 
   // RCM point cloud
-  Eigen::Matrix3Xf rcm_point_cloud_ = GetRcmPointCloud();
+  Eigen::MatrixXf rcm_point_cloud_ = GetRcmPointCloud();
 
   NeuroKinematics_ = NeuroKinematics;
 }
@@ -846,77 +846,53 @@ Eigen::Matrix3Xf ForwardKinematics::GetSubWorkspace(
   Eigen::Vector3d ep_in_imager_coordinate, Eigen::Matrix4d registration,
   double probe_init)
 {
-  // Creating the PC for the Validated RCM points that satisfy the distance
-  // criteria
+  /* Creating the PC for the Validated RCM points that satisfy the distance
+  criteria*/
 
   // number of columns of the RCM PC
-  int no_cols_RCM_PC = rcm_point_cloud_.cols();
+  int no_cols_rcm_pc = rcm_point_cloud_.cols();
 
   // calculate the transformation from the robot to the the entry point
   Eigen::Matrix4d registration_inv = registration.inverse();
-  Eigen::Vector3d EP_inRobotCoordinate(0.0, 0.0, 0.0);
+  Eigen::Vector3d ep_in_robot_coordinate(0.0, 0.0, 0.0);
   // Finds the location of the EP W.R.T the robot base
-  calc_Transform(registration_inv, EP_inImagerCoordinate, EP_inRobotCoordinate);
-  std::cout << "EP_inRobotCoordinate is :\n"
-            << EP_inRobotCoordinate << std::endl;
-  // Step to check individual points in the RCM Point cloud
-  int no_of_cols_validated_pts{0};
+  CalculateTransform(registration_inv, ep_in_imager_coordinate,
+                     ep_in_robot_coordinate);
 
-  // loop to go through each RCM points and check for the validity of them W.R.T
-  // the EP
-  // The first loop determines the size of the matrix to store the validated
-  // points The second loop stores the validated points inside the matrix.
-  // Reshape could also be used but may effect the speed.
-  // TODO: Implement ReshapePreserveData method to merge the two loops into one
-  // loop.
-  for (int i = 0; i < no_cols_RCM_PC; i++)
+  /* loop to go through each RCM points and check for the validity of them W.R.T
+  the EP. The first loop determines the size of the matrix to store the
+  validated points The second loop stores the validated points inside the
+  matrix. Reshape could also be used but may effect the speed.*/
+  Eigen::Vector3f rcm_point_to_check;
+  // Matrix which store the validated point set after checking the sphere cond
+  Eigen::Matrix3Xf validated_point_set(3, 1);
+
+  for (int i = 0; i < no_cols_rcm_pc; i++)
   {
-    Eigen::Vector3f RCM_Point_to_Check(RCM_PC(0, i), RCM_PC(1, i),
-                                       RCM_PC(2, i));
-    if (check_Sphere(EP_inRobotCoordinate, RCM_Point_to_Check, probe_init) == 1)
+    rcm_point_to_check(rcm_point_cloud_(0, i), rcm_point_cloud_(1, i),
+                       rcm_point_cloud_(2, i));
+    if (check_Sphere(ep_in_robot_coordinate, rcm_point_to_check, probe_init) ==
+        1)
     {
-      no_of_cols_validated_pts++;
+      StorePointToEigenMatrix(validated_point_set, rcm_point_cloud_(0, i),
+                              rcm_point_cloud_(1, i), rcm_point_cloud_(2, i));
     }
   }
 
-  Eigen::Matrix3Xf Validated_PC(3, no_of_cols_validated_pts);  // Matrix to
-                                                               // store the
-                                                               // validated
-                                                               // points in
-  std::cout << "Number of columns of the Validated PC " << Validated_PC.cols()
-            << std::endl;
+  // Step to check the Inverse Kinematics for each validated RCM point set
+  Eigen::Matrix3Xf validated_inverse_kinematic_rcm_pointset =
+    GetPointCloudInverseKinematics(validated_point_set, ep_in_robot_coordinate);
 
-  no_of_cols_validated_pts = 0;
+  /* Step to populate the point set with equidistance points from the EP to each
+  validated rcm points and past them with the max probe insertion criteria.*/
+  Eigen::Matrix3Xf total_Sub_Workspace = GenerateFinalSubworkspacePointset(
+    validated_inverse_kinematic_rcm_pointset, ep_in_robot_coordinate);
 
-  for (i = 0; i < no_cols_RCM_PC; i++)
-  {
-    Eigen::Vector3f RCM_Point_to_Check(RCM_PC(0, i), RCM_PC(1, i),
-                                       RCM_PC(2, i));
-    if (check_Sphere(EP_inRobotCoordinate, RCM_Point_to_Check, probe_init) == 1)
-    {
-      Validated_PC(0, no_of_cols_validated_pts) = RCM_Point_to_Check(0);
-      Validated_PC(1, no_of_cols_validated_pts) = RCM_Point_to_Check(1);
-      Validated_PC(2, no_of_cols_validated_pts) = RCM_Point_to_Check(2);
-      myout << RCM_Point_to_Check(0) << " " << RCM_Point_to_Check(1) << " "
-            << RCM_Point_to_Check(2) << " 0.00 0.00 0.00" << endl;
-
-      no_of_cols_validated_pts++;
-    }
-  }
-
-  // Step to check the Inverse Kinematics for each Validated RCM point
-  Eigen::Matrix3Xf Sub_Workspace_RCM =
-    get_PointCloud_IK(Validated_PC, EP_inRobotCoordinate);
-
-  Eigen::Matrix3Xf total_Sub_Workspace =
-    create_3D_Mesh(Sub_Workspace_RCM, EP_inRobotCoordinate);
-
-  myout.close();
-  return Validated_PC;
+  return total_Sub_Workspace;
 }
 
-// Method to store a point of the RCM Point Cloud. Points are stored inside an
-// Eigen matrix.
+/* Method to store a point of the RCM Point Cloud. Points are stored inside an
+Eigen matrix.*/
 void ForwardKinematics::StorePoints(Eigen::Matrix3Xf& rcm_point_cloud,
                                     Eigen::Matrix4d   transformation_matrix,
                                     int               counter)
@@ -938,9 +914,9 @@ bool ForwardKinematics::CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
   const float radius  = 72.5 - B_value;  // RCM offset from Robot to RCM point
 
   float distance{0};
-  distance = pow(EP_inRobotCoordinate(0) - RCM_point(0), 2) +
-             pow(EP_inRobotCoordinate(1) - RCM_point(1), 2) +
-             pow(EP_inRobotCoordinate(2) - RCM_point(2), 2);
+  distance = pow(ep_in_robot_coordinate(0) - rcm_point_cloud(0), 2) +
+             pow(ep_in_robot_coordinate(1) - rcm_point_cloud(1), 2) +
+             pow(ep_in_robot_coordinate(2) - rcm_point_cloud(2), 2);
   if (distance <= pow(radius, 2))  // EP is within the Sphere
   {
     return 1;
@@ -951,17 +927,17 @@ bool ForwardKinematics::CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
   }
 }
 
-// Method to Check the IK for the Validated point set
+/* Method to Check the IK for each point in the Validated point set and stores
+the ones that are valid*/
 Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
-  Eigen::Matrix3Xf Validated_PC, Eigen::Vector3d ep_in_robot_coordinate)
+  Eigen::Matrix3Xf validated_point_set, Eigen::Vector3d ep_in_robot_coordinate)
 {
-  Eigen::Matrix3Xf Sub_Workspace_PC_RCM(3, 1);
-  // Initializng the Sub_workspace matrix
-  Sub_Workspace_PC_RCM << 0., 0., 0.;
+  // Initializng the sub_workspace matrix
+  Eigen::Matrix3Xf sub_workspace_rcm_point_set(3, 1);
+  sub_workspace_rcm_point_set << 0., 0., 0.;
 
   int counter{0};
-  // float B_value = NeuroKinematics_._probe->_robotToEntry; // B value
-  int no_Cols_Validated_PC = Validated_PC.cols();
+  int no_cols_validated_point_set = validated_point_set.cols();
 
   /* The methods checks for validity of the filtered workspace Using
   InverseKinematicsWithZeroProbeInsertion Method. This Method takes two Eigen
@@ -969,9 +945,10 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
   argument is the RCM point which is considered as the TP.*/
 
   // Initializing the vectors for EP and TP.
-  Eigen::Vector4d EP_R(EP_inRobotCoordinate(0), EP_inRobotCoordinate(1),
-                       EP_inRobotCoordinate(2), 1);
-  Eigen::Vector4d TP_R(0, 0, 0, 1);
+  Eigen::Vector4d ep_in_robot_coordinate(EP_inRobotCoordinate(0),
+                                         EP_inRobotCoordinate(1),
+                                         EP_inRobotCoordinate(2), 1);
+  Eigen::Vector4d tp_in_robot_coordinate(0, 0, 0, 1);
 
   // Initializing the limits for each axis of the robot.
   const double initial_Axial_separation  = 143;
@@ -988,21 +965,24 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
   const double max_Yaw_rotation          = 0.0;
   const double min_Yaw_rotation          = -88.0 * pi / 180;
   const double min_Probe_insertion       = 0;
-  const double max_Probe_insertion       = 50;
+  const double max_probe_insertion       = 50;
   double       Axial_Seperation{0};
-  // Creating the object to store the output of the
-  // InverseKinematicsWithZeroProbeInsertion method
+
+  /* Object to store the output of the InverseKinematicsWithZeroProbeInsertion
+  method*/
   Neuro_IK_outputs IK_output;
 
-  // Loop that goes through each point in the Validated PC and checks for the
-  // Validity of the IK output
-  for (int i = 0; i < no_Cols_Validated_PC; i++)
+  /* Loop that goes through each point in the Validated PC and checks for the
+  Validity of the IK output*/
+  for (int i = 0; i < no_cols_validated_point_set; i++)
   {
     // setting the TP for each point in the loop
-    TP_R << Validated_PC(0, i), Validated_PC(1, i), Validated_PC(2, i), 1;
+    tp_in_robot_coordinate << validated_point_set(0, i),
+      validated_point_set(1, i), validated_point_set(2, i), 1;
 
-    IK_output =
-      NeuroKinematics_.InverseKinematicsWithZeroProbeInsertion(EP_R, TP_R);
+    IK_output = NeuroKinematics_.InverseKinematicsWithZeroProbeInsertion(
+      ep_in_robot_coordinate, tp_in_robot_coordinate);
+
     Axial_Seperation =
       143 + IK_output.AxialHeadTranslation - IK_output.AxialFeetTranslation;
 
@@ -1010,184 +990,146 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
     {
       continue;
     }
+    /*Axial Heads are farther away than the allowed value or Axial Heads are
+    closer than the allowed value.*/
     if (Axial_Seperation > max_Axial_separation ||
-        Axial_Seperation < min_Axial_separation)  // Axial Heads are farther
-                                                  // away than the allowed value
-                                                  // or Axial Heads are closer
-                                                  // than the allowed value
+        Axial_Seperation < min_Axial_separation)
     {
       continue;
     }
+    // If Axial Head travels more than the max or min allowed range
     if (IK_output.AxialHeadTranslation < min_AxialHead_translation ||
-        IK_output.AxialHeadTranslation > max_AxialHead_translation)  // If Axial
-                                                                     // Head
-                                                                     // travels
-                                                                     // more
-                                                                     // than the
-                                                                     // max or
-                                                                     // min
-                                                                     // allowed
-                                                                     // range
+        IK_output.AxialHeadTranslation > max_AxialHead_translation)
+
     {
       continue;
     }
+    // If Axial Feet travels more than the max or min allowed range
     if (IK_output.AxialFeetTranslation < min_AxialFeet_translation ||
-        IK_output.AxialFeetTranslation > max_AxialFeet_translation)  // If Axial
-                                                                     // Feet
-                                                                     // travels
-                                                                     // more
-                                                                     // than the
-                                                                     // max or
-                                                                     // min
-                                                                     // allowed
-                                                                     // range
+        IK_output.AxialFeetTranslation > max_AxialFeet_translation)
     {
       continue;
     }
+    // If Lateral travels more than the max or min allowed range
     if (IK_output.LateralTranslation < min_Lateral_translation ||
-        IK_output.LateralTranslation > max_Lateral_translation)  // If Lateral
-                                                                 // travels more
-                                                                 // than the max
-                                                                 // or min
-                                                                 // allowed
-                                                                 // range
+        IK_output.LateralTranslation > max_Lateral_translation)
     {
       continue;
     }
+    // If Yaw rotates more than the max or min allowed range
     if (IK_output.YawRotation < min_Yaw_rotation ||
-        IK_output.YawRotation > max_Yaw_rotation)  // If Yaw rotates more than
-                                                   // the max or min allowed
-                                                   // range
+        IK_output.YawRotation > max_Yaw_rotation)
     {
       continue;
     }
+    // If Pitch rotates more than the max or min allowed range
     if (IK_output.PitchRotation < min_Pitch_rotation ||
-        IK_output.PitchRotation > max_Pitch_rotation)  // If Pitch rotates more
-                                                       // than the max or min
-                                                       // allowed range
+        IK_output.PitchRotation > max_Pitch_rotation)
     {
       continue;
     }
+    // This statement will increase the size of the Sub-workspace matrix
+    // by one to store the new point
     if (counter > 0)
-    {  // This if statement will increase the size of the Sub-workspace matrix
-       // by one to store the new point
-      Sub_Workspace_PC_RCM.conservativeResize(3,
-                                              Sub_Workspace_PC_RCM.cols() + 1);
+    {
+      sub_workspace_rcm_point_set.conservativeResize(
+        3, sub_workspace_rcm_point_set.cols() + 1);
     }
 
-    // Storing the validated point in the final sub-workspace matrix
-    Sub_Workspace_PC_RCM(0, counter) = TP_R(0);
-    Sub_Workspace_PC_RCM(1, counter) = TP_R(1);
-    Sub_Workspace_PC_RCM(2, counter) = TP_R(2);
+    // Storing the IK validated point in the sub-workspace matrix
+    sub_workspace_rcm_point_set(0, counter) = TP_R(0);
+    sub_workspace_rcm_point_set(1, counter) = TP_R(1);
+    sub_workspace_rcm_point_set(2, counter) = TP_R(2);
 
     counter++;
   }
-  if (Sub_Workspace_PC_RCM.cols() == 1 && Sub_Workspace_PC_RCM(0, 0) == 0. &&
-      Sub_Workspace_PC_RCM(1, 0) == 0. && Sub_Workspace_PC_RCM(2, 0) == 0.)
+  if (sub_workspace_rcm_point_set.cols() == 1 &&
+      sub_workspace_rcm_point_set(0, 0) == 0. &&
+      sub_workspace_rcm_point_set(1, 0) == 0. &&
+      sub_workspace_rcm_point_set(2, 0) == 0.)
   {
     std::cerr << "\nThe entry point is NOT reachable! Please select another "
                  "point."
               << std::endl;
   }
-  else
-  {
-    std::cout << "\nNumber of Points in the Sub_workspace: "
-              << Sub_Workspace_PC_RCM.cols() << std::endl;
-    ofstream myout("sub_workspace_RCM.xyz");
-    for (i = 0; i < Sub_Workspace_PC_RCM.cols(); i++)
-    {
-      myout << Sub_Workspace_PC_RCM(0, i) << " " << Sub_Workspace_PC_RCM(1, i)
-            << " " << Sub_Workspace_PC_RCM(2, i) << " 0.00 0.00 0.00" << endl;
-    }
-    myout << EP_inRobotCoordinate(0) << " " << EP_inRobotCoordinate(1) << " "
-          << EP_inRobotCoordinate(2) << " 0.00 0.00 0.00" << endl;
-    myout.close();
-  }
-  return Sub_Workspace_PC_RCM;
+  return sub_workspace_rcm_point_set;
 }
 
 // Method to create the 3D representing the sub-workspace
-Eigen::Matrix3Xf ForwardKinematics::Create3DMesh(
-  Eigen::Matrix3Xf Sub_Workspace_RCM, Eigen::Vector3d ep_in_robot_coordinate)
+Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
+  Eigen::Matrix3Xf validated_inverse_kinematic_rcm_pointset,
+  Eigen::Vector3d  ep_in_robot_coordinate)
 {
   /* Step to create a full representative point cloud based on the sub-workspace
   In this step, additional points will be added starting from the Entry Point
   and passing through each RCM points which account for the full probe
-  insertion. The final workspace will
-  be returned to the VTK method to generate the 3D mesh for visualization.*/
+  insertion. The final workspace will be returned to the VTK method to generate
+  the 3D mesh for visualization.*/
 
   // Total number of points in the RCM sub-workspace
-  int   no_cols             = Sub_Workspace_RCM.cols();
-  float max_Probe_Insertion = 40.0;  // Maximum range of motion for the Probe
-                                     // Insertion Axis
-  float Dist_past_RCM =
-    max_Probe_Insertion + NeuroKinematics_.RCMToTreatment(2, 3);  // Max point
-                                                                  // where the
-                                                                  // treatment
-                                                                  // can reach
-                                                                  // past the
-                                                                  // RCM point
-  Eigen::Vector3d vector(0., 0., 0.);  // Vector starting from the entry point
-                                       // and ending at the RCM point,i.e. X2-X1
-  Eigen::Vector3d RCM_point(0., 0., 0.);
+  int no_cols = validated_inverse_kinematic_rcm_pointset.cols();
+  // Maximum range of motion for the Probe Insertion Axis
+  float max_probe_insertion = 40.0;
+  // Max point where the treatment can reach past the RCM point
+  float distance_past_rcm =
+    max_probe_insertion + NeuroKinematics_.RCMToTreatment(2, 3);
+  // Vector starting from the entry point and ending at the RCM point,i.e. X2-X1
+  Eigen::Vector3d vector_ep_to_tp(0., 0., 0.);
+  Eigen::Vector3d rcm_point(0., 0., 0.);
   Eigen::Vector3d coordinate_of_last_point(0., 0., 0.);
   Eigen::Vector3d intersection_point1(0., 0., 0.);
   Eigen::Vector3d intersection_point2(0., 0., 0.);
 
-  int division{5}, counter{0}, counter1{0};  // division is the number of
-                                             // desired points to generate
-                                             // between the EP and the last
-                                             // point
-  // Number of desired points between the EP and the last point
-  // Matrix containing all the points within the sub-workspace starting from
-  // the EP to the last point
-  Eigen::Matrix3Xf sub_workspace_PC(3, no_cols * division);
-  sub_workspace_PC = 0 * sub_workspace_PC;  // initializing
+  /* division is the number of desired points to generate between the EP and the
+  last point*/
+  int division{5}, counter{0}, counter1{0};
+
+  /* Matrix containing all the points within the sub-workspace starting from the
+  EP to the last point*/
+  Eigen::Matrix3Xf total_subworkspace_pointset(3, no_cols * division);
+  total_subworkspace_pointset = 0 * total_subworkspace_pointset;
 
   /*To find the coordinate of the point past the RCM, a series of operations
-  need to be evoked. A sphere of size equal to "Dist_past_RCM" will be placed
-  with it's origin at the RCM point. The intersection of the line from the EP to
-  the RCM point with this sphere will give the coordinate
+  need to be evoked. A sphere of size equal to "distance_past_rcm" will be
+  placed with it's origin at the RCM point. The intersection of the line from
+  the EP to the RCM point with this sphere will give the coordinate
   of the point that the treatment will reach after passing the RCM.*/
-  double a{0}, b{0}, c{0}, t1{0}, t2{0}, x{0}, y{0}, z{0};  // coefficient to be
-                                                            // found for the
-                                                            // equation of line
-                                                            // and it's
-                                                            // intersection with
-                                                            // the sphere
+
+  /* Below are coefficient to be found for the equation of line and it's
+  intersection with the sphere*/
+  double a{0}, b{0}, c{0}, t1{0}, t2{0}, x{0}, y{0}, z{0};
+
   for (int i = 0; i < no_cols; i++)
   {
-    RCM_point << Sub_Workspace_RCM(0, i), Sub_Workspace_RCM(1, i),
-      Sub_Workspace_RCM(2, i);
+    rcm_point << validated_inverse_kinematic_rcm_pointset(0, i),
+      validated_inverse_kinematic_rcm_pointset(1, i),
+      validated_inverse_kinematic_rcm_pointset(2, i);
     // Finding the equation of a line for each pair of RCM and Entry points.
-    vector = RCM_point - EP_inRobotCoordinate;
-    a      = (pow(vector(0), 2) + pow(vector(1), 2) + pow(vector(2), 2));
-    b      = -2 * a;
-    c      = a - pow(Dist_past_RCM, 2);
-    t1 = (-b + sqrt(pow(b, 2) - (4 * a * c))) / (2 * a);  // coefficients that
-                                                          // will be plugged
-                                                          // into the eq of line
-                                                          // which give the
-                                                          // intersection points
-    t2 = (-b - sqrt(pow(b, 2) - (4 * a * c))) / (2 * a);  // coefficients that
-                                                          // will be plugged
-                                                          // into the eq of line
-                                                          // which give the
-                                                          // intersection points
-    intersection_point1 << EP_inRobotCoordinate(0) + vector(0) * t1,
-      EP_inRobotCoordinate(1) + vector(1) * t1,
-      EP_inRobotCoordinate(2) + vector(2) * t1;
-    intersection_point2 << EP_inRobotCoordinate(0) + vector(0) * t2,
-      EP_inRobotCoordinate(1) + vector(1) * t2,
-      EP_inRobotCoordinate(2) + vector(2) * t2;
+    vector_ep_to_tp = rcm_point - ep_in_robot_coordinate;
+    a               = (pow(vector_ep_to_tp(0), 2) + pow(vector_ep_to_tp(1), 2) +
+         pow(vector_ep_to_tp(2), 2));
+    b               = -2 * a;
+    c               = a - pow(distance_past_rcm, 2);
+    /* coefficients that will be plugged into the eq of line which give the
+     * intersection points  coefficients that  will be plugged  into the eq of
+     * line which give the intersection points*/
+    t1 = (-b + sqrt(pow(b, 2) - (4 * a * c))) / (2 * a);
+    t2 = (-b - sqrt(pow(b, 2) - (4 * a * c))) / (2 * a);
+
+    intersection_point1 << ep_in_robot_coordinate(0) + vector_ep_to_tp(0) * t1,
+      ep_in_robot_coordinate(1) + vector_ep_to_tp(1) * t1,
+      ep_in_robot_coordinate(2) + vector_ep_to_tp(2) * t1;
+    intersection_point2 << ep_in_robot_coordinate(0) + vector_ep_to_tp(0) * t2,
+      ep_in_robot_coordinate(1) + vector_ep_to_tp(1) * t2,
+      ep_in_robot_coordinate(2) + vector_ep_to_tp(2) * t2;
     double dist1 =
-      sqrt(pow(intersection_point1(0) - EP_inRobotCoordinate(0), 2) +
-           pow(intersection_point1(1) - EP_inRobotCoordinate(1), 2) +
-           pow(intersection_point1(2) - EP_inRobotCoordinate(2), 2));
+      sqrt(pow(intersection_point1(0) - ep_in_robot_coordinate(0), 2) +
+           pow(intersection_point1(1) - ep_in_robot_coordinate(1), 2) +
+           pow(intersection_point1(2) - ep_in_robot_coordinate(2), 2));
     double dist2 =
-      sqrt(pow(intersection_point2(0) - EP_inRobotCoordinate(0), 2) +
-           pow(intersection_point2(1) - EP_inRobotCoordinate(1), 2) +
-           pow(intersection_point2(2) - EP_inRobotCoordinate(2), 2));
+      sqrt(pow(intersection_point2(0) - ep_in_robot_coordinate(0), 2) +
+           pow(intersection_point2(1) - ep_in_robot_coordinate(1), 2) +
+           pow(intersection_point2(2) - ep_in_robot_coordinate(2), 2));
     if (dist1 > dist2)
     {
       coordinate_of_last_point = intersection_point1;
@@ -1196,53 +1138,41 @@ Eigen::Matrix3Xf ForwardKinematics::Create3DMesh(
     {
       coordinate_of_last_point = intersection_point2;
     }
-    x = abs(coordinate_of_last_point(0) - EP_inRobotCoordinate(0)) /
-        division;  // increments for x
-    y = abs(coordinate_of_last_point(1) - EP_inRobotCoordinate(1)) /
-        division;  // increments for y
-    z = abs(coordinate_of_last_point(2) - EP_inRobotCoordinate(2)) /
-        division;  // increments for z
+    // increments for x
+    x = abs(coordinate_of_last_point(0) - ep_in_robot_coordinate(0)) / division;
+    // increments for y
+    y = abs(coordinate_of_last_point(1) - ep_in_robot_coordinate(1)) / division;
+    // increments for z
+    z = abs(coordinate_of_last_point(2) - ep_in_robot_coordinate(2)) / division;
 
     for (int j = 1; j <= division; j++)
     {
-      if (EP_inRobotCoordinate(0) < coordinate_of_last_point(0))
+      if (ep_in_robot_coordinate(0) < coordinate_of_last_point(0))
       {
-        sub_workspace_PC(0, counter + j - 1) =
-          EP_inRobotCoordinate(0) + (x * j);
+        total_subworkspace_pointset(0, counter + j - 1) =
+          ep_in_robot_coordinate(0) + (x * j);
       }
-      else if (EP_inRobotCoordinate(0) > coordinate_of_last_point(0))
+      else if (ep_in_robot_coordinate(0) > coordinate_of_last_point(0))
       {
-        sub_workspace_PC(0, counter + j - 1) =
-          EP_inRobotCoordinate(0) - (x * j);
+        total_subworkspace_pointset(0, counter + j - 1) =
+          ep_in_robot_coordinate(0) - (x * j);
       }
-      sub_workspace_PC(1, counter + j - 1) = EP_inRobotCoordinate(1) - (y * j);
-      if (EP_inRobotCoordinate(2) < coordinate_of_last_point(2))
+      total_subworkspace_pointset(1, counter + j - 1) =
+        ep_in_robot_coordinate(1) - (y * j);
+      if (ep_in_robot_coordinate(2) < coordinate_of_last_point(2))
       {
-        sub_workspace_PC(2, counter + j - 1) =
-          EP_inRobotCoordinate(2) + (z * j);
+        total_subworkspace_pointset(2, counter + j - 1) =
+          ep_in_robot_coordinate(2) + (z * j);
       }
-      else if (EP_inRobotCoordinate(2) > coordinate_of_last_point(2))
+      else if (ep_in_robot_coordinate(2) > coordinate_of_last_point(2))
       {
-        sub_workspace_PC(2, counter + j - 1) =
-          EP_inRobotCoordinate(2) - (z * j);
+        total_subworkspace_pointset(2, counter + j - 1) =
+          ep_in_robot_coordinate(2) - (z * j);
       }
     }
     counter += division;
   }
-  std::cout << "\nnumber of points created for the final subworkspace: "
-            << sub_workspace_PC.cols() << std::endl;
-  // creating a xyz pc for test
-  ofstream myout("final_sub_workspace.xyz");
-  for (i = 0; i < sub_workspace_PC.cols(); i++)
-  {
-    myout << sub_workspace_PC(0, i) << " " << sub_workspace_PC(1, i) << " "
-          << sub_workspace_PC(2, i) << " 0.00 0.00 0.00" << endl;
-  }
-  // Adding Entry point
-  myout << EP_inRobotCoordinate(0) << " " << EP_inRobotCoordinate(1) << " "
-        << EP_inRobotCoordinate(2) << " 0.00 0.00 0.00" << endl;
-  myout.close();
-  return sub_workspace_PC;
+  return total_subworkspace_pointset;
 }
 
 // Method which applis the transform to the given entry point defined in the
@@ -1297,6 +1227,28 @@ void ForwardKinematics::StorePointToEigenMatrix(
     for (int i = 0; i < 3; i++)
     {
       point_set(i, no_of_columns) = transformation_matrix(i, 3);
+    }
+  }
+}
+void ForwardKinematics::StorePointToEigenMatrix(Eigen::Matrix3Xf& point_set,
+                                                double x, double y, double z)
+{
+  int no_of_columns = point_set.cols();
+  // The case for the first column
+  if (no_of_columns == 1)
+  {
+    point_set(0, 0) = x;
+    point_set(1, 0) = y;
+    point_set(2, 0) = z;
+  }
+  // The case for all columns other than the first column
+  else
+  {
+    point_set.conservativeResize(3, no_of_columns + 1);
+    {
+      point_set(0, no_of_columns) = x;
+      point_set(1, no_of_columns) = y;
+      point_set(2, no_of_columns) = z;
     }
   }
 }

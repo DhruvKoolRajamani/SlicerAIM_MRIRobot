@@ -34,7 +34,7 @@ public:
   double                  ProbeInsertion;
   double                  ProbeRotation;
   NeuroKinematics         NeuroKinematics_;
-  static Eigen::Matrix3Xf rcm_point_cloud_(3, 197779);
+  static Eigen::Matrix3Xf rcm_point_cloud_(3, 1);
 
   // methods
 
@@ -58,11 +58,13 @@ public:
   bool CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
                    Eigen::Vector3f rcm_point, double probe_init);
 
-  Eigen::Matrix3Xf GetPointCloudInverseKinematics(
-    Eigen::Matrix3Xf validated_pc, Eigen::Vector3d ep_in_robot_coordinate);
+  Eigen::Matrix3Xf
+    GetPointCloudInverseKinematics(Eigen::Matrix3Xf validated_point_set,
+                                   Eigen::Vector3d  ep_in_robot_coordinate);
 
-  Eigen::Matrix3Xf Create3DMesh(Eigen::Matrix3Xf subworkspace_rcm,
-                                Eigen::Vector3d  ep_in_robot_coordinate);
+  Eigen::Matrix3Xf GenerateFinalSubworkspacePointset(
+    Eigen::Matrix3Xf validated_inverse_kinematic_rcm_pointset,
+    Eigen::Vector3d  ep_in_robot_coordinate);
 
   Eigen::Vector3d
     ExtractPositionVectorFrom4X4Matrix(Eigen::Matrix4d transformation_matrix);
@@ -71,10 +73,12 @@ public:
   // vector and saves it inside an Eigen matrix
   void StorePointToEigenMatrix(Eigen::Matrix3Xf& point_set,
                                Eigen::Matrix4d   transformation_matrix);
+  void StorePointToEigenMatrix(Eigen::Matrix3Xf& point_set, double x, double y,
+                               double z);
 
-  void CalcTransform(Eigen::Matrix4d  registration_inv,
-                     Eigen::Vector3d  ep_in_imager_coordinate,
-                     Eigen::Vector3d& ep_in_robot_coordinate);
+  void CalculateTransform(Eigen::Matrix4d  registration_inv,
+                          Eigen::Vector3d  ep_in_imager_coordinate,
+                          Eigen::Vector3d& ep_in_robot_coordinate);
 
   Eigen::Vector4d GetTransform(Eigen::Matrix4d  registration_inv,
                                Neuro_FK_outputs forward_kinematic);
