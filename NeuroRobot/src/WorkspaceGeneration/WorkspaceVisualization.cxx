@@ -1,12 +1,9 @@
 #include "../../include/WorkspaceGeneration/WorkspaceVisualization.h"
 using std::endl;
 
-// A is treatment to tip, where treatment is the piezoelectric element,// A =
-// 10mm B is robot to entry, this allows us to specify how close to the patient
-// the physical robot can be,// B = 5mm C is cannula to treatment, we define
-// this so the robot can compute the cannula length,// C = 5mm D is the robot to
-// treatment distance,// D = 41mm Creating an object called Forward for FK In
-// the neuroRobot.cpp the specs for the  probe are: 0,0,5,41
+// A is treatment to tip, B is robot to entry, this allows us to specify how
+// close to the patient the physical robot can be, C is cannula to treatment
+//  D is the robot to treatment distance.
 
 ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   : Diff(68), pi(3.141)
@@ -37,12 +34,18 @@ ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   ProbeInsertion       = 0.0;
   ProbeRotation        = 0.0;
 
+  // RCM point cloud
+  Eigen::Matrix3Xf rcm_point_cloud_ = GetRcmPointCloud();
+
   NeuroKinematics_ = NeuroKinematics;
 }
 
-// Method to Create the surface mesh of General reachable Workspace
+// Method to generate Point cloud of the surface of general reachable Workspace
 Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
 {
+  // Matrix to store point set
+  Eigen::Matrix3Xf point_set(3, 1);
+
   // Object containing the 4x4 transformation matrix
   Neuro_FK_outputs FK{};
 
@@ -58,22 +61,19 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
   {
     AxialHeadTranslation += Top_max_travel / 100;
     AxialFeetTranslation += Top_max_travel / 100;
-    for (k = 0.0 - 49.0; k >= -49.0 - 49.0; k -= 7.0)  // max lateral movement
-                                                       // 0.0 ~ -49.47 (appx =
-                                                       // -49)
+    // max lateral movement  0.0 ~ -49.47 (appx =-49)
+    for (k = 0.0 - 49.0; k >= -49.0 - 49.0; k -= 7.0)
     {
       LateralTranslation = k;
       FK                 = NeuroKinematics_.ForwardKinematics(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-      points->InsertNextPoint(FK.zFrameToTreatment(0, 3),
-                              FK.zFrameToTreatment(1, 3),
-                              FK.zFrameToTreatment(2, 3));
+      StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
     }
   }
 
-  // loop for visualizing the bottom
-  for (i = 0, j = -3; i > -87; i -= 8.7, j -= 8.7)  // 75
+  // loop for visualizing the bottom (75)
+  for (i = 0, j = -3; i > -87; i -= 8.7, j -= 8.7)
   {
     AxialHeadTranslation = i;
     AxialFeetTranslation = j;
@@ -88,12 +88,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
         FK            = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, FK);
-        points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                transferred_point(2));
-        myout << transferred_point(0) << " " << transferred_point(1) << " "
-              << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+        StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
       }
       if (k <= -7 - 49.0)
       {
@@ -102,12 +97,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
         FK            = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, FK);
-        points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                transferred_point(2));
-        myout << transferred_point(0) << " " << transferred_point(1) << " "
-              << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+        StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
       }
     }
   }
@@ -125,8 +115,8 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
     for (k = 0.0 - 49.0; k >= -49.0 - 49.0; k -= 7.0)
     {
       LateralTranslation = k;
-
-      if (j == 71)  // Top level
+      // Top level
+      if (j == 71)
       {
         if (k == 0 - 49.0)
         {
@@ -139,13 +129,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
               FK          = NeuroKinematics_.ForwardKinematics(
                 AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
                 ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-              Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-              transferred_point = get_Transform(registration_inv, FK);
-              points->InsertNextPoint(transferred_point(0),
-                                      transferred_point(1),
-                                      transferred_point(2));
-              myout << transferred_point(0) << " " << transferred_point(1)
-                    << " " << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+              StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
             }
           }
         }
@@ -160,17 +144,12 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
               FK          = NeuroKinematics_.ForwardKinematics(
                 AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
                 ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-              Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-              transferred_point = get_Transform(registration_inv, FK);
-              points->InsertNextPoint(transferred_point(0),
-                                      transferred_point(1),
-                                      transferred_point(2));
-              myout << transferred_point(0) << " " << transferred_point(1)
-                    << " " << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+              StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
             }
           }
         }
-        else  // if (k < 0.0 && k > -49.0) // between the bore and the face
+        // if (k < 0.0 && k > -49.0) // between the bore and the face
+        else
         {
           for (l = Rx_max_degree / 8.8; l >= Rx_max_degree;
                l += Rx_max_degree / 8.8)
@@ -180,53 +159,39 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
             FK            = NeuroKinematics_.ForwardKinematics(
               AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
               ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-            Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-            transferred_point = get_Transform(registration_inv, FK);
-            points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                    transferred_point(2));
-            myout << transferred_point(0) << " " << transferred_point(1) << " "
-                  << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+            StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
           }
         }
       }
-      else  // Any other lvl from bottom to just a lvl before the top
+      // Any other lvl from bottom to just a lvl before the top
+      else
       {
-        if (k == 0 - 49.0)  // Creating corner bore side
+        // Creating corner bore side
+        if (k == 0 - 49.0)
         {
           YawRotation = Rx_max;
-          for (l = 0; l <= RyB_max_degree; l += 5.2)  // lvl one bore side yaw
-                                                      // lowered pitch lowering
+          // lvl one bore side yaw lowered pitch lowering
+          for (l = 0; l <= RyB_max_degree; l += 5.2)
           {
             PitchRotation = l * pi / 180;
             FK            = NeuroKinematics_.ForwardKinematics(
               AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
               ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-            Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-            transferred_point = get_Transform(registration_inv, FK);
-            points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                    transferred_point(2));
-            myout << transferred_point(0) << " " << transferred_point(1) << " "
-                  << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+            StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
           }
         }
 
         else if (k == -49.0 - 49.0)  // Creating corner face side
         {
           YawRotation = Rx_max;
-          for (l = 0; l >= RyF_max_degree; l -= 7.4)  // lvl one face side yaw
-                                                      // lowered pitch
-                                                      // increasing
+          // level one face side yaw lowered pitch increasing
+          for (l = 0; l >= RyF_max_degree; l -= 7.4)
           {
             PitchRotation = l * pi / 180;
             FK            = NeuroKinematics_.ForwardKinematics(
               AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
               ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-            Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-            transferred_point = get_Transform(registration_inv, FK);
-            points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                    transferred_point(2));
-            myout << transferred_point(0) << " " << transferred_point(1) << " "
-                  << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+            StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
           }
         }
 
@@ -237,12 +202,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
           FK            = NeuroKinematics_.ForwardKinematics(
             AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
             ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-          Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-          transferred_point = get_Transform(registration_inv, FK);
-          points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                  transferred_point(2));
-          myout << transferred_point(0) << " " << transferred_point(1) << " "
-                << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+          StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
         }
       }
     }
@@ -252,8 +212,8 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
   AxialFeetTranslation = -89;
   AxialHeadTranslation = -86;
 
-  // Loop for creating the feet face
-  // only for the bottom level at Axial Head of -86 and Axial Feet of -89
+  // Loop for creating the feet face only for the bottom level at Axial Head of
+  // -86 and Axial Feet of -89
   for (k = 0.0 - 49.0; k >= -49.0 - 49.0; k -= 7.0)
   {
     LateralTranslation = k;
@@ -267,12 +227,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
         FK          = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, FK);
-        points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                transferred_point(2));
-        myout << transferred_point(0) << " " << transferred_point(1) << " "
-              << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+        StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
       }
     }
     if (k <= -7 - 49.0)
@@ -284,12 +239,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
         FK          = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, FK);
-        points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                transferred_point(2));
-        myout << transferred_point(0) << " " << transferred_point(1) << " "
-              << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+        StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
       }
     }
   }
@@ -312,12 +262,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
         FK            = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, FK);
-        points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                transferred_point(2));
-        myout << transferred_point(0) << " " << transferred_point(1) << " "
-              << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+        StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
       }
       if (k <= -7 - 49.0)
       {
@@ -326,12 +271,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
         FK            = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, FK);
-        points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                transferred_point(2));
-        myout << transferred_point(0) << " " << transferred_point(1) << " "
-              << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+        StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
       }
     }
   }
@@ -344,27 +284,26 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
   PitchRotation        = 0;
   double AxialHeadTranslation_old{};
   double AxialFeetTranslation_old{};
-  double min_travel{-86};  // The max that the robot can move in z direction
-                           // when at lowest height ( at each hight min level is
-                           // changed)
-  double max_travel{-157};  // 157 The max that the robot can move in z
-                            // direction when at highest height
+
+  // The max that the robot can move in z direction when at lowest height(at
+  // each hight min level is changed)
+  double min_travel{-86};
+  // 157 The max that the robot can move in z direction when at highest height
+  double max_travel{-157};
   for (j = 0; j <= 71; j += 7.1)
   {
-    AxialFeetTranslation += j;  // For each loop it will lift the base by a
-                                // constant value
-    min_travel -= j;  // Takes care of the amount of Axial travel for the Axial
-                      // head and feet
+    // For each loop it will lift the base by a constant value
+    AxialFeetTranslation += j;
+
+    // Takes care of the amount of Axial travel for the Axial head and feet
+    min_travel -= j;
 
     AxialFeetTranslation_old = AxialFeetTranslation;
     AxialHeadTranslation_old = AxialHeadTranslation;
-    for (ii = 0; ii >= min_travel; ii += (min_travel / 10))  // loop to move the
-                                                             // base from Head
-                                                             // to feet based on
-                                                             // the allowable
-                                                             // max movement
-                                                             // range
-                                                             // (min_travel)
+
+    // loop to move the base from Head to feet based on the allowable max
+    // movement range (min_travel)
+    for (ii = 0; ii >= min_travel; ii += (min_travel / 10))
     {
       AxialHeadTranslation += ii;
       AxialFeetTranslation += ii;
@@ -391,14 +330,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
-                Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-                transferred_point = get_Transform(registration_inv, FK);
-                points->InsertNextPoint(transferred_point(0),
-                                        transferred_point(1),
-                                        transferred_point(2));
-                myout << transferred_point(0) << " " << transferred_point(1)
-                      << " " << transferred_point(2) << " 0.00 0.00 0.00"
-                      << endl;
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
               }
             }
             // 2) End of the track
@@ -408,13 +340,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
               FK          = NeuroKinematics_.ForwardKinematics(
                 AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
                 ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-              Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-              transferred_point = get_Transform(registration_inv, FK);
-              points->InsertNextPoint(transferred_point(0),
-                                      transferred_point(1),
-                                      transferred_point(2));
-              myout << transferred_point(0) << " " << transferred_point(1)
-                    << " " << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+              StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
             }
             // 3) In between beginning and end
             else
@@ -426,14 +352,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
-                Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-                transferred_point = get_Transform(registration_inv, FK);
-                points->InsertNextPoint(transferred_point(0),
-                                        transferred_point(1),
-                                        transferred_point(2));
-                myout << transferred_point(0) << " " << transferred_point(1)
-                      << " " << transferred_point(2) << " 0.00 0.00 0.00"
-                      << endl;
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
               }
             }
           }
@@ -454,14 +373,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
-                Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-                transferred_point = get_Transform(registration_inv, FK);
-                points->InsertNextPoint(transferred_point(0),
-                                        transferred_point(1),
-                                        transferred_point(2));
-                myout << transferred_point(0) << " " << transferred_point(1)
-                      << " " << transferred_point(2) << " 0.00 0.00 0.00"
-                      << endl;
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
               }
             }
           }
@@ -481,14 +393,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
-                Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-                transferred_point = get_Transform(registration_inv, FK);
-                points->InsertNextPoint(transferred_point(0),
-                                        transferred_point(1),
-                                        transferred_point(2));
-                myout << transferred_point(0) << " " << transferred_point(1)
-                      << " " << transferred_point(2) << " 0.00 0.00 0.00"
-                      << endl;
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
               }
             }
 
@@ -502,14 +407,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
-                Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-                transferred_point = get_Transform(registration_inv, FK);
-                points->InsertNextPoint(transferred_point(0),
-                                        transferred_point(1),
-                                        transferred_point(2));
-                myout << transferred_point(0) << " " << transferred_point(1)
-                      << " " << transferred_point(2) << " 0.00 0.00 0.00"
-                      << endl;
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
               }
             }
           }
@@ -517,8 +415,9 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
         // For the side towards the patient
         else if (k == -49.0 - 49.0)
         {
-          // Conditions based on the position of the base
-          // Only for the first level
+          // Conditions based on the position of the base:
+
+          //  Only for the first level
           if (j == 0)
           {
             PitchRotation = RyF_max;
@@ -533,14 +432,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
-                Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-                transferred_point = get_Transform(registration_inv, FK);
-                points->InsertNextPoint(transferred_point(0),
-                                        transferred_point(1),
-                                        transferred_point(2));
-                myout << transferred_point(0) << " " << transferred_point(1)
-                      << " " << transferred_point(2) << " 0.00 0.00 0.00"
-                      << endl;
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
               }
             }
             // 2) End of the track
@@ -550,13 +442,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
               FK          = NeuroKinematics_.ForwardKinematics(
                 AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
                 ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-              Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-              transferred_point = get_Transform(registration_inv, FK);
-              points->InsertNextPoint(transferred_point(0),
-                                      transferred_point(1),
-                                      transferred_point(2));
-              myout << transferred_point(0) << " " << transferred_point(1)
-                    << " " << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+              StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
             }
             // 3) In between beginning and end
             else
@@ -568,14 +454,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
-                Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-                transferred_point = get_Transform(registration_inv, FK);
-                points->InsertNextPoint(transferred_point(0),
-                                        transferred_point(1),
-                                        transferred_point(2));
-                myout << transferred_point(0) << " " << transferred_point(1)
-                      << " " << transferred_point(2) << " 0.00 0.00 0.00"
-                      << endl;
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
               }
             }
           }
@@ -596,14 +475,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
-                Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-                transferred_point = get_Transform(registration_inv, FK);
-                points->InsertNextPoint(transferred_point(0),
-                                        transferred_point(1),
-                                        transferred_point(2));
-                myout << transferred_point(0) << " " << transferred_point(1)
-                      << " " << transferred_point(2) << " 0.00 0.00 0.00"
-                      << endl;
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
               }
             }
           }
@@ -623,14 +495,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
-                Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-                transferred_point = get_Transform(registration_inv, FK);
-                points->InsertNextPoint(transferred_point(0),
-                                        transferred_point(1),
-                                        transferred_point(2));
-                myout << transferred_point(0) << " " << transferred_point(1)
-                      << " " << transferred_point(2) << " 0.00 0.00 0.00"
-                      << endl;
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
               }
             }
 
@@ -644,14 +509,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
                   AxialHeadTranslation, AxialFeetTranslation,
                   LateralTranslation, ProbeInsertion, ProbeRotation,
                   PitchRotation, YawRotation);
-                Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-                transferred_point = get_Transform(registration_inv, FK);
-                points->InsertNextPoint(transferred_point(0),
-                                        transferred_point(1),
-                                        transferred_point(2));
-                myout << transferred_point(0) << " " << transferred_point(1)
-                      << " " << transferred_point(2) << " 0.00 0.00 0.00"
-                      << endl;
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
               }
             }
           }
@@ -666,23 +524,18 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
     AxialFeetTranslation = -3;
     min_travel           = -86;
   }
-  std::cout << "# of points: " << points->GetNumberOfPoints();
-  myout.close();
-  return points;
+  return point_set;
 }
 
-// Method to Create the RCM surface mesh for RCM visualization.
-
-vtkSmartPointer< vtkPoints >
-  ForwardKinematics::GetRcmWorkSpace(vtkSmartPointer< vtkPoints > points)
+// Method to generate Point cloud of the surface of the RCM Workspace
+Eigen::Matrix3Xf ForwardKinematics::GetRcmWorkSpace()
 {
-  Eigen::Vector4d point(0.0, 0.0, 0.0, 0.0);
-
   // Object containing the 4x4 transformation matrix
   Neuro_FK_outputs RCM{};
+  // Matrix to store point set
+  Eigen::Matrix3Xf point_set(3, 1);
 
   //  ++++RCM Point Cloud Generation+++
-
   double       min_seperation{71};  // 71
   const double Abs_min_leg_separation{68};
 
@@ -702,15 +555,10 @@ vtkSmartPointer< vtkPoints >
       ++counter;
 
       LateralTranslation = k;
-      RCM = NeuroKinematics_.get_RCM(AxialHeadTranslation, AxialFeetTranslation,
-                                     LateralTranslation, ProbeInsertion,
-                                     ProbeRotation, PitchRotation, YawRotation);
-      Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-      transferred_point = get_Transform(registration_inv, RCM);
-      points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                              transferred_point(2));
-      myout << transferred_point(0) << " " << transferred_point(1) << " "
-            << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+      RCM = NeuroKinematics_.GetRcm(AxialHeadTranslation, AxialFeetTranslation,
+                                    LateralTranslation, ProbeInsertion,
+                                    ProbeRotation, PitchRotation, YawRotation);
+      StorePointToEigenMatrix(point_set, RCM.zFrameToTreatment);
     }
   }
 
@@ -726,15 +574,10 @@ vtkSmartPointer< vtkPoints >
       for (k = -49.0; k >= -98.0; k += -49 / 10)
       {
         LateralTranslation = k;
-        RCM                = NeuroKinematics_.get_RCM(
+        RCM                = NeuroKinematics_.GetRcm(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, RCM);
-        points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                transferred_point(2));
-        myout << transferred_point(0) << " " << transferred_point(1) << " "
-              << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+        StorePointToEigenMatrix(point_set, RCM.zFrameToTreatment);
       }
     }
     else
@@ -744,15 +587,10 @@ vtkSmartPointer< vtkPoints >
       for (k = -49.0; k >= -98.0; k += -49 / 10)
       {
         LateralTranslation = k;
-        RCM                = NeuroKinematics_.get_RCM(
+        RCM                = NeuroKinematics_.GetRcm(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, RCM);
-        points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                transferred_point(2));
-        myout << transferred_point(0) << " " << transferred_point(1) << " "
-              << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+        StorePointToEigenMatrix(point_set, RCM.zFrameToTreatment);
       }
     }
   }
@@ -769,15 +607,10 @@ vtkSmartPointer< vtkPoints >
     {
       LateralTranslation = k;
 
-      RCM = NeuroKinematics_.get_RCM(AxialHeadTranslation, AxialFeetTranslation,
-                                     LateralTranslation, ProbeInsertion,
-                                     ProbeRotation, PitchRotation, YawRotation);
-      Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-      transferred_point = get_Transform(registration_inv, RCM);
-      points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                              transferred_point(2));
-      myout << transferred_point(0) << " " << transferred_point(1) << " "
-            << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+      RCM = NeuroKinematics_.GetRcm(AxialHeadTranslation, AxialFeetTranslation,
+                                    LateralTranslation, ProbeInsertion,
+                                    ProbeRotation, PitchRotation, YawRotation);
+      StorePointToEigenMatrix(point_set, RCM.zFrameToTreatment);
     }
   }
   AxialFeetTranslation = -89;
@@ -793,15 +626,10 @@ vtkSmartPointer< vtkPoints >
     {
       LateralTranslation = k;
 
-      RCM = NeuroKinematics_.get_RCM(AxialHeadTranslation, AxialFeetTranslation,
-                                     LateralTranslation, ProbeInsertion,
-                                     ProbeRotation, PitchRotation, YawRotation);
-      Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-      transferred_point = get_Transform(registration_inv, RCM);
-      points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                              transferred_point(2));
-      myout << transferred_point(0) << " " << transferred_point(1) << " "
-            << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+      RCM = NeuroKinematics_.GetRcm(AxialHeadTranslation, AxialFeetTranslation,
+                                    LateralTranslation, ProbeInsertion,
+                                    ProbeRotation, PitchRotation, YawRotation);
+      StorePointToEigenMatrix(point_set, RCM.zFrameToTreatment);
     }
   }
 
@@ -832,75 +660,63 @@ vtkSmartPointer< vtkPoints >
       for (k = -49.0; k >= -49 * 2; k += -49)
       {
         LateralTranslation = k;
-        RCM                = NeuroKinematics_.get_RCM(
+        RCM                = NeuroKinematics_.GetRcm(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, RCM);
-        points->InsertNextPoint(transferred_point(0), transferred_point(1),
-                                transferred_point(2));
-        myout << transferred_point(0) << " " << transferred_point(1) << " "
-              << transferred_point(2) << " 0.00 0.00 0.00" << endl;
+        StorePointToEigenMatrix(point_set, RCM.zFrameToTreatment);
       }
     }
     AxialFeetTranslation = -3;
     AxialHeadTranslation = 0;
   }
-  std::cout << "# of points: " << points->GetNumberOfPoints();
-  myout.close();
-  return points;
+  return point_set;
 }
 
-// Method to create a point set containing all RCM points
-Eigen::Matrix3Xf
-  ForwardKinematics::GetRcmPointCloud(Eigen::Matrix4d registration)
-{  // To visualize the transferred points in the slicer without using the
-   // Transform Module
-  Eigen::Matrix4d registration_inv = registration.inverse();
-
-  // Vector to store points before transformation
-  Eigen::Vector4d point(0.0, 0.0, 0.0, 0.0);
-
+// Method to generate a point set containing all RCM points
+Eigen::Matrix3Xf ForwardKinematics::GetRcmPointCloud()
+{
   // Object containing the 4x4 transformation matrix
   Neuro_FK_outputs RCM_PC{};
+  // Matrix to store point set
+  Eigen::Matrix3Xf point_set(3, 1);
 
-  /*============================================================================================================
-     =============================================RCM
-     computation============================================
-      ==================================================================================================*/
+  // RCM point set generation
 
   // Initializing a 3 X 197,779 Eigen matrix to store the RCM point cloud.
-  // Change the col length if the courseness of the PC is changed. The value for
+  // Change the col length if the coarseness of the PS is changed. The value for
   // this length is printed upon running this method.
-  Eigen::Matrix3Xf Point_cloud(3, 197779);
+  Eigen::Matrix3Xf rcm_point_cloud(3, 197779);
 
-  double       min_seperation{71};          // 71
-  const double division{100};               // 100
-  const double division_k{20};              // 20
-  const double lateral_start{-49};          //-49
+  // Minimum allowed distance between the two legs {71}
+  double min_seperation{71};
+  // Division factor determining the coarseness of the PC in the Z direction 100
+  const double division{100};
+  // Division factor determining the coarseness of the PC in the X direction 20
+  const double division_k{20};
+  // Strarting position for the lateral head -49
+  const double lateral_start{-49};
   const double Abs_min_leg_separation{68};  // 68
+
   // Loop for visualizing the top
   AxialFeetTranslation = 68;
   AxialHeadTranslation = 0;
   double Top_max_travel{-157};
   counter = 0;  //-157
+  // initial separation 143, min separation 75 => 143-75 = 68 mm
   for (i = Top_max_travel / division; i >= Top_max_travel;
-       i += Top_max_travel / division)  // initial separation 143, min
-                                        // separation 75 => 143-75 = 68 mm
+       i += Top_max_travel / division)
   {
     AxialHeadTranslation += Top_max_travel / division;
     AxialFeetTranslation += Top_max_travel / division;
+    // max lateral movement 0.0 ~ -49.47 (appx = -49)
     for (k = lateral_start; k >= lateral_start * 2;
-         k += lateral_start / division_k)  // max lateral movement 0.0 ~ -49.47
-                                           // (appx = -49)
+         k += lateral_start / division_k)
     {
       LateralTranslation = k;
-      RCM_PC             = NeuroKinematics_.get_RCM(
+      RCM_PC             = NeuroKinematics_.GetRcm(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-      Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-      transferred_point = get_Transform(registration_inv, RCM_PC);
-      store_Point(Point_cloud, transferred_point, counter);
+      StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
       ++counter;
     }
   }
@@ -911,19 +727,17 @@ Eigen::Matrix3Xf
   double max_travel_bottom{-86};
   for (i = 0; i >= max_travel_bottom; i += max_travel_bottom / division)  //
   {
-    if (i == 0)  // for the beginning row
+    // for the beginning row
+    if (i == 0)
     {
       for (k = lateral_start; k >= lateral_start * 2;
            k += lateral_start / division_k)
       {
         LateralTranslation = k;
-        RCM_PC             = NeuroKinematics_.get_RCM(
+        RCM_PC             = NeuroKinematics_.GetRcm(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, RCM_PC);
-
-        store_Point(Point_cloud, transferred_point, counter);
+        StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
         ++counter;
       }
     }
@@ -935,13 +749,10 @@ Eigen::Matrix3Xf
            k += lateral_start / division_k)
       {
         LateralTranslation = k;
-        RCM_PC             = NeuroKinematics_.get_RCM(
+        RCM_PC             = NeuroKinematics_.GetRcm(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, RCM_PC);
-
-        store_Point(Point_cloud, transferred_point, counter);
+        StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
         ++counter;
       }
     }
@@ -960,12 +771,10 @@ Eigen::Matrix3Xf
     {
       LateralTranslation = k;
 
-      RCM_PC = NeuroKinematics_.get_RCM(
+      RCM_PC = NeuroKinematics_.GetRcm(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-      Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-      transferred_point = get_Transform(registration_inv, RCM_PC);
-      store_Point(Point_cloud, transferred_point, counter);
+      StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
       ++counter;
     }
   }
@@ -983,12 +792,10 @@ Eigen::Matrix3Xf
     {
       LateralTranslation = k;
 
-      RCM_PC = NeuroKinematics_.get_RCM(
+      RCM_PC = NeuroKinematics_.GetRcm(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-      Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-      transferred_point = get_Transform(registration_inv, RCM_PC);
-      store_Point(Point_cloud, transferred_point, counter);
+      StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
       ++counter;
     }
   }
@@ -996,24 +803,24 @@ Eigen::Matrix3Xf
   // loop for creating the sides
   AxialFeetTranslation = -3;
   AxialHeadTranslation = 0;
-  double min_travel{-86};  // The max that the robot can move in z direction
-                           // when at lowest height (at each hight min travel is
-                           // changed)
-  double max_travel{-157};  // 157 The max that the robot can move in z
-                            // direction when at highest height
+  // The max that the robot can move in z direction when at lowest height (at
+  // each hight min travel is changed)
+  double min_travel{-86};
+  // 157 The max that the robot can move in z direction when at highest height.
+  double max_travel{-157};
+
   for (j = min_seperation / division; j <= Abs_min_leg_separation;
        j += min_seperation / division)
   {
-    AxialFeetTranslation += j;  // For each loop it will lift the base by a
-                                // constant value
-    min_travel -= min_seperation / division;  // Takes care of the amount of
-                                              // Axial travel for the Axial head
-                                              // and feet
+    // For each loop it will lift the base by a constant value
+    AxialFeetTranslation += j;
+    // Takes care of the amount of Axial travel for the Axial head and feet
+    min_travel -= min_seperation / division;
 
+    // loop to move the base from Head to Feet, based on the allowable max
+    // movement range (min_travel)
     for (ii = 0; ii > min_travel + 1 && min_travel >= max_travel;
-         ii += min_travel / division)  // loop to move the base from Head to
-                                       // feet based on the allowable max
-                                       // movement range (min_travel)
+         ii += min_travel / division)
     {
       AxialHeadTranslation += min_travel / division;
       AxialFeetTranslation += min_travel / division;
@@ -1021,21 +828,17 @@ Eigen::Matrix3Xf
            k += lateral_start / division_k)
       {
         LateralTranslation = k;
-        RCM_PC             = NeuroKinematics_.get_RCM(
+        RCM_PC             = NeuroKinematics_.GetRcm(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        Eigen::Vector4d transferred_point(0.0, 0.0, 0.0, 1.0);
-        transferred_point = get_Transform(registration_inv, RCM_PC);
-        store_Point(Point_cloud, transferred_point, counter);
+        StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
         ++counter;
       }
     }
     AxialFeetTranslation = -3;
     AxialHeadTranslation = 0;
   }
-  // std::cout << "\nTotal # points inside the point cloud: " << counter - 1
-  //           << std::endl;
-  return Point_cloud;
+  return rcm_point_cloud;
 }
 
 // Method to return a point set based on a given EP.
@@ -1045,13 +848,9 @@ Eigen::Matrix3Xf ForwardKinematics::GetSubWorkspace(
 {
   // Creating the PC for the Validated RCM points that satisfy the distance
   // criteria
-  ofstream myout("Validated_workspace.xyz");
 
-  // Creating a point set containing all RCM points
-  Eigen::Matrix3Xf RCM_PC;
-  RCM_PC = get_RCM_PC(registration);
   // number of columns of the RCM PC
-  int no_cols_RCM_PC = RCM_PC.cols();
+  int no_cols_RCM_PC = rcm_point_cloud_.cols();
 
   // calculate the transformation from the robot to the the entry point
   Eigen::Matrix4d registration_inv = registration.inverse();
@@ -1119,12 +918,12 @@ Eigen::Matrix3Xf ForwardKinematics::GetSubWorkspace(
 // Method to store a point of the RCM Point Cloud. Points are stored inside an
 // Eigen matrix.
 void ForwardKinematics::StorePoints(Eigen::Matrix3Xf& rcm_point_cloud,
-                                    Eigen::Vector4d&  transferred_Point,
+                                    Eigen::Matrix4d   transformation_matrix,
                                     int               counter)
 {
-  RCM_Point_cloud(0, counter) = transferred_Point(0);
-  RCM_Point_cloud(1, counter) = transferred_Point(1);
-  RCM_Point_cloud(2, counter) = transferred_Point(2);
+  rcm_point_cloud(0, counter) = transformation_matrix(0, 3);
+  rcm_point_cloud(1, counter) = transformation_matrix(1, 3);
+  rcm_point_cloud(2, counter) = transformation_matrix(2, 3);
 }
 
 // Method to check if the Entry point is within the bounds of a given RCM point
@@ -1164,10 +963,10 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
   // float B_value = NeuroKinematics_._probe->_robotToEntry; // B value
   int no_Cols_Validated_PC = Validated_PC.cols();
 
-  /* The methods checks for validity of the filtered workspace Using IK_solver
-  Method. This Method takes two Eigen Vectors of size 4 i.e (x,y,z,1). First
-  argument is the EP and the second argument is the RCM point which is
-  considered as the TP.*/
+  /* The methods checks for validity of the filtered workspace Using
+  InverseKinematicsWithZeroProbeInsertion Method. This Method takes two Eigen
+  Vectors of size 4 i.e (x,y,z,1). First argument is the EP and the second
+  argument is the RCM point which is considered as the TP.*/
 
   // Initializing the vectors for EP and TP.
   Eigen::Vector4d EP_R(EP_inRobotCoordinate(0), EP_inRobotCoordinate(1),
@@ -1191,7 +990,8 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
   const double min_Probe_insertion       = 0;
   const double max_Probe_insertion       = 50;
   double       Axial_Seperation{0};
-  // Creating the object to store the output of the IK_Solver
+  // Creating the object to store the output of the
+  // InverseKinematicsWithZeroProbeInsertion method
   Neuro_IK_outputs IK_output;
 
   // Loop that goes through each point in the Validated PC and checks for the
@@ -1201,7 +1001,8 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
     // setting the TP for each point in the loop
     TP_R << Validated_PC(0, i), Validated_PC(1, i), Validated_PC(2, i), 1;
 
-    IK_output = NeuroKinematics_.IK_solver(EP_R, TP_R);
+    IK_output =
+      NeuroKinematics_.InverseKinematicsWithZeroProbeInsertion(EP_R, TP_R);
     Axial_Seperation =
       143 + IK_output.AxialHeadTranslation - IK_output.AxialFeetTranslation;
 
@@ -1332,20 +1133,16 @@ Eigen::Matrix3Xf ForwardKinematics::Create3DMesh(
   Eigen::Vector3d coordinate_of_last_point(0., 0., 0.);
   Eigen::Vector3d intersection_point1(0., 0., 0.);
   Eigen::Vector3d intersection_point2(0., 0., 0.);
+
   int division{5}, counter{0}, counter1{0};  // division is the number of
                                              // desired points to generate
                                              // between the EP and the last
                                              // point
   // Number of desired points between the EP and the last point
-  Eigen::Matrix3Xf sub_workspace_PC(3, no_cols * division);  // Matrix
-                                                             // containing all
-                                                             // the points
-                                                             // within the
-                                                             // sub-workspace
-                                                             // starting from
-                                                             // the EP to the
-                                                             // last point
-  sub_workspace_PC = 0 * sub_workspace_PC;                   // initializing
+  // Matrix containing all the points within the sub-workspace starting from
+  // the EP to the last point
+  Eigen::Matrix3Xf sub_workspace_PC(3, no_cols * division);
+  sub_workspace_PC = 0 * sub_workspace_PC;  // initializing
 
   /*To find the coordinate of the point past the RCM, a series of operations
   need to be evoked. A sphere of size equal to "Dist_past_RCM" will be placed
@@ -1478,3 +1275,28 @@ Eigen::Vector4d ForwardKinematics::GetTransform(
 
 Eigen::Vector3d ForwardKinematics::ExtractPositionVectorFrom4X4Matrix(
   Eigen::Matrix4d transformation_matrix);
+
+// Method which takes a 4X4 transformation matrix and extracts the position
+// vector and saves it inside an Eigen matrix
+void ForwardKinematics::StorePointToEigenMatrix(
+  Eigen::Matrix3Xf& point_set, Eigen::Matrix4d transformation_matrix)
+{
+  int no_of_columns = point_set.cols();
+  // The case for the first column
+  if (no_of_columns == 1)
+  {
+    for (int i = 0; i < 3; i++)
+    {
+      point_set(i, 0) = transformation_matrix(i, 3);
+    }
+  }
+  // The case for all columns other than the first column
+  else
+  {
+    point_set.conservativeResize(3, no_of_columns + 1);
+    for (int i = 0; i < 3; i++)
+    {
+      point_set(i, no_of_columns) = transformation_matrix(i, 3);
+    }
+  }
+}

@@ -319,8 +319,8 @@ Neuro_IK_outputs NeuroKinematics::InverseKinematics(
 }
 // Method to calculate the Cartesian base location and the Pitch and Yaw
 // rotation of the robot given an EP and the RCM point as the TP.
-Neuro_IK_outputs NeuroKinematics::IK_solver(Eigen::Vector4d EntryPoint,
-                                            Eigen::Vector4d TargetPoint)
+Neuro_IK_outputs NeuroKinematics::InverseKinematicsWithZeroProbeInsertion(
+  Eigen::Vector4d EntryPoint, Eigen::Vector4d TargetPoint)
 {
   /* In this method the target point is going to be the the RCM point. The IK
   solver will try to find the values for lateral and Axial feet and Axial head
@@ -394,7 +394,7 @@ Neuro_IK_outputs NeuroKinematics::IK_solver(Eigen::Vector4d EntryPoint,
 };
 
 // Method to calculate the RCM location w.r.t Z-frame
-Neuro_FK_outputs NeuroKinematics::get_RCM(
+Neuro_FK_outputs NeuroKinematics::GetRcm(
   double AxialHeadTranslation, double AxialFeetTranslation,
   double LateralTranslation, double ProbeInsertion, double ProbeRotation,
   double PitchRotation, double YawRotation)

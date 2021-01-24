@@ -99,19 +99,19 @@ public:
                                      double YawRotation);
 
   // Method for the calculation of the location of the RCM w.r.t Z-frame
-  Neuro_FK_outputs get_RCM(double AxialHeadTranslation,
-                           double AxialFeetTranslation,
-                           double LateralTranslation, double ProbeInsertion,
-                           double ProbeRotation, double PitchRotation,
-                           double YawRotation);
+  Neuro_FK_outputs GetRcm(double AxialHeadTranslation,
+                          double AxialFeetTranslation,
+                          double LateralTranslation, double ProbeInsertion,
+                          double ProbeRotation, double PitchRotation,
+                          double YawRotation);
   // Method to calculate joint values given a desired EP and TP
   Neuro_IK_outputs InverseKinematics(Eigen::Vector4d entryPointzFrame,
                                      Eigen::Vector4d targetPointzFrame);
 
   // IK Method for calculation of the cartesian base based on a given Entry
   // point and an RCM point as the target point
-  Neuro_IK_outputs IK_solver(Eigen::Vector4d EntryPoint,
-                             Eigen::Vector4d TargetPoint);
+  Neuro_IK_outputs InverseKinematicsWithZeroProbeInsertion(
+    Eigen::Vector4d entry_point, Eigen::Vector4d target_point);
 };
 
 #endif /* NEUROKINEMATICS_HPP_ */

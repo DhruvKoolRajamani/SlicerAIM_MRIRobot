@@ -26,21 +26,23 @@ public:
   double       Rx_max_degree;
   int          counter;  // counter for NaN checker
   // Robot axis
-  double          AxialHeadTranslation;
-  double          AxialFeetTranslation;
-  double          LateralTranslation;
-  double          PitchRotation;
-  double          YawRotation;
-  double          ProbeInsertion;
-  double          ProbeRotation;
-  NeuroKinematics NeuroKinematics_;
+  double                  AxialHeadTranslation;
+  double                  AxialFeetTranslation;
+  double                  LateralTranslation;
+  double                  PitchRotation;
+  double                  YawRotation;
+  double                  ProbeInsertion;
+  double                  ProbeRotation;
+  NeuroKinematics         NeuroKinematics_;
+  static Eigen::Matrix3Xf rcm_point_cloud_(3, 197779);
 
   // methods
 
-  // Method to calculate the Point cloud for the suface of the WS
+  // Method to generate Point cloud of the surface of general reachable
+  // Workspace
   Eigen::Matrix3Xf GetGeneralWorkspace();
 
-  // Method to calculate the Point cloud for the suface of the RCM
+  // Method to generate Point cloud of the surface of the RCM Workspace
   Eigen::Matrix3Xf GetRcmWorkSpace();
 
   // Method to generate a point set from the RCM WS.
@@ -51,7 +53,7 @@ public:
                                    double          probe_init);
 
   void StorePoints(Eigen::Matrix3Xf& rcm_point_cloud,
-                   Eigen::Vector4d& transferred_point, int counter);
+                   Eigen::Matrix4d transformation_matrix, int counter);
 
   bool CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
                    Eigen::Vector3f rcm_point, double probe_init);
@@ -64,6 +66,11 @@ public:
 
   Eigen::Vector3d
     ExtractPositionVectorFrom4X4Matrix(Eigen::Matrix4d transformation_matrix);
+
+  // Method which takes a 4X4 transformation matrix and extracts the position
+  // vector and saves it inside an Eigen matrix
+  void StorePointToEigenMatrix(Eigen::Matrix3Xf& point_set,
+                               Eigen::Matrix4d   transformation_matrix);
 
   void CalcTransform(Eigen::Matrix4d  registration_inv,
                      Eigen::Vector3d  ep_in_imager_coordinate,
