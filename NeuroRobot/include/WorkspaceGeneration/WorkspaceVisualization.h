@@ -1,7 +1,5 @@
 #pragma once
 #include "../Kinematics/NeuroKinematics.hpp"
-#include <vtkPoints.h>
-#include <vtkSmartPointer.h>
 
 class ForwardKinematics
 {
@@ -34,7 +32,7 @@ public:
   double                  ProbeInsertion;
   double                  ProbeRotation;
   NeuroKinematics         NeuroKinematics_;
-  static Eigen::Matrix3Xf rcm_point_cloud_(3, 1);
+  static Eigen::Matrix3Xf rcm_point_set_;
 
   // methods
 
@@ -46,17 +44,16 @@ public:
   Eigen::Matrix3Xf GetRcmWorkSpace();
 
   // Method to generate a point set from the RCM WS.
-  Eigen::Matrix3Xf GetRcmPointCloud();
+  Eigen::Matrix3Xf GetRcmPointSet();
 
   // Method to return a point set based on a given EP.
-  Eigen::Matrix3Xf GetSubWorkspace(Eigen::Vector3d ep_in_imager_coordinate,
-                                   double          probe_init);
+  Eigen::Matrix3Xf GetSubWorkspace(Eigen::Vector3d ep_in_robot_coordinate);
 
-  void StorePoints(Eigen::Matrix3Xf& rcm_point_cloud,
-                   Eigen::Matrix4d transformation_matrix, int counter);
+  void StorePoint(Eigen::Matrix3Xf& rcm_point_cloud,
+                  Eigen::Matrix4d transformation_matrix, int counter);
 
   bool CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
-                   Eigen::Vector3f rcm_point, double probe_init);
+                   Eigen::Vector3f rcm_point_set);
 
   Eigen::Matrix3Xf
     GetPointCloudInverseKinematics(Eigen::Matrix3Xf validated_point_set,
@@ -66,11 +63,8 @@ public:
     Eigen::Matrix3Xf validated_inverse_kinematic_rcm_pointset,
     Eigen::Vector3d  ep_in_robot_coordinate);
 
-  Eigen::Vector3d
-    ExtractPositionVectorFrom4X4Matrix(Eigen::Matrix4d transformation_matrix);
-
-  // Method which takes a 4X4 transformation matrix and extracts the position
-  // vector and saves it inside an Eigen matrix
+  /* Method which takes a 4X4 transformation matrix and extracts the position
+  vector and saves it inside an Eigen matrix*/
   void StorePointToEigenMatrix(Eigen::Matrix3Xf& point_set,
                                Eigen::Matrix4d   transformation_matrix);
   void StorePointToEigenMatrix(Eigen::Matrix3Xf& point_set, double x, double y,
@@ -79,7 +73,4 @@ public:
   void CalculateTransform(Eigen::Matrix4d  registration_inv,
                           Eigen::Vector3d  ep_in_imager_coordinate,
                           Eigen::Vector3d& ep_in_robot_coordinate);
-
-  Eigen::Vector4d GetTransform(Eigen::Matrix4d  registration_inv,
-                               Neuro_FK_outputs forward_kinematic);
 };

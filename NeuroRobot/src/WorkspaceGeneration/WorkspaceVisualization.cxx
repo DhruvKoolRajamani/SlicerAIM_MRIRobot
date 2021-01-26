@@ -8,7 +8,7 @@ using std::endl;
 ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   : Diff(68), pi(3.141)
 {
-  // counters
+  // Counters
   i       = 0.0;
   j       = 0.0;
   k       = 0.0;
@@ -35,7 +35,7 @@ ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   ProbeRotation        = 0.0;
 
   // RCM point cloud
-  Eigen::MatrixXf rcm_point_cloud_ = GetRcmPointCloud();
+  rcm_point_set_ = GetRcmPointSet();
 
   NeuroKinematics_ = NeuroKinematics;
 }
@@ -673,19 +673,17 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmWorkSpace()
 }
 
 // Method to generate a point set containing all RCM points
-Eigen::Matrix3Xf ForwardKinematics::GetRcmPointCloud()
+Eigen::Matrix3Xf ForwardKinematics::GetRcmPointSet()
 {
   // Object containing the 4x4 transformation matrix
   Neuro_FK_outputs RCM_PC{};
-  // Matrix to store point set
-  Eigen::Matrix3Xf point_set(3, 1);
 
   // RCM point set generation
 
-  // Initializing a 3 X 197,779 Eigen matrix to store the RCM point cloud.
-  // Change the col length if the coarseness of the PS is changed. The value for
-  // this length is printed upon running this method.
-  Eigen::Matrix3Xf rcm_point_cloud(3, 197779);
+  /* Initializing a 3 X 197,779 Eigen matrix to store total RCM point-set.
+  Change the col length if the coarseness of the PS is changed. The value for
+  this length is printed upon running this method.*/
+  Eigen::Matrix3Xf rcm_point_set(3, 197779);
 
   // Minimum allowed distance between the two legs {71}
   double min_seperation{71};
@@ -716,7 +714,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmPointCloud()
       RCM_PC             = NeuroKinematics_.GetRcm(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-      StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
+      StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
       ++counter;
     }
   }
@@ -725,7 +723,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmPointCloud()
   AxialHeadTranslation = 0;
   AxialFeetTranslation = -3;
   double max_travel_bottom{-86};
-  for (i = 0; i >= max_travel_bottom; i += max_travel_bottom / division)  //
+  for (i = 0; i >= max_travel_bottom; i += max_travel_bottom / division)
   {
     // for the beginning row
     if (i == 0)
@@ -737,7 +735,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmPointCloud()
         RCM_PC             = NeuroKinematics_.GetRcm(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
+        StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
         ++counter;
       }
     }
@@ -752,7 +750,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmPointCloud()
         RCM_PC             = NeuroKinematics_.GetRcm(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
+        StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
         ++counter;
       }
     }
@@ -774,7 +772,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmPointCloud()
       RCM_PC = NeuroKinematics_.GetRcm(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-      StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
+      StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
       ++counter;
     }
   }
@@ -795,7 +793,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmPointCloud()
       RCM_PC = NeuroKinematics_.GetRcm(
         AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
         ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-      StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
+      StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
       ++counter;
     }
   }
@@ -831,51 +829,37 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmPointCloud()
         RCM_PC             = NeuroKinematics_.GetRcm(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        StorePoint(rcm_point_cloud, RCM_PC.zFrameToTreatment, counter);
+        StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
         ++counter;
       }
     }
     AxialFeetTranslation = -3;
     AxialHeadTranslation = 0;
   }
-  return rcm_point_cloud;
+  return rcm_point_set;
 }
 
 // Method to return a point set based on a given EP.
-Eigen::Matrix3Xf ForwardKinematics::GetSubWorkspace(
-  Eigen::Vector3d ep_in_imager_coordinate, Eigen::Matrix4d registration,
-  double probe_init)
+Eigen::Matrix3Xf
+  ForwardKinematics::GetSubWorkspace(Eigen::Vector3d ep_in_robot_coordinate)
 {
-  /* Creating the PC for the Validated RCM points that satisfy the distance
-  criteria*/
 
-  // number of columns of the RCM PC
-  int no_cols_rcm_pc = rcm_point_cloud_.cols();
+  // Number of points inside the RCM point set
+  int no_cols_rcm_pc = rcm_point_set_.cols();
 
-  // calculate the transformation from the robot to the the entry point
-  Eigen::Matrix4d registration_inv = registration.inverse();
-  Eigen::Vector3d ep_in_robot_coordinate(0.0, 0.0, 0.0);
-  // Finds the location of the EP W.R.T the robot base
-  CalculateTransform(registration_inv, ep_in_imager_coordinate,
-                     ep_in_robot_coordinate);
-
-  /* loop to go through each RCM points and check for the validity of them W.R.T
-  the EP. The first loop determines the size of the matrix to store the
-  validated points The second loop stores the validated points inside the
-  matrix. Reshape could also be used but may effect the speed.*/
   Eigen::Vector3f rcm_point_to_check;
-  // Matrix which store the validated point set after checking the sphere cond
+  // Matrix which stores the validated point set after checking the sphere cond
   Eigen::Matrix3Xf validated_point_set(3, 1);
-
+  /* Loop which goes through each RCM points and checks for the validity of each
+  point based on the sphere criteria.*/
   for (int i = 0; i < no_cols_rcm_pc; i++)
   {
-    rcm_point_to_check(rcm_point_cloud_(0, i), rcm_point_cloud_(1, i),
-                       rcm_point_cloud_(2, i));
-    if (check_Sphere(ep_in_robot_coordinate, rcm_point_to_check, probe_init) ==
-        1)
+    rcm_point_to_check << rcm_point_set_(0, i), rcm_point_set_(1, i),
+      rcm_point_set_(2, i);
+    if (CheckSphere(ep_in_robot_coordinate, rcm_point_to_check) == 1)
     {
-      StorePointToEigenMatrix(validated_point_set, rcm_point_cloud_(0, i),
-                              rcm_point_cloud_(1, i), rcm_point_cloud_(2, i));
+      StorePointToEigenMatrix(validated_point_set, rcm_point_set_(0, i),
+                              rcm_point_set_(1, i), rcm_point_set_(2, i));
     }
   }
 
@@ -893,9 +877,9 @@ Eigen::Matrix3Xf ForwardKinematics::GetSubWorkspace(
 
 /* Method to store a point of the RCM Point Cloud. Points are stored inside an
 Eigen matrix.*/
-void ForwardKinematics::StorePoints(Eigen::Matrix3Xf& rcm_point_cloud,
-                                    Eigen::Matrix4d   transformation_matrix,
-                                    int               counter)
+void ForwardKinematics::StorePoint(Eigen::Matrix3Xf& rcm_point_cloud,
+                                   Eigen::Matrix4d   transformation_matrix,
+                                   int               counter)
 {
   rcm_point_cloud(0, counter) = transformation_matrix(0, 3);
   rcm_point_cloud(1, counter) = transformation_matrix(1, 3);
@@ -904,24 +888,25 @@ void ForwardKinematics::StorePoints(Eigen::Matrix3Xf& rcm_point_cloud,
 
 // Method to check if the Entry point is within the bounds of a given RCM point
 bool ForwardKinematics::CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
-                                    Eigen::Vector3f rcm_point_cloud,
-                                    double          probe_init)
+                                    Eigen::Vector3f rcm_point_set)
 {
   /*Whether a point lies inside a sphere or not, depends upon its distance from
   the centre. A point (x, y, z) is inside the sphere with center (cx, cy, cz)
   and radius r if ( x-cx ) ^2 + (y-cy) ^2 + (z-cz) ^ 2 < r^2 */
-  float       B_value = probe_init;
+  float       B_value = NeuroKinematics_._probe->_robotToEntry;
   const float radius  = 72.5 - B_value;  // RCM offset from Robot to RCM point
 
   float distance{0};
-  distance = pow(ep_in_robot_coordinate(0) - rcm_point_cloud(0), 2) +
-             pow(ep_in_robot_coordinate(1) - rcm_point_cloud(1), 2) +
-             pow(ep_in_robot_coordinate(2) - rcm_point_cloud(2), 2);
-  if (distance <= pow(radius, 2))  // EP is within the Sphere
+  distance = pow(ep_in_robot_coordinate(0) - rcm_point_set(0), 2) +
+             pow(ep_in_robot_coordinate(1) - rcm_point_set(1), 2) +
+             pow(ep_in_robot_coordinate(2) - rcm_point_set(2), 2);
+  // Entry point is inside the Sphere
+  if (distance <= pow(radius, 2))
   {
     return 1;
   }
-  else  // EP is outside of the Sphere
+  // Entry point is outside of the Sphere
+  else
   {
     return 0;
   }
@@ -1111,8 +1096,8 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
     b               = -2 * a;
     c               = a - pow(distance_past_rcm, 2);
     /* coefficients that will be plugged into the eq of line which give the
-     * intersection points  coefficients that  will be plugged  into the eq of
-     * line which give the intersection points*/
+    intersection points  coefficients that  will be plugged  into the eq of
+    line which give the intersection points*/
     t1 = (-b + sqrt(pow(b, 2) - (4 * a * c))) / (2 * a);
     t2 = (-b - sqrt(pow(b, 2) - (4 * a * c))) / (2 * a);
 
@@ -1175,44 +1160,37 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
   return total_subworkspace_pointset;
 }
 
-// Method which applis the transform to the given entry point defined in the
-// Imager's coordinate frame to define it in the Robot's frame
-void ForwardKinematics::CalcTransform(Eigen::Matrix4d  registration_inv,
-                                      Eigen::Vector3d  ep_in_imager_coordinate,
-                                      Eigen::Vector3d& ep_in_robot_coordinate)
+/*Method which applies the transform to the given entry point defined in the
+Imager's coordinate frame to define it in the Robot's frame.*/
+void ForwardKinematics::CalculateTransform(
+  Eigen::Matrix4d registration_inv, Eigen::Vector3d ep_in_imager_coordinate,
+  Eigen::Vector3d& ep_in_robot_coordinate)
 {
-  Eigen::Vector4d EP_R(EP_inRobotCoordinate(0), EP_inRobotCoordinate(1),
-                       EP_inRobotCoordinate(2), 1);  // Creating a standard
-                                                     // vector for matrix
-                                                     // multiplication
-  Eigen::Vector4d EP_I(EP_inImagerCoordinate(0), EP_inImagerCoordinate(1),
-                       EP_inImagerCoordinate(2), 1);  // Creating a standard
-                                                      // vector for matrix
-                                                      // multiplication
+  // Creating a standard vector for matrix multiplication
+  Eigen::Vector4d entry_point_robot(ep_in_robot_coordinate(0),
+                                    ep_in_robot_coordinate(1),
+                                    ep_in_robot_coordinate(2), 1);
+  // Creating a standard vector for matrix multiplication
+  Eigen::Vector4d entry_point_imager(ep_in_imager_coordinate(0),
+                                     ep_in_imager_coordinate(1),
+                                     ep_in_imager_coordinate(2), 1);
   // Finding the location of the EP W.R.T Robot's base frame
-  EP_R = registration_inv * EP_I;
-
+  entry_point_robot = registration_inv * entry_point_imager;
   // rounding step (to the tenth)
   for (int t = 0; t < 3; t++)
   {
-    EP_R(t)                 = round(EP_R(t) * 10) / 10;
-    EP_inRobotCoordinate(t) = EP_R(t);
+    entry_point_robot(t)      = round(entry_point_robot(t) * 10) / 10;
+    ep_in_robot_coordinate(t) = entry_point_robot(t);
   }
 }
 
-Eigen::Vector4d ForwardKinematics::GetTransform(
-  Eigen::Matrix4d registration_inv, Neuro_FK_outputs forward_kinematic);
-
-Eigen::Vector3d ForwardKinematics::ExtractPositionVectorFrom4X4Matrix(
-  Eigen::Matrix4d transformation_matrix);
-
-// Method which takes a 4X4 transformation matrix and extracts the position
-// vector and saves it inside an Eigen matrix
+/* Method takes a 4x4 transformation matrix comrised of [R P;0001], and extracts
+the position vector P, and appends it in a 3xN Eigen matrix.*/
 void ForwardKinematics::StorePointToEigenMatrix(
   Eigen::Matrix3Xf& point_set, Eigen::Matrix4d transformation_matrix)
 {
   int no_of_columns = point_set.cols();
-  // The case for the first column
+  // The case where the point set is empty
   if (no_of_columns == 1)
   {
     for (int i = 0; i < 3; i++)
@@ -1220,7 +1198,7 @@ void ForwardKinematics::StorePointToEigenMatrix(
       point_set(i, 0) = transformation_matrix(i, 3);
     }
   }
-  // The case for all columns other than the first column
+  // The case where the point set has at least one point in it
   else
   {
     point_set.conservativeResize(3, no_of_columns + 1);
@@ -1230,6 +1208,7 @@ void ForwardKinematics::StorePointToEigenMatrix(
     }
   }
 }
+
 void ForwardKinematics::StorePointToEigenMatrix(Eigen::Matrix3Xf& point_set,
                                                 double x, double y, double z)
 {
