@@ -30,5 +30,6 @@
       "label": "Issues",
       "query": "repo:${owner}/${repository} state:open" //  sort:created-desc
     }
-  ]
+  ],
+  "cmake.configureOnEdit": false
 }
