@@ -39,6 +39,7 @@
 #include <vtkMRMLVolumeRenderingDisplayNode.h>
 
 // VTK includes
+#include "vtkMRMLVolumePropertyNode.h"
 #include <vtkCleanPolyData.h>
 #include <vtkCollection.h>
 #include <vtkCollectionIterator.h>
@@ -496,6 +497,8 @@ vtkMRMLVolumeNode*
 
   if (VolumeRenderingLogic)
   {
+    VolumeRenderingLogic->SetMRMLScene(this->GetMRMLScene());
+
     this->InputVolumeRenderingDisplayNode =
       VolumeRenderingLogic->GetFirstVolumeRenderingDisplayNode(volumeNode);
 
@@ -505,6 +508,19 @@ vtkMRMLVolumeNode*
       this->InputVolumeRenderingDisplayNode =
         VolumeRenderingLogic->CreateDefaultVolumeRenderingNodes(volumeNode);
     }
+    else
+    {
+      VolumeRenderingLogic->UpdateDisplayNodeFromVolumeNode(
+        this->InputVolumeRenderingDisplayNode, volumeNode);
+    }
+
+    // Get the current Volume Property Node.
+    vtkMRMLVolumePropertyNode* volumePropertyNode =
+      this->InputVolumeRenderingDisplayNode->GetVolumePropertyNode();
+
+    // Copy the MRI preset to the volume property node
+    volumePropertyNode->Copy(
+      VolumeRenderingLogic->GetPresetByName("MR-Default"));
   }
   else
   {
@@ -514,18 +530,19 @@ vtkMRMLVolumeNode*
     return volumeNode;
   }
 
-  VolumeRenderingLogic->SetMRMLScene(this->GetMRMLScene());
-  vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode > displayNode =
-    vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode >::Take(
-      this->InputVolumeRenderingDisplayNode);
+  // vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode > displayNode =
+  //   vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode >::Take(
+  //     this->InputVolumeRenderingDisplayNode);
 
-  if (!this->GetMRMLScene()->IsNodePresent(displayNode))
-  {
-    this->GetMRMLScene()->AddNode(displayNode);
-    volumeNode->AddAndObserveDisplayNodeID(displayNode->GetID());
-    VolumeRenderingLogic->UpdateDisplayNodeFromVolumeNode(displayNode,
-                                                          volumeNode);
-  }
+  // if (!this->GetMRMLScene()->IsNodePresent(
+  //       this->InputVolumeRenderingDisplayNode))
+  // {
+  //   this->GetMRMLScene()->AddNode(this->InputVolumeRenderingDisplayNode);
+  //   volumeNode->AddAndObserveDisplayNodeID(
+  //     this->InputVolumeRenderingDisplayNode->GetID());
+  // VolumeRenderingLogic->UpdateDisplayNodeFromVolumeNode(
+  //   this->InputVolumeRenderingDisplayNode, volumeNode);
+  // }
 
   this->AnnotationROINode = this->InputVolumeRenderingDisplayNode->GetROINode();
   this->WorkspaceGenerationNode->SetAndObserveAnnotationROINodeID(
@@ -603,7 +620,7 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   vtkSmartPointer< vtkDelaunay3D > delaunay =
     vtkSmartPointer< vtkDelaunay3D >::New();
   delaunay->SetInputData(polyDataWorkspace);
-  delaunay->SetAlpha(6);
+  delaunay->SetAlpha(2);
   delaunay->SetTolerance(0.3);
   delaunay->SetOffset(5.0);
   delaunay->Update();

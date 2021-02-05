@@ -24,6 +24,8 @@ set(${KIT}_SRCS
   vtkSlicer${MODULE_NAME}Logic.h
   )
 
+# add_library(lNvidiaAIAAClient SHARED ${CMAKE_BINARY_DIR}/lib/libNvidiaAIAAClient.so)
+
 set(${KIT}_TARGET_LIBRARIES
   ${ITK_LIBRARIES}
   vtkSlicer${MODULE_NAME}ModuleMRML
@@ -36,6 +38,7 @@ set(${KIT}_TARGET_LIBRARIES
   vtkSlicerSegmentationsModuleLogic
   # utilities
   NeuroKinematics
+  NvidiaAIAAClient
   )
 
 #-----------------------------------------------------------------------------

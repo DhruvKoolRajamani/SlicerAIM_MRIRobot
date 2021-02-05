@@ -1372,13 +1372,13 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
 
     if (d->InputVolumeRenderingDisplayNode != NULL)
     {
-      // Get the current Volume Property Node.
-      d->VolumePropertyNode =
-        d->InputVolumeRenderingDisplayNode->GetVolumePropertyNode();
+      // // Get the current Volume Property Node.
+      // d->VolumePropertyNode =
+      //   d->InputVolumeRenderingDisplayNode->GetVolumePropertyNode();
 
-      // Copy the MRI preset to the volume property node
-      d->VolumePropertyNode->Copy(
-        this->VolumeRenderingLogic->GetPresetByName("MR-Default"));
+      // // Copy the MRI preset to the volume property node
+      // d->VolumePropertyNode->Copy(
+      //   this->VolumeRenderingLogic->GetPresetByName("MR-Default"));
 
       // Set the current mrml scene in the preset combo box widget
       // d->InputVolumeRenderingPresetComboBox->setMRMLScene(this->mrmlScene());

@@ -802,7 +802,7 @@
           <property name="indent" stdset="0">
             <number>0</number>
           </property>
-          <layout class="QGridLayout" name="MarkupsFiducialsGridLayout">
+          <layout class="QGridLayout" name="IsoSurfaceGridLayout">
             <property name="leftMargin">
               <number>5</number>
             </property>
