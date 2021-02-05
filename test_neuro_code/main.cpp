@@ -1,7 +1,21 @@
-#include "NeuroRobotKinematics/NeuroRobotKinematics.hpp"
-
+#include "../NeuroRobot/include/WorkspaceGeneration/WorkspaceVisualization.h"
+#include "../Utilities/include/SavePointCloudData/SavePointCloudData.hpp"
 int main(int argc, char* argv[])
 {
+  double _cannulaToTreatment{5.0};
+  double _treatmentToTip{10.0};
+  double _robotToEntry{5.0};
+  double _robotToTreatmentAtHome{41.0};
+  Probe  probe_init = {_cannulaToTreatment, _treatmentToTip, _robotToEntry,
+                      _robotToTreatmentAtHome};
+  NeuroKinematics   NeuroKinematics_(&probe_init);
+  ForwardKinematics ForwardKinematics_(NeuroKinematics_);
+  Eigen::Matrix3Xf  GeneralWorkspace = ForwardKinematics_.GetGeneralWorkspace();
+
+  SaveDataToFile data_writer(GeneralWorkspace);
+  data_writer.SaveToXyz("GeneralWorkspace.xyz");
+
+  // ForwardKinematics_.GetGeneralWorkspace();
   return 0;
 }
 

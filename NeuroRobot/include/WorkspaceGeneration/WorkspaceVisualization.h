@@ -11,28 +11,30 @@ public:
   double i, j, k, l, ii;  // counter initialization
                           // Min allowed seperation 75mm
   // Max allowed seperation  146mm
-  const double Diff;  // Is the max allowed movement while one block is
-                      // stationary 146-75 = 71 mm
+  // Is the max allowed movement while one block is stationary 146-75 = 71 mm
+  const double Diff;
   const double pi;
   double       Ry;       // Initializing the PitchRotation counter
-  double       RyF_max;  // in paper is 37.2
-  double       RyB_max;  // in paper is  30.6
   double       Rx;       // Initializing the YawRotation counter
-  double       Rx_max;   // Max YawRotation
-  double       RyF_max_degree;
-  double       RyB_max_degree;
-  double       Rx_max_degree;
+  const double Rx_max;   // Max YawRotation
+  const double RyF_max;  // in paper is 37.2
+  const double RyB_max;  // in paper is  30.6
+  const double RyF_max_degree;
+  const double RyB_max_degree;
+  const double Rx_max_degree;
+  const double Top_max_travel;
+  const double Lateral_translation_start;
   int          counter;  // counter for NaN checker
   // Robot axis
-  double                  AxialHeadTranslation;
-  double                  AxialFeetTranslation;
-  double                  LateralTranslation;
-  double                  PitchRotation;
-  double                  YawRotation;
-  double                  ProbeInsertion;
-  double                  ProbeRotation;
-  NeuroKinematics         NeuroKinematics_;
-  static Eigen::Matrix3Xf rcm_point_set_;
+  double           AxialHeadTranslation;
+  double           AxialFeetTranslation;
+  double           LateralTranslation;
+  double           PitchRotation;
+  double           YawRotation;
+  double           ProbeInsertion;
+  double           ProbeRotation;
+  NeuroKinematics  NeuroKinematics_;
+  Eigen::Matrix3Xf rcm_point_set_;
 
   // methods
 

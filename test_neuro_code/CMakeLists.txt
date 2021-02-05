@@ -77,14 +77,11 @@
 
 # export(EXPORT NeuroRobotKinematics FILE NeuroRobotKinematicsConfig.cmake)
 #=========================================
-add_library(NeuroRobot
-/include/WorkspaceGeneration/WorkspaceVisualization.h
-/src/WorkspaceGeneration/WorkspaceVisualization.cpp)
-add_library(Kinematics
-/include/Kinematics/NeuroKinematics.hpp
-/src/Kinematics/NeuroKinematics.cpp)
-target_include_directories(NeuroRobot PUBLIC 
-${CMAKE_CURRENT_SOURCE_DIR}/src
-${CMAKE_CURRENT_SOURCE_DIR}/include)
+cmake_minimum_required(VERSION 3.0.0)
 
+project(Workspace_testing)
 
+include_directories(../NeuroRobot/include/Kinematics ../NeuroRobot/include/WorkspaceGeneration/ ../Utilities/include/SavePointCloudData/)
+file(GLOB_RECURSE SOURCES "./main.cpp" "../NeuroRobot/src/Kinematics/NeuroKinematics.cpp" "../NeuroRobot/src/WorkspaceGeneration/WorkspaceVisualization.cxx" "../Utilities/src/SavePointCloudData/SavePointCloudData.cpp")
+
+add_executable(${PROJECT_NAME} ${SOURCES})

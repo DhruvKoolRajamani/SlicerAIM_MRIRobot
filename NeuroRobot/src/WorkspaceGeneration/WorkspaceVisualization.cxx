@@ -6,7 +6,16 @@ using std::endl;
 //  D is the robot to treatment distance.
 
 ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
-  : Diff(68), pi(3.141)
+  : Diff(68)
+  , pi(3.141)
+  , Lateral_translation_start(-49.0)
+  , Top_max_travel(-146)
+  , RyF_max(-37.0 * pi / 180)
+  , RyF_max_degree(-37.0)
+  , RyB_max(26.0 * pi / 180)
+  , RyB_max_degree(26.0)
+  , Rx_max(-88.0 * pi / 180)
+  , Rx_max_degree(-88.0)
 {
   // Counters
   i       = 0.0;
@@ -16,15 +25,11 @@ ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   ii      = 0.0;
   counter = 0;
   // Min allowed seperation 75mm
-  // Max allowed seperatio1f46mm
-  Ry             = 0.0;               // Initializing the PitchRotation counter
-  RyF_max        = -37.0 * pi / 180;  // in paper is 37.2
-  RyF_max_degree = -37.0;
-  RyB_max        = +26.0 * pi / 180;  // in paper is  30.6
-  RyB_max_degree = 26.0;
-  Rx             = 0.0;               // Initializing the YawRotation counter
-  Rx_max         = -88.0 * pi / 180;  // Max YawRotation
-  Rx_max_degree  = -88.0;
+  // Max allowed seperation 146mm
+  //******TODO:You have to change the Pitch Bore and Face values and swap them!!
+  // meaning that the RyB_max is 37 and RyF_max is -26
+  Ry = 0.0;
+  Rx = 0.0;
   // Robot axis
   AxialHeadTranslation = 0.0;
   AxialFeetTranslation = 0.0;
@@ -33,10 +38,8 @@ ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   YawRotation          = 0.0;
   ProbeInsertion       = 0.0;
   ProbeRotation        = 0.0;
-
   // RCM point cloud
-  rcm_point_set_ = GetRcmPointSet();
-
+  rcm_point_set_   = GetRcmPointSet();
   NeuroKinematics_ = NeuroKinematics;
 }
 
@@ -50,11 +53,10 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
   Neuro_FK_outputs FK{};
 
   // Code below is the computation of the general workspace
-
   // Loop for visualization of the top of the Workspace
   AxialFeetTranslation = 68;
   AxialHeadTranslation = 0;
-  double Top_max_travel{-146};
+
   // initial separation 143, min separation 75=> 143-75 = 68 mm
   for (i = Top_max_travel / 100; i > Top_max_travel; i += Top_max_travel / 100)
 
@@ -915,7 +917,7 @@ bool ForwardKinematics::CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
 /* Method to Check the IK for each point in the Validated point set and stores
 the ones that are valid*/
 Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
-  Eigen::Matrix3Xf validated_point_set, Eigen::Vector3d ep_in_robot_coordinate)
+  Eigen::Matrix3Xf validated_point_set, Eigen::Vector3d ep_in_robot_coordnt)
 {
   // Initializng the sub_workspace matrix
   Eigen::Matrix3Xf sub_workspace_rcm_point_set(3, 1);
@@ -930,9 +932,8 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
   argument is the RCM point which is considered as the TP.*/
 
   // Initializing the vectors for EP and TP.
-  Eigen::Vector4d ep_in_robot_coordinate(EP_inRobotCoordinate(0),
-                                         EP_inRobotCoordinate(1),
-                                         EP_inRobotCoordinate(2), 1);
+  Eigen::Vector4d ep_in_robot_coordinate(
+    ep_in_robot_coordnt(0), ep_in_robot_coordnt(1), ep_in_robot_coordnt(2), 1);
   Eigen::Vector4d tp_in_robot_coordinate(0, 0, 0, 1);
 
   // Initializing the limits for each axis of the robot.
@@ -1022,9 +1023,9 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
     }
 
     // Storing the IK validated point in the sub-workspace matrix
-    sub_workspace_rcm_point_set(0, counter) = TP_R(0);
-    sub_workspace_rcm_point_set(1, counter) = TP_R(1);
-    sub_workspace_rcm_point_set(2, counter) = TP_R(2);
+    sub_workspace_rcm_point_set(0, counter) = tp_in_robot_coordinate(0);
+    sub_workspace_rcm_point_set(1, counter) = tp_in_robot_coordinate(1);
+    sub_workspace_rcm_point_set(2, counter) = tp_in_robot_coordinate(2);
 
     counter++;
   }
@@ -1191,7 +1192,8 @@ void ForwardKinematics::StorePointToEigenMatrix(
 {
   int no_of_columns = point_set.cols();
   // The case where the point set is empty
-  if (no_of_columns == 1)
+  if (no_of_columns == 1 && point_set(0, 0) == 0. && point_set(1, 0) == 0. &&
+      point_set(2, 0) == 0.)
   {
     for (int i = 0; i < 3; i++)
     {
@@ -1214,7 +1216,8 @@ void ForwardKinematics::StorePointToEigenMatrix(Eigen::Matrix3Xf& point_set,
 {
   int no_of_columns = point_set.cols();
   // The case for the first column
-  if (no_of_columns == 1)
+  if (no_of_columns == 1 && point_set(0, 0) == 0. && point_set(1, 0) == 0. &&
+      point_set(2, 0) == 0.)
   {
     point_set(0, 0) = x;
     point_set(1, 0) = y;
