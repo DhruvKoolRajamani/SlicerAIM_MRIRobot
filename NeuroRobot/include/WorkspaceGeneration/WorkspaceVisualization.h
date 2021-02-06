@@ -24,6 +24,10 @@ public:
   const double Rx_max_degree;
   const double Top_max_travel;
   const double Lateral_translation_start;
+  const double Lateral_translation_end;
+  const double Lateral_resolution;
+  const double Probe_insert_max;
+  const double Probe_insert_min;
   int          counter;  // counter for NaN checker
   // Robot axis
   double           AxialHeadTranslation;

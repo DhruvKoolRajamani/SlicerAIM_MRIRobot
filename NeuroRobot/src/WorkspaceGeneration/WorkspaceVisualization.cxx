@@ -9,13 +9,17 @@ ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   : Diff(68)
   , pi(3.141)
   , Lateral_translation_start(-49.0)
+  , Lateral_translation_end(-98.0)
+  , Lateral_resolution(7)
   , Top_max_travel(-146)
-  , RyF_max(-37.0 * pi / 180)
-  , RyF_max_degree(-37.0)
-  , RyB_max(26.0 * pi / 180)
-  , RyB_max_degree(26.0)
+  , RyF_max(-26.0 * pi / 180)
+  , RyF_max_degree(-26.0)
+  , RyB_max(37.0 * pi / 180)
+  , RyB_max_degree(37.0)
   , Rx_max(-88.0 * pi / 180)
   , Rx_max_degree(-88.0)
+  , Probe_insert_max(40)
+  , Probe_insert_min(0)
 {
   // Counters
   i       = 0.0;
@@ -52,8 +56,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
   // Object containing the 4x4 transformation matrix
   Neuro_FK_outputs FK{};
 
-  // Code below is the computation of the general workspace
-  // Loop for visualization of the top of the Workspace
+  // Visualization of the top of the Workspace
   AxialFeetTranslation = 68;
   AxialHeadTranslation = 0;
 
@@ -63,8 +66,8 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
   {
     AxialHeadTranslation += Top_max_travel / 100;
     AxialFeetTranslation += Top_max_travel / 100;
-    // max lateral movement  0.0 ~ -49.47 (appx =-49)
-    for (k = 0.0 - 49.0; k >= -49.0 - 49.0; k -= 7.0)
+    for (k = Lateral_translation_start; k >= Lateral_translation_end;
+         k -= Lateral_resolution)
     {
       LateralTranslation = k;
       FK                 = NeuroKinematics_.ForwardKinematics(
@@ -74,28 +77,42 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
     }
   }
 
-  // loop for visualizing the bottom (75)
+  // loop for visualizing the bottom
+  ProbeInsertion = Probe_insert_max;
   for (i = 0, j = -3; i > -87; i -= 8.7, j -= 8.7)
   {
     AxialHeadTranslation = i;
     AxialFeetTranslation = j;
-    for (k = 0.0 - 49.0; k >= -49 - 49.0; k -= 7.0)
+    for (k = Lateral_translation_start; k >= Lateral_translation_end;
+         k -= Lateral_resolution)
     {
       LateralTranslation = k;
-      if (k >= -28 - 49.0)
+      if (k == Lateral_translation_start)
       {
-
-        YawRotation   = Rx_max;
-        PitchRotation = RyB_max;
-        FK            = NeuroKinematics_.ForwardKinematics(
-          AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
-          ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+        for (l = 0; l >= RyF_max; l += RyF_max / 5)
+        {
+          // YawRotation   = Rx_max;
+          PitchRotation = l;
+          FK            = NeuroKinematics_.ForwardKinematics(
+            AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+            ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+          StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+        }
       }
-      if (k <= -7 - 49.0)
+      else if (k == Lateral_translation_end)
       {
-        YawRotation   = Rx_max;
-        PitchRotation = RyF_max;
+        for (l = 0; l <= RyB_max; l += RyB_max / 5)
+        {
+          PitchRotation = l;
+          FK            = NeuroKinematics_.ForwardKinematics(
+            AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+            ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+          StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+        }
+      }
+      else
+      {
+        PitchRotation = 0;
         FK            = NeuroKinematics_.ForwardKinematics(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
@@ -106,21 +123,23 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
 
   YawRotation          = 0;
   PitchRotation        = 0;
-  AxialFeetTranslation = -3;
+  AxialFeetTranslation = -3 - 7.1;
   AxialHeadTranslation = 0;
+  ProbeInsertion       = Probe_insert_min;
 
   // Loop for creating the head face
-  for (j = 7.1; j <= 71; j += 7.1)
+  for (j = 0; j <= 71; j += 7.1)  // j = 7.1
   {
     AxialFeetTranslation += 7.1;
 
-    for (k = 0.0 - 49.0; k >= -49.0 - 49.0; k -= 7.0)
+    for (k = Lateral_translation_start; k >= Lateral_translation_end;
+         k -= Lateral_resolution)
     {
       LateralTranslation = k;
       // Top level
       if (j == 71)
       {
-        if (k == 0 - 49.0)
+        if (k == Lateral_translation_start)
         {
           for (i = 0; i <= RyB_max_degree; i += 5.2)
           {
@@ -135,7 +154,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
             }
           }
         }
-        else if (k == -49.0 - 49.0)
+        else if (k == Lateral_translation_end)
         {
           for (i = 0; i >= RyF_max_degree; i -= 7.4)
           {
@@ -165,13 +184,72 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
           }
         }
       }
+      // Base level
+      else if (j == 0)
+      {
+        // Creating corner bore side
+        if (k == Lateral_translation_start)
+        {
+          YawRotation = Rx_max;
+          // lvl one bore side yaw lowered pitch lowering
+          for (l = 0; l <= RyB_max_degree; l += 5.2)
+          {
+            PitchRotation = l * pi / 180;
+            for (int jj = Probe_insert_min; jj <= Probe_insert_max - 10;
+                 jj += Probe_insert_max / 10)
+            {
+              ProbeInsertion = jj;
+              FK             = NeuroKinematics_.ForwardKinematics(
+                AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+                ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+              StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+            }
+          }
+        }
+
+        else if (k == Lateral_translation_end)  // Creating corner face side
+        {
+          YawRotation = Rx_max;
+          // level one face side yaw lowered pitch increasing
+          for (l = 0; l >= RyF_max_degree; l -= 7.4)
+          {
+            PitchRotation = l * pi / 180;
+            for (int jj = Probe_insert_min; jj <= Probe_insert_max - 10;
+                 jj += Probe_insert_max / 10)
+            {
+              ProbeInsertion = jj;
+              FK             = NeuroKinematics_.ForwardKinematics(
+                AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+                ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+              StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+            }
+          }
+        }
+
+        else  // Space between two corners
+        {
+          YawRotation   = Rx_max;
+          PitchRotation = 0;
+          for (int jj = Probe_insert_min; jj <= Probe_insert_max - 10;
+               jj += Probe_insert_max / 10)
+          {
+            ProbeInsertion = jj;
+            FK             = NeuroKinematics_.ForwardKinematics(
+              AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+              ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+            StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+          }
+        }
+        ProbeInsertion = Probe_insert_min;
+      }
+
       // Any other lvl from bottom to just a lvl before the top
       else
       {
+        YawRotation = Rx_max;
         // Creating corner bore side
-        if (k == 0 - 49.0)
+        if (k == Lateral_translation_start)
         {
-          YawRotation = Rx_max;
           // lvl one bore side yaw lowered pitch lowering
           for (l = 0; l <= RyB_max_degree; l += 5.2)
           {
@@ -183,9 +261,8 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
           }
         }
 
-        else if (k == -49.0 - 49.0)  // Creating corner face side
+        else if (k == Lateral_translation_end)  // Creating corner face side
         {
-          YawRotation = Rx_max;
           // level one face side yaw lowered pitch increasing
           for (l = 0; l >= RyF_max_degree; l -= 7.4)
           {
@@ -199,7 +276,6 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
 
         else  // Space between two corners
         {
-          YawRotation   = Rx_max;
           PitchRotation = 0;
           FK            = NeuroKinematics_.ForwardKinematics(
             AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
@@ -216,6 +292,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
 
   // Loop for creating the feet face only for the bottom level at Axial Head of
   // -86 and Axial Feet of -89
+  ProbeInsertion = Probe_insert_max;
   for (k = 0.0 - 49.0; k >= -49.0 - 49.0; k -= 7.0)
   {
     LateralTranslation = k;
@@ -279,6 +356,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
   }
 
   // loop for creating the sides
+  ProbeInsertion       = Probe_insert_min;
   AxialFeetTranslation = -3;
   AxialHeadTranslation = 0;
   LateralTranslation   = 0;
