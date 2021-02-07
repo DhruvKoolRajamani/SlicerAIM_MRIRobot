@@ -24,8 +24,10 @@ static const char* INPUT_ROLE = "InputVolume";
 static const char* ROI_ROLE   = "ROI";
 static const char* WORKSPACEMESH_SEGMENTATION_ROLE =
   "WorkspaceMeshSegmentation";
-static const char* ENTRY_POINT_ROLE  = "EntryPoint";
-static const char* TARGET_POINT_ROLE = "TargetPoint";
+static const char* BURRHOLE_SEGMENTATION_ROLE = "BurrHoleSegmentation";
+static const char* BH_EXTREME_POINT_ROLE      = "BHExtremePoint";
+static const char* ENTRY_POINT_ROLE           = "EntryPoint";
+static const char* TARGET_POINT_ROLE          = "TargetPoint";
 
 vtkMRMLNodeNewMacro(vtkMRMLWorkspaceGenerationNode);
 
@@ -71,6 +73,19 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
   workspaceMeshEvents->InsertNextValue(vtkCommand::ModifiedEvent);
   workspaceMeshEvents->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
 
+  vtkNew< vtkIntArray > burrHoleSegEvents;
+  burrHoleSegEvents->InsertNextValue(vtkCommand::ModifiedEvent);
+  burrHoleSegEvents->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
+
+  vtkNew< vtkIntArray > bHExtremePointMarkupEvents;
+  bHExtremePointMarkupEvents->InsertNextValue(vtkCommand::ModifiedEvent);
+  bHExtremePointMarkupEvents->InsertNextValue(
+    vtkMRMLMarkupsNode::PointAddedEvent);
+  bHExtremePointMarkupEvents->InsertNextValue(
+    vtkMRMLMarkupsNode::PointRemovedEvent);
+  bHExtremePointMarkupEvents->InsertNextValue(
+    vtkMRMLMarkupsNode::PointModifiedEvent);
+
   vtkNew< vtkIntArray > entryPointMarkupEvents;
   entryPointMarkupEvents->InsertNextValue(vtkCommand::ModifiedEvent);
   entryPointMarkupEvents->InsertNextValue(vtkMRMLMarkupsNode::PointAddedEvent);
@@ -93,6 +108,10 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
   this->AddNodeReferenceRole(ROI_ROLE);
   this->AddNodeReferenceRole(WORKSPACEMESH_SEGMENTATION_ROLE, NULL,
                              workspaceMeshEvents.GetPointer());
+  this->AddNodeReferenceRole(BURRHOLE_SEGMENTATION_ROLE, NULL,
+                             burrHoleSegEvents.GetPointer());
+  this->AddNodeReferenceRole(BH_EXTREME_POINT_ROLE, NULL,
+                             bHExtremePointMarkupEvents.GetPointer());
   this->AddNodeReferenceRole(ENTRY_POINT_ROLE, NULL,
                              entryPointMarkupEvents.GetPointer());
   this->AddNodeReferenceRole(TARGET_POINT_ROLE, NULL,
@@ -249,6 +268,44 @@ vtkMRMLSegmentationNode*
 }
 
 //-----------------------------------------------------------------
+vtkMRMLSegmentationNode*
+  vtkMRMLWorkspaceGenerationNode::GetBurrHoleSegmentationNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLSegmentationNode* burrHoleSegmentationNode =
+    vtkMRMLSegmentationNode::SafeDownCast(
+      this->GetNodeReference(BURRHOLE_SEGMENTATION_ROLE));
+
+  if (!burrHoleSegmentationNode)
+  {
+    qWarning() << Q_FUNC_INFO << ": burrHoleSegmentationNode node is null";
+    return NULL;
+  }
+
+  return burrHoleSegmentationNode;
+}
+
+//-----------------------------------------------------------------
+vtkMRMLMarkupsFiducialNode*
+  vtkMRMLWorkspaceGenerationNode::GetBHExtremePointNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLMarkupsFiducialNode* bHExtremePointNode =
+    vtkMRMLMarkupsFiducialNode::SafeDownCast(
+      this->GetNodeReference(BH_EXTREME_POINT_ROLE));
+
+  if (!bHExtremePointNode)
+  {
+    qWarning() << Q_FUNC_INFO << ": bHExtremePointNode node is null";
+    return NULL;
+  }
+
+  return bHExtremePointNode;
+}
+
+//-----------------------------------------------------------------
 vtkMRMLMarkupsFiducialNode* vtkMRMLWorkspaceGenerationNode::GetEntryPointNode()
 {
   qInfo() << Q_FUNC_INFO;
@@ -343,6 +400,56 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveAnnotationROINodeID(
   }
 
   this->SetAndObserveNodeReferenceID(ROI_ROLE, annotationROIId);
+}
+
+//-----------------------------------------------------------------
+void vtkMRMLWorkspaceGenerationNode::SetAndObserveBurrHoleSegmentationNodeID(
+  const char* burrHoleSegmentationNodeId)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  // error check
+  const char* workspaceMeshSegmentationNodeId =
+    this->GetNodeReferenceID(WORKSPACEMESH_SEGMENTATION_ROLE);
+  if (burrHoleSegmentationNodeId != NULL &&
+      workspaceMeshSegmentationNodeId != NULL &&
+      strcmp(burrHoleSegmentationNodeId, workspaceMeshSegmentationNodeId) == 0)
+  {
+    vtkErrorMacro(
+      "Burr Hole Segmentation node and Workspace Mesh Segmentation Node cannot "
+      "be same.");
+    return;
+  }
+
+  this->SetAndObserveNodeReferenceID(BURRHOLE_SEGMENTATION_ROLE,
+                                     burrHoleSegmentationNodeId);
+}
+
+//-----------------------------------------------------------------
+void vtkMRMLWorkspaceGenerationNode::SetAndObserveBHExtremePointNodeId(
+  const char* bHExtremePointNodeId)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (bHExtremePointNodeId == NULL)
+  {
+    vtkErrorMacro("Burr hole point node id cannot be null.");
+    return;
+  }
+
+  const char* targetPointNodeId = this->GetNodeReferenceID(TARGET_POINT_ROLE);
+  const char* entryPointNodeId  = this->GetNodeReferenceID(ENTRY_POINT_ROLE);
+  if (targetPointNodeId != NULL && entryPointNodeId != NULL &&
+        strcmp(bHExtremePointNodeId, targetPointNodeId) == 0 ||
+      strcmp(bHExtremePointNodeId, entryPointNodeId))
+  {
+    vtkErrorMacro(
+      "Extreme point cannot be the same as Entry point or target point.");
+    return;
+  }
+
+  this->SetAndObserveNodeReferenceID(BH_EXTREME_POINT_ROLE,
+                                     bHExtremePointNodeId);
 }
 
 //-----------------------------------------------------------------

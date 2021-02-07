@@ -52,7 +52,6 @@ add_subdirectory(WorkspaceGeneration)
 include(${Slicer_EXTENSION_GENERATE_CONFIG})
 include(${Slicer_EXTENSION_CPACK})
 
-
 #-----------------------------------------------------------------------------
 
 # set(${nvidia_extension}_SOURCE_DIR ${CMAKE_BINARY_DIR}/${nvidia_extension})

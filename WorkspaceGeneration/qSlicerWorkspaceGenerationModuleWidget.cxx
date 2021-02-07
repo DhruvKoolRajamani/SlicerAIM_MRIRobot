@@ -81,10 +81,10 @@ public:
 
   vtkMRMLVolumeRenderingDisplayNode* InputVolumeRenderingDisplayNode;
   vtkMRMLSegmentationDisplayNode*    WorkspaceMeshSegmentationDisplayNode;
+  vtkMRMLSegmentationDisplayNode*    BurrHoleSegmentationDisplayNode;
+  vtkMRMLMarkupsDisplayNode*         BHExtremePointDisplayNode;
   vtkMRMLMarkupsDisplayNode*         EntryPointDisplayNode;
   vtkMRMLMarkupsDisplayNode*         TargetPointDisplayNode;
-
-  vtkMRMLVolumePropertyNode* VolumePropertyNode;
 
   vtkMatrix4x4*         WorkspaceMeshRegistrationMatrix;
   vtkMRMLTransformNode* WorkspaceMeshTransformNode;
@@ -186,27 +186,80 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
           SLOT(onGenerateWorkspaceClick()));
   connect(d->WorkspaceVisibilityToggle__3_12, SIGNAL(toggled(bool)), this,
           SLOT(onWorkspaceMeshVisibilityChanged(bool)));
-  connect(d->EntryPointFiducialSelector__4_2,
+  connect(d->BurrHoleSegmentationSelector__4_2,
+          SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
+          SLOT(onBurrHoleSegmentationNodeAdded(vtkMRMLNode*)));
+  connect(d->BurrHoleSetVisibilityCheckBox__4_3, SIGNAL(toggled(bool)), this,
+          SLOT(onBurrHoleVisibilityChanged(bool)));
+  connect(d->BurrHoleExtremeMarkupsFiducialSelector__4_4,
+          SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
+          SLOT(onBHExtremePointAdded(vtkMRMLNode*)));
+  connect(d->BurrHoleExtremeMarkupsFiducialSelector__4_4,
+          SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
+          SLOT(onBHExtremePointChanged(vtkMRMLNode*)));
+  connect(d->DetectBurrHoleButton__4_6, SIGNAL(released()), this,
+          SLOT(onDetectBurrHoleClick()));
+  connect(d->EntryPointFiducialSelector__5_2,
           SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
           SLOT(onEntryPointAdded(vtkMRMLNode*)));
-  connect(d->EntryPointFiducialSelector__4_2,
+  connect(d->EntryPointFiducialSelector__5_2,
           SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
           SLOT(onEntryPointSelectionChanged(vtkMRMLNode*)));
-  connect(d->TargetPointFiducialSelector__4_4,
+  connect(d->TargetPointFiducialSelector__5_4,
           SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
           SLOT(onTargetPointAdded(vtkMRMLNode*)));
-  connect(d->TargetPointFiducialSelector__4_4,
+  connect(d->TargetPointFiducialSelector__5_4,
           SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
           SLOT(onTargetPointSelectionChanged(vtkMRMLNode*)));
-  connect(d->GenerateIsosurfaceButton__5_2, SIGNAL(released()), this,
-          SLOT(onGenerateIsoSurfaceClick()));
 
-  d->EntryPointMarkupsPlaceWidget__4_3->setPlaceMultipleMarkups(
+  d->BurrHoleExtremeMarkupsPlaceWidget__4_5->setPlaceMultipleMarkups(
+    qSlicerMarkupsPlaceWidget::PlaceMultipleMarkupsType::
+      ForcePlaceMultipleMarkups);
+  d->EntryPointMarkupsPlaceWidget__5_3->setPlaceMultipleMarkups(
     qSlicerMarkupsPlaceWidget::PlaceMultipleMarkupsType::
       ForcePlaceSingleMarkup);
-  d->TargetPointMarkupsPlaceWidget__4_5->setPlaceMultipleMarkups(
+  d->TargetPointMarkupsPlaceWidget__5_5->setPlaceMultipleMarkups(
     qSlicerMarkupsPlaceWidget::PlaceMultipleMarkupsType::
       ForcePlaceSingleMarkup);
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onBurrHoleVisibilityChanged(
+  bool visible)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* selectedWorkspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (selectedWorkspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": No workspace generation node created yet.";
+    return;
+  }
+
+  vtkMRMLSegmentationNode* burrHoleSegmentationNode =
+    d->logic()->getBurrHoleSegmentationNode();
+
+  if (!burrHoleSegmentationNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No Burr Hole Segmentation node created";
+    return;
+  }
+
+  // Get volume rendering display node for volume. Create if absent.
+  if (!d->BurrHoleSegmentationDisplayNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No Burr Hole Segmentation display node";
+    return;
+  }
+
+  d->BurrHoleSegmentationDisplayNode->SetVisibility(visible);
+
+  // Update widget from display node of the volume node
+  this->updateGUIFromMRML();
 }
 
 //-----------------------------------------------------------------------------
@@ -805,6 +858,213 @@ void qSlicerWorkspaceGenerationModuleWidget::onApplyTransformClick()
 //-----------------------------------------------------------------------------
 */
 
+// 1 + 2 = 3.1 Markup Burr Hole Segment.
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onBurrHoleSegmentationNodeAdded(
+  vtkMRMLNode* addedNode)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  vtkMRMLSegmentationNode* burrHoleSegmentationNodeAdded =
+    vtkMRMLSegmentationNode::SafeDownCast(addedNode);
+  if (burrHoleSegmentationNodeAdded == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Failed, invalid node";
+    return;
+  }
+
+  if (burrHoleSegmentationNodeAdded->GetName())
+  {
+    std::string burrHoleNodeName = "BurrHole";
+    // std::string(modelNode->GetName()).append("GeneralWorkspace");
+    burrHoleSegmentationNodeAdded->SetName(burrHoleNodeName.c_str());
+  }
+}
+
+// 1 + 2 = 3.1 Markup Burr Hole Segment.
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onBurrHoleSegmentationNodeChanged(
+  vtkMRMLNode* nodeSelected)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+
+    workspaceGenerationNode->SetAndObserveBurrHoleSegmentationNodeID(NULL);
+    d->BurrHoleSegmentationDisplayNode = NULL;
+
+    return;
+  }
+
+  if (nodeSelected == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": unexpected workspace mesh model node type";
+
+    workspaceGenerationNode->SetAndObserveBurrHoleSegmentationNodeID(NULL);
+    d->BurrHoleSegmentationDisplayNode = NULL;
+
+    return;
+  }
+
+  vtkMRMLSegmentationNode* burrHoleSegmentationNodeChanged =
+    vtkMRMLSegmentationNode::SafeDownCast(nodeSelected);
+
+  if (burrHoleSegmentationNodeChanged == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": burrhole segmentation node has not been added yet.";
+
+    workspaceGenerationNode->SetAndObserveBurrHoleSegmentationNodeID(NULL);
+    d->BurrHoleSegmentationDisplayNode = NULL;
+
+    return;
+  }
+
+  workspaceGenerationNode->SetAndObserveBurrHoleSegmentationNodeID(
+    burrHoleSegmentationNodeChanged->GetID());
+  auto segmentationDisplayNode = vtkMRMLSegmentationDisplayNode::SafeDownCast(
+    burrHoleSegmentationNodeChanged->GetDisplayNode());
+  qvtkReconnect(d->BurrHoleSegmentationDisplayNode, segmentationDisplayNode,
+                vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
+  // d->WorkspaceMeshSegmentationDisplayNode = segmentationDisplayNode;
+  // d->logic()->setWorkspaceMeshSegmentationDisplayNode(segmentationDisplayNode);
+
+  // Create logic to accommodate creating a new annotation ROI node.
+  // Should you transfer the data to the new node? Reset all visibility params?
+
+  this->updateGUIFromMRML();
+}
+
+// 1 + 2 = 3.1 Markup Burr Hole Segment.
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onbHExtremePointAdded(
+  vtkMRMLNode* addedNode)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  vtkMRMLMarkupsFiducialNode* markupNode =
+    vtkMRMLMarkupsFiducialNode::SafeDownCast(addedNode);
+  if (markupNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Failed, invalid node";
+    return;
+  }
+
+  if (markupNode->GetName())
+  {
+    std::string nodeName = "BurrHoleExtremePoint";
+    // std::string(modelNode->GetName()).append("GeneralWorkspace");
+    markupNode->SetName(nodeName.c_str());
+  }
+}
+
+// 1 + 2 = 3.1 Markup Burr Hole Segment.
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onbHExtremePointChanged(
+  vtkMRMLNode* selectedNode)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+
+    workspaceGenerationNode->SetAndObserveBHExtremePointNodeId(NULL);
+    d->BHExtremePointDisplayNode = NULL;
+
+    return;
+  }
+
+  if (selectedNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": unexpected markup node";
+
+    workspaceGenerationNode->SetAndObserveBHExtremePointNodeId(NULL);
+    d->BHExtremePointDisplayNode = NULL;
+
+    return;
+  }
+
+  vtkMRMLMarkupsFiducialNode* bHExtremePointNode =
+    vtkMRMLMarkupsFiducialNode::SafeDownCast(selectedNode);
+
+  if (bHExtremePointNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Markup Fiducial has not been added yet.";
+
+    workspaceGenerationNode->SetAndObserveBHExtremePointNodeId(NULL);
+    d->BHExtremePointDisplayNode = NULL;
+
+    return;
+  }
+
+  workspaceGenerationNode->SetAndObserveBHExtremePointNodeId(
+    bHExtremePointNode->GetID());
+
+  vtkMRMLMarkupsDisplayNode* bHExtremePointDisplayNode =
+    vtkMRMLMarkupsDisplayNode::SafeDownCast(
+      bHExtremePointNode->GetDisplayNode());
+  if (bHExtremePointDisplayNode == NULL)
+  {
+    bHExtremePointNode->CreateDefaultDisplayNodes();
+    bHExtremePointDisplayNode = vtkMRMLMarkupsDisplayNode::SafeDownCast(
+      bHExtremePointNode->GetDisplayNode());
+  }
+
+  qvtkReconnect(d->EntryPointDisplayNode, bHExtremePointDisplayNode,
+                vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
+  d->EntryPointDisplayNode = bHExtremePointDisplayNode;
+
+  subscribeToMarkupEvents(bHExtremePointNode);
+
+  // Create logic to accommodate creating a new annotation ROI node.
+  // Should you transfer the data to the new node? Reset all visibility params?
+
+  this->updateGUIFromMRML();
+}
+
+// 4. Generate IsoSurface for burr hole identification
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onDetectBurrHoleClick()
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+}
+
 // 1 + 2 = 3.1 Place Entry Point.
 //-----------------------------------------------------------------------------
 void qSlicerWorkspaceGenerationModuleWidget::onEntryPointAdded(
@@ -1162,14 +1422,6 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
   }
 }
 
-// 4. Generate IsoSurface for burr hole identification
-//-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onGenerateIsoSurfaceClick()
-{
-  Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  qInfo() << Q_FUNC_INFO;
-}
-
 //-----------------------------------------------------------------------------
 vtkMRMLAnnotationROINode*
   qSlicerWorkspaceGenerationModuleWidget::GetAnnotationROINode()
@@ -1322,41 +1574,41 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
     // return;
   }
 
-  // d->EntryPointFiducialSelector__4_2->setEnabled(true);
-  // d->EntryPointFiducialSelector__4_2->blockSignals(true);
-  d->EntryPointFiducialSelector__4_2->setMRMLScene(this->mrmlScene());
+  // d->EntryPointFiducialSelector__5_2->setEnabled(true);
+  // d->EntryPointFiducialSelector__5_2->blockSignals(true);
+  d->EntryPointFiducialSelector__5_2->setMRMLScene(this->mrmlScene());
 
   vtkMRMLMarkupsFiducialNode* entryPoint =
     workspaceGenerationNode->GetEntryPointNode();
 
-  d->EntryPointFiducialSelector__4_2->setCurrentNode(entryPoint);
+  d->EntryPointFiducialSelector__5_2->setCurrentNode(entryPoint);
   if (entryPoint != NULL)
   {
-    d->EntryPointMarkupsPlaceWidget__4_3->setCurrentNode(entryPoint);
+    d->EntryPointMarkupsPlaceWidget__5_3->setCurrentNode(entryPoint);
   }
   else
   {
     qWarning() << Q_FUNC_INFO << ": Entry point is NULL";
-    d->EntryPointMarkupsPlaceWidget__4_3->setCurrentNode(NULL);
+    d->EntryPointMarkupsPlaceWidget__5_3->setCurrentNode(NULL);
   }
-  // d->EntryPointFiducialSelector__4_2->blockSignals(false);
+  // d->EntryPointFiducialSelector__5_2->blockSignals(false);
 
-  // d->TargetPointFiducialSelector__4_4->setEnabled(true);
-  // d->TargetPointFiducialSelector__4_4->blockSignals(true);
-  d->TargetPointFiducialSelector__4_4->setMRMLScene(this->mrmlScene());
+  // d->TargetPointFiducialSelector__5_4->setEnabled(true);
+  // d->TargetPointFiducialSelector__5_4->blockSignals(true);
+  d->TargetPointFiducialSelector__5_4->setMRMLScene(this->mrmlScene());
   vtkMRMLMarkupsFiducialNode* targetPoint =
     workspaceGenerationNode->GetTargetPointNode();
-  d->TargetPointFiducialSelector__4_4->setCurrentNode(targetPoint);
+  d->TargetPointFiducialSelector__5_4->setCurrentNode(targetPoint);
   if (targetPoint != NULL)
   {
-    d->TargetPointMarkupsPlaceWidget__4_5->setCurrentNode(targetPoint);
+    d->TargetPointMarkupsPlaceWidget__5_5->setCurrentNode(targetPoint);
   }
   else
   {
     qWarning() << Q_FUNC_INFO << ": Target point is NULL";
-    d->TargetPointMarkupsPlaceWidget__4_5->setCurrentNode(NULL);
+    d->TargetPointMarkupsPlaceWidget__5_5->setCurrentNode(NULL);
   }
-  // d->TargetPointFiducialSelector__4_4->blockSignals(false);
+  // d->TargetPointFiducialSelector__5_4->blockSignals(false);
 
   // block ALL signals until the function returns
   // if a return is called after this line, then unblockAllSignals should also
@@ -1401,8 +1653,8 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
     setCheckState(d->InputVolumeSetVisibilityCheckBox__2_3, false);
   }
 
-  d->EntryPointMarkupsPlaceWidget__4_3->setMRMLScene(this->mrmlScene());
-  d->TargetPointMarkupsPlaceWidget__4_5->setMRMLScene(this->mrmlScene());
+  d->EntryPointMarkupsPlaceWidget__5_3->setMRMLScene(this->mrmlScene());
+  d->TargetPointMarkupsPlaceWidget__5_5->setMRMLScene(this->mrmlScene());
 
   // Determine visibility of widgets
   bool isEntryPoint =
@@ -1415,8 +1667,8 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
   qDebug() << Q_FUNC_INFO << ": Target Point"
            << ((isTargetPoint) ? "true" : "false");
 
-  d->EntryPointMarkupsPlaceWidget__4_3->setVisible(isEntryPoint);
-  d->TargetPointMarkupsPlaceWidget__4_5->setVisible(isTargetPoint);
+  d->EntryPointMarkupsPlaceWidget__5_3->setVisible(isEntryPoint);
+  d->TargetPointMarkupsPlaceWidget__5_5->setVisible(isTargetPoint);
 
   this->blockAllSignals(false);
 }

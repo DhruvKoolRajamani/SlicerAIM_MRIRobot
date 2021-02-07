@@ -85,6 +85,9 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkStripper.h>
 
+// Nvidia AIAA
+#include <nvidia/aiaa/client.h>
+
 #include "vtkSlicerWorkspaceGenerationModuleLogicExport.h"
 
 class vtkMRMLWorkspaceGenerationNode;
@@ -135,6 +138,7 @@ public:
   vtkSlicerVolumeRenderingLogic* getVolumeRenderingLogic();
   qSlicerAbstractCoreModule*     getVolumeRenderingModule();
   vtkMRMLSegmentationNode*       getWorkspaceMeshSegmentationNode();
+  vtkMRMLSegmentationNode*       getBurrHoleSegmentationNode();
   vtkMRMLVolumeRenderingDisplayNode*
     getCurrentInputVolumeRenderingDisplayNode();
   vtkMRMLSegmentationDisplayNode*
@@ -144,6 +148,8 @@ public:
   void setWorkspaceGenerationNode(vtkMRMLWorkspaceGenerationNode* wgn);
   void setWorkspaceMeshSegmentationDisplayNode(
     vtkMRMLSegmentationDisplayNode* workspaceMeshSegmentationDisplayNode);
+  void setBurrHoleSegmentationDisplayNode(
+    vtkMRMLSegmentationDisplayNode* burrHoleSegmentationDisplayNode);
 
 protected:
   vtkSlicerWorkspaceGenerationLogic();
@@ -191,6 +197,15 @@ protected:
   // Segmentations Logic
   vtkSlicerSegmentationsModuleLogic* SegmentationsLogic;
   qSlicerAbstractCoreModule*         SegmentationsModule;
+
+  // Nvidia AIAA
+  nvidia::aiaa::Client* NvidiaAIAAClient;
+
+  // Burr Hole Segmentation Node
+  vtkMRMLSegmentationNode* BurrHoleSegmentationNode;
+
+  // Burr Hole Display Node
+  vtkMRMLSegmentationDisplayNode*    BurrHoleSegmentationDisplayNode;
 
 private:
   vtkSlicerWorkspaceGenerationLogic(

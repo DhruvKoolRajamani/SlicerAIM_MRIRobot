@@ -155,6 +155,9 @@ public:
   void SetAndObserveAnnotationROINodeID(const char* annotationROINodeId);
   void SetAndObserveWorkspaceMeshSegmentationNodeID(
     const char* workspaceMeshSegmentationNodeId);
+  void SetAndObserveBurrHoleSegmentationNodeID(
+    const char* burrHoleSegmentationNodeId);
+  void SetAndObserveBHExtremePointNodeId(const char* bHExtremePointNodeId);
   void SetAndObserveEntryPointNodeId(const char* entryPointNodeId);
   void SetAndObserveTargetPointNodeId(const char* targetPointNodeId);
   void ProcessMRMLEvents(vtkObject* caller, unsigned long event,
@@ -163,6 +166,8 @@ public:
   vtkMRMLVolumeNode*          GetInputVolumeNode();
   vtkMRMLAnnotationROINode*   GetAnnotationROINode();
   vtkMRMLSegmentationNode*    GetWorkspaceMeshSegmentationNode();
+  vtkMRMLSegmentationNode*    GetBurrHoleSegmentationNode();
+  vtkMRMLMarkupsFiducialNode* GetBHExtremePointNode();
   vtkMRMLMarkupsFiducialNode* GetEntryPointNode();
   vtkMRMLMarkupsFiducialNode* GetTargetPointNode();
   BurrHoleParameters          GetBurrHoleParams();

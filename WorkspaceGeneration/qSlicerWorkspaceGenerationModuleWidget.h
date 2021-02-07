@@ -100,6 +100,10 @@ protected slots:
   void onAnnotationROINodeAdded(vtkMRMLNode*);
   void onAnnotationROISelectionChanged(vtkMRMLNode*);
   void onPresetComboBoxNodeChanged(vtkMRMLNode*);
+  void onBurrHoleSegmentationNodeAdded(vtkMRMLNode*);
+  void onBurrHoleSegmentationNodeChanged(vtkMRMLNode*);
+  void onbHExtremePointAdded(vtkMRMLNode*);
+  void onbHExtremePointChanged(vtkMRMLNode*);
   void onEntryPointAdded(vtkMRMLNode*);
   void onEntryPointSelectionChanged(vtkMRMLNode*);
   void onTargetPointSelectionChanged(vtkMRMLNode*);
@@ -109,7 +113,7 @@ protected slots:
   void onWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode*);
   void onWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode*);
   void onGenerateWorkspaceClick();
-  void onGenerateIsoSurfaceClick();
+  void onDetectBurrHoleClick();
   void onSceneImportedEvent();
 
   // // DEPRECATED
@@ -133,6 +137,7 @@ protected slots:
 
   void onInputVolumeVisibilityChanged(bool visible);
   void onWorkspaceMeshVisibilityChanged(bool visible);
+  void onBurrHoleVisibilityChanged(bool visible);
 
   void UpdateVolumeRendering();
 

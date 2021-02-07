@@ -106,6 +106,26 @@ vtkSlicerWorkspaceGenerationLogic::vtkSlicerWorkspaceGenerationLogic()
                                vtkSlicerSegmentationsModuleLogic::SafeDownCast(
                                  this->SegmentationsModule->logic()) :
                                0;
+
+  try
+  {
+    NvidiaAIAAClient =
+      new nvidia::aiaa::Client("http://skull.cs.queensu.ca:8123");
+
+    // List all models
+    nvidia::aiaa::ModelList modelList = NvidiaAIAAClient->models();
+    qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
+             << modelList.toJson().c_str();
+
+    nvidia::aiaa::Model model =
+      modelList.getMatchingModel("annotation_mri_brain_tumors_t1ce_tc");
+  }
+  catch (nvidia::aiaa::exception& e)
+  {
+    qCritical() << Q_FUNC_INFO
+                << "nvidia::aiaa::exception => nvidia.aiaa.error." << e.id
+                << "; description: " << e.name().c_str();
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -131,6 +151,8 @@ qSlicerAbstractCoreModule*
 void vtkSlicerWorkspaceGenerationLogic::setWorkspaceMeshSegmentationDisplayNode(
   vtkMRMLSegmentationDisplayNode* workspaceMeshSegmentationDisplayNode)
 {
+  qInfo() << Q_FUNC_INFO;
+
   if (!workspaceMeshSegmentationDisplayNode)
   {
     qCritical() << Q_FUNC_INFO << ": Workspace Mesh Model Display Node is NULL";
@@ -139,6 +161,22 @@ void vtkSlicerWorkspaceGenerationLogic::setWorkspaceMeshSegmentationDisplayNode(
 
   this->WorkspaceMeshSegmentationDisplayNode =
     workspaceMeshSegmentationDisplayNode;
+}
+
+//------------------------------------------------------------------------------
+void vtkSlicerWorkspaceGenerationLogic::setBurrHoleSegmentationDisplayNode(
+  vtkMRMLSegmentationDisplayNode* burrHoleSegmentationDisplayNode)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (!burrHoleSegmentationDisplayNode)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": BurrHole Segmentation Display Node is NULL";
+    return;
+  }
+
+  this->BurrHoleSegmentationDisplayNode = burrHoleSegmentationDisplayNode;
 }
 
 //----------------------------------------------------------------------------
@@ -443,31 +481,23 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
 
   if (wsgn->GetInputVolumeNode() != nullptr)
   {
-    // Skin extraction here
-    // vtkSmartPointer< vtkMarchingCubes > skinExtractor =
-    //   vtkSmartPointer< vtkMarchingCubes >::New();
+    try
+    {
+      // List all models
+      nvidia::aiaa::ModelList modelList = NvidiaAIAAClient->models();
+      qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
+               << modelList.toJson().c_str();
 
-    // skinExtractor->SetInputConnection(
-    //   wsgn->GetInputVolumeNode()->GetImageDataConnection());
-
-    // skinExtractor->SetValue(0, 200);
-    // skinExtractor->ComputeNormalsOn();
-    // skinExtractor->Update();
-    // qDebug() << Q_FUNC_INFO << ": Updated Marching Cubes";
-
-    // vtkSmartPointer< vtkStripper > skinStripper =
-    //   vtkSmartPointer< vtkStripper >::New();
-    // skinStripper->SetInputConnection(skinExtractor->GetOutputPort());
-
-    // skinStripper->Update();
-    // qDebug() << Q_FUNC_INFO << ": Updated Stripper";
+      nvidia::aiaa::Model model =
+        modelList.getMatchingModel("annotation_mri_brain_tumors_t1ce_tc");
+    }
+    catch (nvidia::aiaa::exception& e)
+    {
+      qCritical() << Q_FUNC_INFO
+                  << "nvidia::aiaa::exception => nvidia.aiaa.error." << e.id
+                  << "; description: " << e.name().c_str();
+    }
   }
-
-  // vtkSmartPointer< vtkPolyDataMapper > skinMapper =
-  //   vtkSmartPointer< vtkPolyDataMapper >::New();
-
-  // skinMapper->SetInputConnection(skinStripper->GetOutputPort());
-  // skinMapper->ScalarVisibilityOn();
 
   return true;
 }
@@ -695,6 +725,29 @@ vtkMRMLSegmentationNode*
   }
 
   return this->WorkspaceMeshSegmentationNode;
+}
+
+//------------------------------------------------------------------------------
+vtkMRMLSegmentationNode*
+  vtkSlicerWorkspaceGenerationLogic::getBurrHoleSegmentationNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (!this->BurrHoleSegmentationNode &&
+      !WorkspaceGenerationNode->GetBurrHoleSegmentationNode())
+  {
+    qCritical() << Q_FUNC_INFO << ": No burr hole segmentation node available";
+    return NULL;
+  }
+
+  if (this->BurrHoleSegmentationNode !=
+      this->WorkspaceGenerationNode->GetBurrHoleSegmentationNode())
+  {
+    this->BurrHoleSegmentationNode =
+      this->WorkspaceGenerationNode->GetBurrHoleSegmentationNode();
+  }
+
+  return this->BurrHoleSegmentationNode;
 }
 
 //------------------------------------------------------------------------------
