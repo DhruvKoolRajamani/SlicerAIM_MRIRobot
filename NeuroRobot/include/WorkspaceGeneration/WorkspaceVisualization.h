@@ -13,6 +13,7 @@ public:
   // Max allowed seperation  146mm
   // Is the max allowed movement while one block is stationary 146-75 = 71 mm
   const double Diff;
+  const double Diff_largest;
   const double pi;
   double       Ry;       // Initializing the PitchRotation counter
   double       Rx;       // Initializing the YawRotation counter

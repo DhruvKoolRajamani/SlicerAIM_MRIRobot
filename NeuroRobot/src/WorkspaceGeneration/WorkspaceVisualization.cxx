@@ -7,6 +7,7 @@ using std::endl;
 
 ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   : Diff(68)
+  , Diff_largest(71)
   , pi(3.141)
   , Lateral_translation_start(-49.0)
   , Lateral_translation_end(-98.0)
@@ -61,8 +62,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
   AxialHeadTranslation = 0;
 
   // initial separation 143, min separation 75=> 143-75 = 68 mm
-  for (i = Top_max_travel / 100; i > Top_max_travel; i += Top_max_travel / 100)
-
+  for (i = Top_max_travel / 100; i >= Top_max_travel; i += Top_max_travel / 100)
   {
     AxialHeadTranslation += Top_max_travel / 100;
     AxialFeetTranslation += Top_max_travel / 100;
@@ -91,7 +91,6 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
       {
         for (l = 0; l >= RyF_max; l += RyF_max / 5)
         {
-          // YawRotation   = Rx_max;
           PitchRotation = l;
           FK            = NeuroKinematics_.ForwardKinematics(
             AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
@@ -195,7 +194,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
           for (l = 0; l <= RyB_max_degree; l += 5.2)
           {
             PitchRotation = l * pi / 180;
-            for (int jj = Probe_insert_min; jj <= Probe_insert_max - 10;
+            for (double jj = Probe_insert_min; jj <= Probe_insert_max - 10;
                  jj += Probe_insert_max / 10)
             {
               ProbeInsertion = jj;
@@ -214,7 +213,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
           for (l = 0; l >= RyF_max_degree; l -= 7.4)
           {
             PitchRotation = l * pi / 180;
-            for (int jj = Probe_insert_min; jj <= Probe_insert_max - 10;
+            for (double jj = Probe_insert_min; jj <= Probe_insert_max - 10;
                  jj += Probe_insert_max / 10)
             {
               ProbeInsertion = jj;
@@ -230,7 +229,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
         {
           YawRotation   = Rx_max;
           PitchRotation = 0;
-          for (int jj = Probe_insert_min; jj <= Probe_insert_max - 10;
+          for (double jj = Probe_insert_min; jj <= Probe_insert_max - 10;
                jj += Probe_insert_max / 10)
           {
             ProbeInsertion = jj;
@@ -285,72 +284,121 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
       }
     }
   }
-  YawRotation          = 0;
+  YawRotation          = Rx_max;
   PitchRotation        = 0;
-  AxialFeetTranslation = -89;
-  AxialHeadTranslation = -86;
+  AxialFeetTranslation = -78;
+  AxialHeadTranslation = -75;
+  ProbeInsertion       = Probe_insert_max;
 
-  // Loop for creating the feet face only for the bottom level at Axial Head of
-  // -86 and Axial Feet of -89
-  ProbeInsertion = Probe_insert_max;
-  for (k = 0.0 - 49.0; k >= -49.0 - 49.0; k -= 7.0)
+  // loop for creating feet face
+  for (i = 0.; i >= -Diff_largest; i += -Diff_largest / 10)
   {
-    LateralTranslation = k;
-    // if on the bore side
-    if (k >= -28 - 49.0)
+    if (i == 0)
     {
-      PitchRotation = RyB_max;
-      for (i = 0; i >= Rx_max_degree; i -= 8.8)
+      for (j = 0; j >= Rx_max; j += Rx_max / 10)
       {
-        YawRotation = i * pi / 180;
-        FK          = NeuroKinematics_.ForwardKinematics(
-          AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
-          ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+        YawRotation = j;
+        for (k = Lateral_translation_start; k >= Lateral_translation_end;
+             k -= Lateral_resolution)
+        {
+          LateralTranslation = k;
+          // creating curved corners
+          if (k == Lateral_translation_start)
+          {
+            for (l = 0; l >= RyF_max; l += RyF_max / 10)
+            {
+              PitchRotation = l;
+              FK            = NeuroKinematics_.ForwardKinematics(
+                AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+                ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+              StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+              PitchRotation = 0;
+            }
+          }
+          else if (k == Lateral_translation_end)
+          {
+            for (l = 0; l <= RyB_max; l += RyB_max / 10)
+            {
+              PitchRotation = l;
+              FK            = NeuroKinematics_.ForwardKinematics(
+                AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+                ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+              StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+              PitchRotation = 0;
+            }
+          }
+          else
+          {
+            FK = NeuroKinematics_.ForwardKinematics(
+              AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+              ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+            StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+          }
+        }
       }
     }
-    if (k <= -7 - 49.0)
+    else
     {
-      PitchRotation = RyF_max;
-      for (i = 0; i >= Rx_max_degree; i -= 8.8)
+      AxialHeadTranslation += -Diff_largest / 10;
+      // Top level
+      if (i == -71)
       {
-        YawRotation = i * pi / 180;
-        FK          = NeuroKinematics_.ForwardKinematics(
-          AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
-          ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
-      }
-    }
-  }
+        for (k = Lateral_translation_start; k >= Lateral_translation_end;
+             k -= Lateral_resolution)
+        {
+          LateralTranslation = k;
+          for (l = Probe_insert_max / 20; l <= Probe_insert_max - 10;
+               l += Probe_insert_max / 20)
+          {
+            ProbeInsertion = l;
+            YawRotation    = 0;
 
-  YawRotation   = 0;
-  PitchRotation = 0;
-  // Feet face for levels other than the first
-  for (j = -7.1; j >= -71; j -= 7.1)
-  {
-    AxialHeadTranslation -= 7.1;
-
-    for (k = 0.0 - 49.0; k >= -49.0 - 49.0; k -= 7.0)
-    {
-      LateralTranslation = k;
-      // if on the bore side
-      if (k >= -28 - 49.0)
-      {
-        PitchRotation = RyB_max;
-        YawRotation   = 0;
-        FK            = NeuroKinematics_.ForwardKinematics(
-          AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
-          ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+            FK = NeuroKinematics_.ForwardKinematics(
+              AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+              ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+            StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+          }
+        }
       }
-      if (k <= -7 - 49.0)
+      // All other levels between the bottom level and the top
+      else
       {
-        PitchRotation = RyF_max;
-        YawRotation   = 0;
-        FK            = NeuroKinematics_.ForwardKinematics(
-          AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
-          ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+        for (k = Lateral_translation_start; k >= Lateral_translation_end;
+             k -= Lateral_resolution)
+        {
+          LateralTranslation = k;
+          if (k == Lateral_translation_start)
+          {
+            for (l = 0; l >= RyF_max; l += RyF_max / 10)
+            {
+              PitchRotation = l;
+              FK            = NeuroKinematics_.ForwardKinematics(
+                AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+                ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+              StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+              PitchRotation = 0;
+            }
+          }
+          else if (k == Lateral_translation_end)
+          {
+            for (l = 0; l <= RyB_max; l += RyB_max / 10)
+            {
+              PitchRotation = l;
+              FK            = NeuroKinematics_.ForwardKinematics(
+                AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+                ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+              StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+              PitchRotation = 0;
+            }
+          }
+          else
+          {
+            FK = NeuroKinematics_.ForwardKinematics(
+              AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
+              ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
+            StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+          }
+        }
       }
     }
   }
@@ -368,9 +416,8 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
   // The max that the robot can move in z direction when at lowest height(at
   // each hight min level is changed)
   double min_travel{-86};
-  // 157 The max that the robot can move in z direction when at highest height
-  double max_travel{-157};
-  for (j = 0; j <= 71; j += 7.1)
+  double increment = -(Top_max_travel - min_travel);
+  for (j = 0; j <= increment; j += increment / 10)
   {
     // For each loop it will lift the base by a constant value
     AxialFeetTranslation += j;
@@ -383,38 +430,27 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
 
     // loop to move the base from Head to feet based on the allowable max
     // movement range (min_travel)
-    for (ii = 0; ii >= min_travel; ii += (min_travel / 10))
+    for (ii = 0.; ii >= min_travel; ii += min_travel / 20.0)
     {
       AxialHeadTranslation += ii;
       AxialFeetTranslation += ii;
 
-      for (k = 0.0 - 49.0; k >= -49.0 - 49.0; k -= 49.0)
+      for (k = Lateral_translation_start; k >= Lateral_translation_end;
+           k += Lateral_translation_start)
       {
         LateralTranslation = k;
         // For the side towards bore
-        if (k == 0.0 - 49.0)
+        if (k == Lateral_translation_start)
         {
+
           // Conditions based on the position of the base
           // Only for the first level
           if (j == 0)
           {
             PitchRotation = RyB_max;
 
-            // 1) Beginning of the track
-            if (ii == 0)
-            {
-              for (i = 0; i > Rx_max_degree; i += Rx_max_degree / 10)
-              {
-                YawRotation = i * pi / 180;
-                FK          = NeuroKinematics_.ForwardKinematics(
-                  AxialHeadTranslation, AxialFeetTranslation,
-                  LateralTranslation, ProbeInsertion, ProbeRotation,
-                  PitchRotation, YawRotation);
-                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
-              }
-            }
-            // 2) End of the track
-            else if (ii == min_travel)
+            // 1) End of the track
+            if (ii == min_travel)
             {
               YawRotation = 0;
               FK          = NeuroKinematics_.ForwardKinematics(
@@ -438,8 +474,9 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
           }
 
           // Only for the topmost level
-          else if (j == 71)
+          else if (j == increment)
           {
+
             // In between beginning and end
             if (ii < 0 && ii > min_travel)
             {
@@ -448,6 +485,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
               {
                 PitchRotation = l * pi / 180;
                 YawRotation   = 0;
+                std::cerr << "Hi Im here";
 
                 FK = NeuroKinematics_.ForwardKinematics(
                   AxialHeadTranslation, AxialFeetTranslation,
@@ -493,7 +531,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
           }
         }
         // For the side towards the patient
-        else if (k == -49.0 - 49.0)
+        else if (k == Lateral_translation_end)
         {
           // Conditions based on the position of the base:
 
@@ -540,7 +578,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
           }
 
           // Only for the topmost level
-          else if (j == 71)
+          else if (j == increment)
           {
             // In between beginning and end
             if (ii < 0 && ii > min_travel)
@@ -720,7 +758,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmWorkSpace()
   double min_travel{-86};  // The max that the robot can move in z direction
                            // when at lowest height (at each hight min travel is
                            // changed)
-  double max_travel{-157};  // 157 The max that the robot can move in z
+  double max_travel{-146};  // 157 The max that the robot can move in z
                             // direction when at highest height
   for (j = min_seperation / 10; j <= Abs_min_leg_separation;
        j += min_seperation / 10)
@@ -885,7 +923,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmPointSet()
   // each hight min travel is changed)
   double min_travel{-86};
   // 157 The max that the robot can move in z direction when at highest height.
-  double max_travel{-157};
+  double max_travel{-146};
 
   for (j = min_seperation / division; j <= Abs_min_leg_separation;
        j += min_seperation / division)
@@ -1038,7 +1076,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
 
   /* Loop that goes through each point in the Validated PC and checks for the
   Validity of the IK output*/
-  for (int i = 0; i < no_cols_validated_point_set; i++)
+  for (i = 0; i < no_cols_validated_point_set; i++)
   {
     // setting the TP for each point in the loop
     tp_in_robot_coordinate << validated_point_set(0, i),
@@ -1163,7 +1201,7 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
   intersection with the sphere*/
   double a{0}, b{0}, c{0}, t1{0}, t2{0}, x{0}, y{0}, z{0};
 
-  for (int i = 0; i < no_cols; i++)
+  for (i = 0; i < no_cols; i++)
   {
     rcm_point << validated_inverse_kinematic_rcm_pointset(0, i),
       validated_inverse_kinematic_rcm_pointset(1, i),
@@ -1209,7 +1247,7 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
     // increments for z
     z = abs(coordinate_of_last_point(2) - ep_in_robot_coordinate(2)) / division;
 
-    for (int j = 1; j <= division; j++)
+    for (j = 1; j <= division; j++)
     {
       if (ep_in_robot_coordinate(0) < coordinate_of_last_point(0))
       {
