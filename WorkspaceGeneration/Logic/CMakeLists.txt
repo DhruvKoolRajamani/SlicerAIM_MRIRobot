@@ -17,6 +17,7 @@ set(${KIT}_INCLUDE_DIRECTORIES
   ${vtkSlicerSegmentationsModuleLogic_SRCS}
   ${utilities_INCLUDE_DIRS}
   ${neurorobot_INCLUDE_DIRS}
+  ${nlohmann_json_INCLUDE_DIRS}
   )
 
 set(${KIT}_SRCS
@@ -39,6 +40,7 @@ set(${KIT}_TARGET_LIBRARIES
   # utilities
   NeuroKinematics
   NvidiaAIAAClient
+  # nlohmann_json
   )
 
 #-----------------------------------------------------------------------------

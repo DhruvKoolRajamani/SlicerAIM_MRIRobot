@@ -17,6 +17,9 @@
 
 // QT includes
 #include <QDebug>
+#include <QDir>
+#include <QTemporaryDir>
+#include <QTemporaryFile>
 
 // WorkspaceGeneration Logic includes
 #include "vtkSlicerWorkspaceGenerationLogic.h"
@@ -24,6 +27,8 @@
 // Slicer Module includes
 #include <qSlicerAbstractModule.h>
 #include <qSlicerCoreApplication.h>
+#include <qSlicerCoreIOManager.h>
+#include <qSlicerIO.h>
 #include <qSlicerModuleManager.h>
 
 // MRML includes
@@ -51,6 +56,7 @@
 #include <vtkPoints.h>
 // #include <vtkPolyDataMapper.h>
 // #include <vtkPowerCrustSurfaceReconstruction.h>
+#include <vtkMRMLMarkupsNode.h>
 #include <vtkSmartPointer.h>
 #include <vtkTriangleFilter.h>
 
@@ -59,6 +65,9 @@
 #include <cmath>
 #include <set>
 #include <vector>
+
+// NvidiaAIAA includes
+#include <nlohmann/json.hpp>
 
 class qSlicerAbstractCoreModule;
 class vtkSlicerVolumeRenderingLogic;
@@ -450,6 +459,134 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
     return false;
   }
 
+  vtkMRMLMarkupsFiducialNode* bHEPNode = wsgn->GetBHExtremePointNode();
+
+  if (bHEPNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Extreme Point Node has not been set.";
+    return false;
+  }
+
+  vtkMRMLVolumeNode* inputVolumeNode = wsgn->GetInputVolumeNode();
+  vtkSmartPointer< vtkMRMLVolumeNode > outputVolumeNode;
+
+  vtkSmartPointer< vtkMatrix4x4 > RASToIJKMatrix =
+    vtkSmartPointer< vtkMatrix4x4 >::New();
+  inputVolumeNode->GetRASToIJKMatrix(RASToIJKMatrix);
+  // std::string in_file = NvidiaAIAAClient->getSession(inputVolumeNode);
+
+  QString        ext = ".nii.gz";
+  QTemporaryFile in_file(QDir::tempPath() + "/in_file_xxxxxx");
+  QTemporaryFile out_file(QDir::tempPath() + "/out_file_xxxxxx" + ext);
+  // QTemporaryFile          out_file = std::tmpnam(nullptr) + ext;
+  qSlicerIO::IOProperties properties;
+  qSlicerIO::IOFileType   fileType =
+    qSlicerCoreApplication::application()->coreIOManager()->fileWriterFileType(
+      inputVolumeNode, ext);
+
+  properties["fileName"]   = in_file.fileName();
+  properties["fileFormat"] = ext;
+  properties["nodeID"]     = QString(inputVolumeNode->GetID());
+
+  qSlicerCoreApplication::application()->coreIOManager()->saveNodes(fileType,
+                                                                    properties);
+  std::string sessionID = "";
+
+  if (!in_file.exists())
+  {
+    qWarning() << Q_FUNC_INFO << ": in_file is NULL";
+    // in_file = NvidiaAIAAClient->createSession(inputVolumeNode);
+  }
+  else
+  {
+    auto response = NvidiaAIAAClient->createSession(
+      QString(in_file.fileName() + ext).toUtf8().constData());
+
+    try
+    {
+      nlohmann::json j = nlohmann::json::parse(response);
+      sessionID        = j.find("session_id") != j.end() ?
+                           j["session_id"].get< std::string >() :
+                           std::string();
+    }
+    catch (nlohmann::json::parse_error& e)
+    {
+      qCritical() << Q_FUNC_INFO << e.what();
+      // throw exception(exception::RESPONSE_PARSE_ERROR, e.what());
+    }
+    catch (nlohmann::json::type_error& e)
+    {
+      qCritical() << Q_FUNC_INFO << e.what();
+      // throw exception(exception::RESPONSE_PARSE_ERROR, e.what());
+    }
+  }
+
+  nvidia::aiaa::PointSet bHExtremePointSet;
+
+  for (int i = 0; i < bHEPNode->GetNumberOfFiducials(); i++)
+  {
+    double coord[3] = {0.0, 0.0, 0.0};
+    bHEPNode->GetNthFiducialPosition(i, coord);
+
+    double world[4] = {0.0, 0.0, 0.0, 0.0};
+    bHEPNode->GetNthFiducialWorldCoordinates(i, world);
+
+    double             p_Ras[4] = {coord[0], coord[1], coord[2], 1.0};
+    double*            p_Ijk    = RASToIJKMatrix->MultiplyDoublePoint(p_Ras);
+    std::vector< int > points;
+    for (int idx = 0; idx < 3; idx++)
+    {
+      points.push_back(( int ) p_Ijk[idx]);
+    }
+
+    bHExtremePointSet.points.push_back(points);
+  }
+
+  if (wsgn->GetInputVolumeNode() != nullptr)
+  {
+    try
+    {
+      // List all models
+      nvidia::aiaa::ModelList modelList = NvidiaAIAAClient->models();
+      qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
+               << modelList.toJson().c_str();
+
+      nvidia::aiaa::Model model =
+        modelList.getMatchingModel("annotation_mri_brain_tumors_t1ce_tc");
+
+      bool segmentedState = NvidiaAIAAClient->dextr3D(
+        model, bHExtremePointSet, in_file.fileName().toUtf8().constData(),
+        out_file.fileName().toUtf8().constData(), false, sessionID);
+
+      // https://github.com/NVIDIA/ai-assisted-annotation-client/blob/df65b44448348f7d0d0af4feaaca772254aae3f1/slicer-plugin/NvidiaAIAA/SegmentEditorNvidiaAIAALib/SegmentEditorEffect.py#L231
+      // this->UpdateBHSegmentationMask(bHExtremePointSet, out_file, 0,
+      // overwriteCurrentSegment=true):
+    }
+    catch (nvidia::aiaa::exception& e)
+    {
+      qCritical() << Q_FUNC_INFO
+                  << "nvidia::aiaa::exception => nvidia.aiaa.error." << e.id
+                  << "; description: " << e.name().c_str();
+    }
+  }
+
+  return true;
+}
+
+/** ------------------------------- DEPRECATED ---------------------------------
+//-----------------------------------------------------------------------------
+bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
+  vtkMRMLWorkspaceGenerationNode* wsgn)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (wsgn == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Workspace Generation Node is not available.";
+    return false;
+  }
+
   vtkMRMLMarkupsFiducialNode* epNode = wsgn->GetEntryPointNode();
   vtkMRMLMarkupsFiducialNode* tpNode = wsgn->GetTargetPointNode();
 
@@ -501,6 +638,7 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
 
   return true;
 }
+*/
 
 // feature: #18 Generate subworkspace given markup points. @FaridTavakol
 //------------------------------------------------------------------------------

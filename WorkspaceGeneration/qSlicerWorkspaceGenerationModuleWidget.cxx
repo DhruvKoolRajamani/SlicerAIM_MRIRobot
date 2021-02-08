@@ -945,7 +945,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onBurrHoleSegmentationNodeChanged(
   qvtkReconnect(d->BurrHoleSegmentationDisplayNode, segmentationDisplayNode,
                 vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
   // d->WorkspaceMeshSegmentationDisplayNode = segmentationDisplayNode;
-  // d->logic()->setWorkspaceMeshSegmentationDisplayNode(segmentationDisplayNode);
+  d->logic()->setBurrHoleSegmentationDisplayNode(segmentationDisplayNode);
 
   // Create logic to accommodate creating a new annotation ROI node.
   // Should you transfer the data to the new node? Reset all visibility params?
@@ -1049,7 +1049,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onbHExtremePointChanged(
                 vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
   d->EntryPointDisplayNode = bHExtremePointDisplayNode;
 
-  subscribeToMarkupEvents(bHExtremePointNode);
+  // subscribeToMarkupEvents(bHExtremePointNode);
 
   // Create logic to accommodate creating a new annotation ROI node.
   // Should you transfer the data to the new node? Reset all visibility params?
@@ -1063,6 +1063,38 @@ void qSlicerWorkspaceGenerationModuleWidget::onDetectBurrHoleClick()
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
   qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  vtkMRMLMarkupsFiducialNode* bHExtremePointNode =
+    workspaceGenerationNode->GetBHExtremePointNode();
+  if (bHExtremePointNode == NULL)
+  {
+    qWarning() << Q_FUNC_INFO << ": BH Extreme Points have not been created.";
+    return;
+  }
+
+  if (bHExtremePointNode->GetNumberOfDefinedControlPoints() <
+      nvidia::aiaa::Client::MIN_POINTS_FOR_SEGMENTATION)
+  {
+    qWarning() << Q_FUNC_INFO
+               << ": BurrHole Extreme points are less than the minimum "
+                  "required.";
+    return;
+  }
+
+  bool burrholeSet = d->logic()->IdentifyBurrHole(workspaceGenerationNode);
+
+  // Should be ideally moved to burr hole detection.
+  workspaceGenerationNode->SetBurrHoleDetected(burrholeSet);
 }
 
 // 1 + 2 = 3.1 Place Entry Point.
@@ -1397,6 +1429,12 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
     return;
   }
 
+  if (!burrholeSet)
+  {
+    qWarning() << Q_FUNC_INFO << ": Burr Hole has not been identified yet.";
+    return;
+  }
+
   if (entryPointNode->GetNumberOfDefinedControlPoints() == 0)
   {
     qWarning() << Q_FUNC_INFO << ": Entry point has not been placed yet.";
@@ -1413,13 +1451,13 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
   }
 
   // Easy to modify this to a lock if asynchronousity is required.
-  if (!burrholeSet)
-  {
-    burrholeSet = d->logic()->IdentifyBurrHole(workspaceGenerationNode);
+  // if (!burrholeSet)
+  // {
+  //   burrholeSet = d->logic()->IdentifyBurrHole(workspaceGenerationNode);
 
-    // Should be ideally moved to burr hole detection.
-    workspaceGenerationNode->SetBurrHoleDetected(burrholeSet);
-  }
+  //   // Should be ideally moved to burr hole detection.
+  //   workspaceGenerationNode->SetBurrHoleDetected(burrholeSet);
+  // }
 }
 
 //-----------------------------------------------------------------------------
