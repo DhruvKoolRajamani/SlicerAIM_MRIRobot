@@ -10,12 +10,15 @@ int main(int argc, char* argv[])
                       _robotToTreatmentAtHome};
   NeuroKinematics   NeuroKinematics_(&probe_init);
   ForwardKinematics ForwardKinematics_(NeuroKinematics_);
-  Eigen::Matrix3Xf  GeneralWorkspace = ForwardKinematics_.GetGeneralWorkspace();
 
-  SaveDataToFile data_writer(GeneralWorkspace);
+  Eigen::Matrix3Xf general_workspace = ForwardKinematics_.GetGeneralWorkspace();
+  SaveDataToFile   data_writer(general_workspace);
   data_writer.SaveToXyz("GeneralWorkspace.xyz");
 
-  // ForwardKinematics_.GetGeneralWorkspace();
+  Eigen::Matrix3Xf rcm_workspace = ForwardKinematics_.GetRcmWorkSpace();
+  SaveDataToFile   data_writer1(rcm_workspace);
+  data_writer1.SaveToXyz("RcmWorkspace.xyz");
+
   return 0;
 }
 
