@@ -41,6 +41,7 @@ set(${KIT}_TARGET_LIBRARIES
   NeuroKinematics
   NvidiaAIAAClient
   # nlohmann_json
+  ${Boost_LIBRARIES}
   )
 
 #-----------------------------------------------------------------------------

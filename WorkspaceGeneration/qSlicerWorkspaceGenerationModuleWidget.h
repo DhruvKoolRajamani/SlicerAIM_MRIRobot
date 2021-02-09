@@ -102,8 +102,8 @@ protected slots:
   void onPresetComboBoxNodeChanged(vtkMRMLNode*);
   void onBurrHoleSegmentationNodeAdded(vtkMRMLNode*);
   void onBurrHoleSegmentationNodeChanged(vtkMRMLNode*);
-  void onbHExtremePointAdded(vtkMRMLNode*);
-  void onbHExtremePointChanged(vtkMRMLNode*);
+  void onBHExtremePointAdded(vtkMRMLNode*);
+  void onBHExtremePointChanged(vtkMRMLNode*);
   void onEntryPointAdded(vtkMRMLNode*);
   void onEntryPointSelectionChanged(vtkMRMLNode*);
   void onTargetPointSelectionChanged(vtkMRMLNode*);

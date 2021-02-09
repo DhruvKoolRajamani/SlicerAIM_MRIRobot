@@ -20,6 +20,7 @@
 #include <QDir>
 #include <QTemporaryDir>
 #include <QTemporaryFile>
+#include <ctime>
 
 // WorkspaceGeneration Logic includes
 #include "vtkSlicerWorkspaceGenerationLogic.h"
@@ -68,6 +69,12 @@
 
 // NvidiaAIAA includes
 #include <nlohmann/json.hpp>
+
+#include <itkImageFileReader.h>
+#include <itkLabelImageToLabelMapFilter.h>
+#include <itkLabelMap.h>
+// #include <itkLabelMapMaskImageFilter.h>
+#include <itkLabelObject.h>
 
 class qSlicerAbstractCoreModule;
 class vtkSlicerVolumeRenderingLogic;
@@ -121,13 +128,13 @@ vtkSlicerWorkspaceGenerationLogic::vtkSlicerWorkspaceGenerationLogic()
     NvidiaAIAAClient =
       new nvidia::aiaa::Client("http://skull.cs.queensu.ca:8123");
 
-    // List all models
-    nvidia::aiaa::ModelList modelList = NvidiaAIAAClient->models();
-    qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
-             << modelList.toJson().c_str();
+    // // List all models
+    // nvidia::aiaa::ModelList modelList = NvidiaAIAAClient->models();
+    // qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
+    //          << modelList.toJson().c_str();
 
-    nvidia::aiaa::Model model =
-      modelList.getMatchingModel("annotation_mri_brain_tumors_t1ce_tc");
+    // nvidia::aiaa::Model model =
+    //   modelList.getMatchingModel("annotation_mri_brain_tumors_t1ce_tc");
   }
   catch (nvidia::aiaa::exception& e)
   {
@@ -447,6 +454,72 @@ void vtkSlicerWorkspaceGenerationLogic::PruneExcessMarkups(
 }
 
 //-----------------------------------------------------------------------------
+bool vtkSlicerWorkspaceGenerationLogic::UpdateBHSegmentationMask(
+  vtkMRMLWorkspaceGenerationNode* wsgn, nvidia::aiaa::PointSet extremePoints,
+  const std::string maskFileName, bool overwriteCurrentSegment,
+  boost::optional< float > sliceIndex, int* cropBox)
+{
+  qInfo() << Q_FUNC_INFO;
+  // Start timer (for response?)
+  clock_t startTime = clock();
+
+  vtkMRMLSegmentationNode* bHSegNode = wsgn->GetBurrHoleSegmentationNode();
+  if (bHSegNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Segmentation node has not been created.";
+    return false;
+  }
+
+  vtkSmartPointer< vtkSegmentation > bHSeg = bHSegNode->GetSegmentation();
+
+  if (bHSeg == NULL)
+  {
+    qWarning() << Q_FUNC_INFO
+               << ": No segment has been added to the segmentation node, "
+                  "adding one now.";
+    bHSeg = vtkSmartPointer< vtkSegmentation >::New();
+    bHSeg->AddEmptySegment();
+    bHSegNode->SetAndObserveSegmentation(bHSeg);
+  }
+
+  if (!maskFileName.empty())
+  {
+    qCritical() << Q_FUNC_INFO << ": Input file is null, exiting.";
+    return false;
+  }
+
+  if (FILE* maskFile = fopen(maskFileName.c_str(), "r"))
+  {
+    qDebug() << Q_FUNC_INFO << ": Opened response mask file";
+    fclose(maskFile);
+  }
+  else
+  {
+    qCritical() << Q_FUNC_INFO << ": response file does not exist! exiting.";
+    return false;
+  }
+
+  // using ImageType = TImage;
+  // unsigned int dimension = image->GetImageDimension();
+
+  // using PixelType                 = unsigned char;
+  // using ImageType                 = itk::Image< PixelType, Dimension >;
+  // using ReaderType                = itk::ImageFileReader< ImageType >;
+  // ReaderType::Pointer imageReader = ReaderType::New();
+  // imageReader->SetFileName(maskFileName.c_str());
+
+  // using LabelMapType = itk::LabelMap< LabelObjectType >;
+  // using LabelImage2LabelMapType =
+  //   itk::LabelImageToLabelMapFilter< ImageType, LabelMapType >;
+  // LabelImage2LabelMapType::Pointer convert = LabelImage2LabelMapType::New();
+  // LabelImage2LabelMapType::Pointer convert = LabelImage2LabelMapType::New();
+  // convert->SetInput(imageReader->GetOutput());
+  // convert->Set
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
 bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   vtkMRMLWorkspaceGenerationNode* wsgn)
 {
@@ -468,6 +541,12 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   }
 
   vtkMRMLVolumeNode* inputVolumeNode = wsgn->GetInputVolumeNode();
+  if (inputVolumeNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Input Volume Node has not been set.";
+    return false;
+  }
+
   vtkSmartPointer< vtkMRMLVolumeNode > outputVolumeNode;
 
   vtkSmartPointer< vtkMatrix4x4 > RASToIJKMatrix =
@@ -475,32 +554,45 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   inputVolumeNode->GetRASToIJKMatrix(RASToIJKMatrix);
   // std::string in_file = NvidiaAIAAClient->getSession(inputVolumeNode);
 
-  QString        ext = ".nii.gz";
-  QTemporaryFile in_file(QDir::tempPath() + "/in_file_xxxxxx");
-  QTemporaryFile out_file(QDir::tempPath() + "/out_file_xxxxxx" + ext);
-  // QTemporaryFile          out_file = std::tmpnam(nullptr) + ext;
+  QString ext = ".nii.gz";
+  /* initialize random seed: */
+  srand(time(NULL));
+  int     random = rand() % 10000 + 1;
+  QString in_file(QDir::currentPath() + QDir::separator() + "in_file_" +
+                  std::to_string(random).c_str());
+  QString out_file(QDir::currentPath() + QDir::separator() + "out_file_" +
+                   std::to_string(random).c_str() + ext);
+
+  qDebug() << Q_FUNC_INFO << ": in_file created: " << in_file;
+  qDebug() << Q_FUNC_INFO << ": out_file created: " << out_file;
   qSlicerIO::IOProperties properties;
   qSlicerIO::IOFileType   fileType =
     qSlicerCoreApplication::application()->coreIOManager()->fileWriterFileType(
       inputVolumeNode, ext);
 
-  properties["fileName"]   = in_file.fileName();
+  qDebug() << Q_FUNC_INFO << ": FileWriterType created";
+
+  properties["fileName"]   = in_file;
   properties["fileFormat"] = ext;
   properties["nodeID"]     = QString(inputVolumeNode->GetID());
+
+  // https://vtk.org/doc/nightly/html/classvtkNIFTIImageWriter.html
+  // Also include header, check if vtkMRMLVolumeNode needs to Get Data to save.
+  // Try to find examples
 
   qSlicerCoreApplication::application()->coreIOManager()->saveNodes(fileType,
                                                                     properties);
   std::string sessionID = "";
 
-  if (!in_file.exists())
+  if (in_file == "")
   {
-    qWarning() << Q_FUNC_INFO << ": in_file is NULL";
+    qWarning() << Q_FUNC_INFO << ": in_file is Empty";
     // in_file = NvidiaAIAAClient->createSession(inputVolumeNode);
   }
   else
   {
     auto response = NvidiaAIAAClient->createSession(
-      QString(in_file.fileName() + ext).toUtf8().constData());
+      QString(in_file + ext).toUtf8().constData());
 
     try
     {
@@ -555,12 +647,12 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
         modelList.getMatchingModel("annotation_mri_brain_tumors_t1ce_tc");
 
       bool segmentedState = NvidiaAIAAClient->dextr3D(
-        model, bHExtremePointSet, in_file.fileName().toUtf8().constData(),
-        out_file.fileName().toUtf8().constData(), false, sessionID);
+        model, bHExtremePointSet, in_file.toUtf8().constData(),
+        out_file.toUtf8().constData(), false, sessionID);
 
       // https://github.com/NVIDIA/ai-assisted-annotation-client/blob/df65b44448348f7d0d0af4feaaca772254aae3f1/slicer-plugin/NvidiaAIAA/SegmentEditorNvidiaAIAALib/SegmentEditorEffect.py#L231
-      // this->UpdateBHSegmentationMask(bHExtremePointSet, out_file, 0,
-      // overwriteCurrentSegment=true):
+      this->UpdateBHSegmentationMask(wsgn, bHExtremePointSet,
+                                     out_file.toUtf8().constData(), true);
     }
     catch (nvidia::aiaa::exception& e)
     {

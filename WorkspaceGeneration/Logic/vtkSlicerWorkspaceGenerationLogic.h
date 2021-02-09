@@ -25,6 +25,10 @@
 // QT Includes
 #include <QString>
 
+// Boost
+// I don't like this, should change later on
+#include <boost/optional.hpp>
+
 // Slicer includes
 #include "vtkSlicerModuleLogic.h"
 
@@ -168,6 +172,12 @@ protected:
   // Prune any markups that are more than one.
   void PruneExcessMarkups(vtkMRMLMarkupsFiducialNode* mfn);
 
+  // Update segmentation mask for BurrHole
+  bool UpdateBHSegmentationMask(vtkMRMLWorkspaceGenerationNode* wsgn,
+    nvidia::aiaa::PointSet extremePoints, const std::string maskFileName,
+    bool                     overwriteCurrentSegment = false,
+    boost::optional< float > sliceIndex = boost::none, int* cropBox = nullptr);
+
   // Parameter Nodes
   vtkMRMLWorkspaceGenerationNode* WorkspaceGenerationNode;
 
@@ -205,7 +215,7 @@ protected:
   vtkMRMLSegmentationNode* BurrHoleSegmentationNode;
 
   // Burr Hole Display Node
-  vtkMRMLSegmentationDisplayNode*    BurrHoleSegmentationDisplayNode;
+  vtkMRMLSegmentationDisplayNode* BurrHoleSegmentationDisplayNode;
 
 private:
   vtkSlicerWorkspaceGenerationLogic(

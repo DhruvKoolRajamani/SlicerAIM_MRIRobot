@@ -10,6 +10,9 @@ set(CMAKE_BUILD_TYPE Debug)
 # Extension dependencies
 find_package(Slicer REQUIRED)
 include(${Slicer_USE_FILE})
+include_directories( ${Boost_INCLUDE_DIR} )
+
+find_package(Boost REQUIRED)
 
 include(InstallRequiredSystemLibraries)
 

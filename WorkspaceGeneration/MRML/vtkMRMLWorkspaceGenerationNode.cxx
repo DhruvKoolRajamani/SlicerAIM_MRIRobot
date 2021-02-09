@@ -439,9 +439,10 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveBHExtremePointNodeId(
 
   const char* targetPointNodeId = this->GetNodeReferenceID(TARGET_POINT_ROLE);
   const char* entryPointNodeId  = this->GetNodeReferenceID(ENTRY_POINT_ROLE);
-  if (targetPointNodeId != NULL && entryPointNodeId != NULL &&
-        strcmp(bHExtremePointNodeId, targetPointNodeId) == 0 ||
-      strcmp(bHExtremePointNodeId, entryPointNodeId))
+  if ((targetPointNodeId != NULL &&
+       strcmp(bHExtremePointNodeId, targetPointNodeId) == 0) &&
+      (entryPointNodeId != NULL &&
+       strcmp(bHExtremePointNodeId, entryPointNodeId) == 0))
   {
     vtkErrorMacro(
       "Extreme point cannot be the same as Entry point or target point.");

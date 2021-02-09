@@ -41,9 +41,6 @@
        </property>
       </widget>
      </item>
-<!-- /////////////////////////////////////////////////////////////////////// -->
-<!-- /////////////////////////WorkspaceGenerationNode/////////////////////// -->
-<!-- /////////////////////////////////////////////////////////////////////// -->
      <item row="0" column="1" colspan="3">
       <widget class="qMRMLNodeComboBox" name="ParameterNodeSelector__1_1">
        <property name="nodeTypes">
@@ -61,9 +58,6 @@
      </item>
     </layout>
    </item>
-<!-- /////////////////////////////////////////////////////////////////////// -->
-<!-- /////////////////////////////Input Settings//////////////////////////// -->
-<!-- /////////////////////////////////////////////////////////////////////// -->
    <item>
     <widget class="ctkCollapsibleButton" name="InputSettingsCollapsibleButton__2_1">
      <property name="font">
@@ -203,9 +197,6 @@
      </layout>
     </widget>
    </item>
-<!-- /////////////////////////////////////////////////////////////////////// -->
-<!-- ////////////////////////Robot Workspace Settings/////////////////////// -->
-<!-- /////////////////////////////////////////////////////////////////////// -->
    <item>
     <widget class="ctkCollapsibleButton" name="WorkspaceMeshSettingsCollapsibleButton__3_1">
      <property name="font">
@@ -620,9 +611,6 @@
      </layout>
     </widget>
    </item>
-<!-- /////////////////////////////////////////////////////////////////////// -->
-<!-- //////////////////////////Burr Hole Detection////////////////////////// -->
-<!-- /////////////////////////////////////////////////////////////////////// -->
    <item>
     <widget class="ctkCollapsibleButton" name="BurrHoleCollapsibleButton__4_1">
      <property name="sizePolicy">
@@ -699,7 +687,7 @@
         </property>
         <property name="nodeTypes">
          <stringlist>
-          <string>vtkMRMLSegmentationNode</string>
+          <string>vtkMRMLMarkupsFiducialNode</string>
          </stringlist>
         </property>
         <property name="noneEnabled">
@@ -726,7 +714,7 @@
         </property>
         <property name="nodeTypes">
          <stringlist>
-          <string>vtkMRMLMarkupsFiducialNode</string>
+          <string>vtkMRMLSegmentationNode</string>
          </stringlist>
         </property>
         <property name="noneEnabled">
@@ -813,9 +801,6 @@
      </layout>
     </widget>
    </item>
-<!-- /////////////////////////////////////////////////////////////////////// -->
-<!-- //////////////////////////EP and TP Selection////////////////////////// -->
-<!-- /////////////////////////////////////////////////////////////////////// -->
    <item>
     <widget class="ctkCollapsibleButton" name="MarkupsFiducialsCollapsibleButton__5_1">
      <property name="sizePolicy">
