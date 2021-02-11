@@ -1,3 +1,4 @@
 [submodule "ai-assisted-annotation-client"]
 	path = ai-assisted-annotation-client
-	url = https://github.com/NVIDIA/ai-assisted-annotation-client.git
+	url = https://github.com/DhruvKoolRajamani/ai-assisted-annotation-client.git
+	branch = api-v2

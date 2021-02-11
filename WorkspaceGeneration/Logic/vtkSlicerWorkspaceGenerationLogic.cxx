@@ -21,6 +21,8 @@
 #include <QTemporaryDir>
 #include <QTemporaryFile>
 #include <ctime>
+#include <qSlicerIOManager.h>
+#include <qfileinfo.h>
 
 // WorkspaceGeneration Logic includes
 #include "vtkSlicerWorkspaceGenerationLogic.h"
@@ -30,6 +32,7 @@
 #include <qSlicerCoreApplication.h>
 #include <qSlicerCoreIOManager.h>
 #include <qSlicerIO.h>
+#include <qSlicerIOOptions.h>
 #include <qSlicerModuleManager.h>
 
 // MRML includes
@@ -70,11 +73,13 @@
 // NvidiaAIAA includes
 #include <nlohmann/json.hpp>
 
+// ITK Includes
 #include <itkImageFileReader.h>
 #include <itkLabelImageToLabelMapFilter.h>
 #include <itkLabelMap.h>
 // #include <itkLabelMapMaskImageFilter.h>
 #include <itkLabelObject.h>
+#include <itkNiftiImageIO.h>
 
 class qSlicerAbstractCoreModule;
 class vtkSlicerVolumeRenderingLogic;
@@ -122,31 +127,12 @@ vtkSlicerWorkspaceGenerationLogic::vtkSlicerWorkspaceGenerationLogic()
                                vtkSlicerSegmentationsModuleLogic::SafeDownCast(
                                  this->SegmentationsModule->logic()) :
                                0;
-
-  try
-  {
-    NvidiaAIAAClient =
-      new nvidia::aiaa::Client("http://skull.cs.queensu.ca:8123");
-
-    // // List all models
-    // nvidia::aiaa::ModelList modelList = NvidiaAIAAClient->models();
-    // qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
-    //          << modelList.toJson().c_str();
-
-    // nvidia::aiaa::Model model =
-    //   modelList.getMatchingModel("annotation_mri_brain_tumors_t1ce_tc");
-  }
-  catch (nvidia::aiaa::exception& e)
-  {
-    qCritical() << Q_FUNC_INFO
-                << "nvidia::aiaa::exception => nvidia.aiaa.error." << e.id
-                << "; description: " << e.name().c_str();
-  }
 }
 
 //----------------------------------------------------------------------------
 vtkSlicerWorkspaceGenerationLogic::~vtkSlicerWorkspaceGenerationLogic()
 {
+  delete NvidiaAIAAClient;
 }
 
 //----------------------------------------------------------------------------
@@ -499,22 +485,16 @@ bool vtkSlicerWorkspaceGenerationLogic::UpdateBHSegmentationMask(
     return false;
   }
 
-  // using ImageType = TImage;
-  // unsigned int dimension = image->GetImageDimension();
+  QFileInfo inFileInfo = QFileInfo(maskFileName.c_str());
 
-  // using PixelType                 = unsigned char;
-  // using ImageType                 = itk::Image< PixelType, Dimension >;
-  // using ReaderType                = itk::ImageFileReader< ImageType >;
-  // ReaderType::Pointer imageReader = ReaderType::New();
-  // imageReader->SetFileName(maskFileName.c_str());
-
-  // using LabelMapType = itk::LabelMap< LabelObjectType >;
-  // using LabelImage2LabelMapType =
-  //   itk::LabelImageToLabelMapFilter< ImageType, LabelMapType >;
-  // LabelImage2LabelMapType::Pointer convert = LabelImage2LabelMapType::New();
-  // LabelImage2LabelMapType::Pointer convert = LabelImage2LabelMapType::New();
-  // convert->SetInput(imageReader->GetOutput());
-  // convert->Set
+  QList< qSlicerIO::IOProperties > properties;
+  qSlicerIO::IOProperties          property;
+  property["fileName"] = inFileInfo.absoluteFilePath();
+  // property[""]
+  properties.append(property);
+  bool success =
+    qSlicerCoreApplication::application()->coreIOManager()->loadNodes(
+      properties);
 
   return true;
 }
@@ -554,7 +534,8 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   inputVolumeNode->GetRASToIJKMatrix(RASToIJKMatrix);
   // std::string in_file = NvidiaAIAAClient->getSession(inputVolumeNode);
 
-  QString ext = ".nii.gz";
+  QString ext      = ".nii.gz";
+  QString ext_type = "NifTI (.nii.gz)";
   /* initialize random seed: */
   srand(time(NULL));
   int     random = rand() % 10000 + 1;
@@ -563,43 +544,47 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   QString out_file(QDir::currentPath() + QDir::separator() + "out_file_" +
                    std::to_string(random).c_str() + ext);
 
-  qDebug() << Q_FUNC_INFO << ": in_file created: " << in_file;
-  qDebug() << Q_FUNC_INFO << ": out_file created: " << out_file;
-  qSlicerIO::IOProperties properties;
+  QFileInfo inFileInfo = QFileInfo(in_file + ext);
+  // QFileInfo outFileInfo = QFileInfo(out_file);
+  qSlicerIO::IOProperties savingParameters;
   qSlicerIO::IOFileType   fileType =
     qSlicerCoreApplication::application()->coreIOManager()->fileWriterFileType(
-      inputVolumeNode, ext);
+      inputVolumeNode, ext_type);
+  savingParameters["nodeID"]     = QString(inputVolumeNode->GetID());
+  savingParameters["fileName"]   = inFileInfo.absoluteFilePath();
+  savingParameters["fileFormat"] = ext_type;
 
-  qDebug() << Q_FUNC_INFO << ": FileWriterType created";
+  bool success =
+    qSlicerCoreApplication::application()->coreIOManager()->saveNodes(
+      fileType, savingParameters);
 
-  properties["fileName"]   = in_file;
-  properties["fileFormat"] = ext;
-  properties["nodeID"]     = QString(inputVolumeNode->GetID());
-
-  // https://vtk.org/doc/nightly/html/classvtkNIFTIImageWriter.html
-  // Also include header, check if vtkMRMLVolumeNode needs to Get Data to save.
-  // Try to find examples
-
-  qSlicerCoreApplication::application()->coreIOManager()->saveNodes(fileType,
-                                                                    properties);
   std::string sessionID = "";
 
-  if (in_file == "")
+  if (!success)
   {
     qWarning() << Q_FUNC_INFO << ": in_file is Empty";
     // in_file = NvidiaAIAAClient->createSession(inputVolumeNode);
   }
   else
   {
-    auto response = NvidiaAIAAClient->createSession(
-      QString(in_file + ext).toUtf8().constData());
-
     try
     {
+      NvidiaAIAAClient =
+        new nvidia::aiaa::Client("http://skull.cs.queensu.ca:8123");
+
+      std::string response = NvidiaAIAAClient->createSession(
+        std::string(inFileInfo.absoluteFilePath().toUtf8().constData()));
+
       nlohmann::json j = nlohmann::json::parse(response);
       sessionID        = j.find("session_id") != j.end() ?
                            j["session_id"].get< std::string >() :
                            std::string();
+    }
+    catch (nvidia::aiaa::exception& e)
+    {
+      qCritical() << Q_FUNC_INFO
+                  << "nvidia::aiaa::exception => nvidia.aiaa.error." << e.id
+                  << "; description: " << e.name().c_str();
     }
     catch (nlohmann::json::parse_error& e)
     {
@@ -634,17 +619,31 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
     bHExtremePointSet.points.push_back(points);
   }
 
+  QString pointsStr;
+  for (int i = 0; i < bHExtremePointSet.points.size(); i++)
+  {
+    std::vector< int > point = bHExtremePointSet.points[i];
+    std::string        str =
+      "Point " + std::to_string(i) + ": [" + std::to_string(point[0]) + ", " +
+      std::to_string(point[1]) + ", " + std::to_string(point[2]) + "]";
+    pointsStr.append(str.c_str());
+  }
+
+  qDebug() << Q_FUNC_INFO << ": Point List is";
+  qDebug() << pointsStr;
+
   if (wsgn->GetInputVolumeNode() != nullptr)
   {
     try
     {
       // List all models
       nvidia::aiaa::ModelList modelList = NvidiaAIAAClient->models();
-      qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
-               << modelList.toJson().c_str();
+      // qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
+      //          << modelList.toJson().c_str();
 
-      nvidia::aiaa::Model model =
-        modelList.getMatchingModel("annotation_mri_brain_tumors_t1ce_tc");
+      // annotation_mri_brain_tumors_t1ce_tc -> label: brain tumor core
+      nvidia::aiaa::Model model = modelList.getMatchingModel(
+        "hippocampus", nvidia::aiaa::Model::annotation);
 
       bool segmentedState = NvidiaAIAAClient->dextr3D(
         model, bHExtremePointSet, in_file.toUtf8().constData(),

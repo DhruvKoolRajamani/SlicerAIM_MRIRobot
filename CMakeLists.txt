@@ -14,7 +14,11 @@ include_directories( ${Boost_INCLUDE_DIR} )
 
 find_package(Boost REQUIRED)
 
+find_package(ITK REQUIRED)
+include(${ITK_USE_FILE})
+
 include(InstallRequiredSystemLibraries)
+include(ExternalProject)
 
 #-----------------------------------------------------------------------------
 # Extension meta-information
@@ -48,6 +52,28 @@ include(ai-assisted-annotation-client/cpp-client/CMakeExternals/nlohmann_json.cm
 add_subdirectory(ai-assisted-annotation-client)
 add_dependencies(NvidiaAIAAClient nlohmann_json)
 export(TARGETS NvidiaAIAAClient FILE NvidiaAIAAClientConfig.cmake)
+
+# set(lua_version "5.4.1")
+# ExternalProject_Add(Lua
+#   PREFIX            ${CMAKE_BINARY_DIR}/Lua
+#   URL               http://www.lua.org/ftp/lua-${lua_version}.tar.gz
+#   CONFIGURE_COMMAND ""
+#   INSTALL_COMMAND   ""
+#   BUILD_IN_SOURCE   1
+#   BUILD_COMMAND     COMMAND make all
+# )
+
+# set(SimpleITK "SimpleITK")
+# ExternalProject_Add(${SimpleITK}
+#   PREFIX            ${CMAKE_BINARY_DIR}/${SimpleITK}
+#   BINARY_DIR        ${CMAKE_BINARY_DIR}/${SimpleITK}-build
+#   # SOURCE_DIR        ${CMAKE_BINARY_DIR}/${SimpleITK}/src
+#   GIT_REPOSITORY    ${EP_GIT_PROTOCOL}://github.com/SimpleITK/SimpleITK.git
+#   GIT_TAG           origin/master
+#   GIT_PROGRESS      1
+#   CMAKE_CACHE_ARGS  -DITK_DIR:PATH=${ITK_DIR}
+#   DEPENDS           Lua
+# )
 
 add_subdirectory(WorkspaceGeneration)
 
