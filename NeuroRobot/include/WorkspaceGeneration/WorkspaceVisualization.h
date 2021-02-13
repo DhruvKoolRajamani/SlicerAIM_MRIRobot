@@ -9,11 +9,23 @@ public:
 
   // members
   double i, j, k, l, ii;  // counter initialization
-                          // Min allowed seperation 75mm
+  // Min allowed seperation 75mm
   // Max allowed seperation  146mm
-  // Is the max allowed movement while one block is stationary 146-75 = 71 mm
-  const double Diff;
-  const double Diff_largest;
+  // Max allowed movement while one block is stationary 146-75 = 71 mm
+
+  // Maximum allowed movement for legs from their widest seperation to
+  // narrowest seperation
+  const double max_leg_displacement_;
+  // Max position for the axial head relative to its frame
+  const double axial_head_upper_bound_;
+  // Min position for the axial head relative to its frame
+  const double axial_head_lower_bound_;
+  // Max position for the axial feet relative to its frame
+  const double axial_feet_upper_bound_;
+  // Min position for the axial feet relative to its frame
+  const double axial_feet_lower_bound_;
+  // Closest that the two legs can be from each other
+  const double min_leg_seperation;
   const double pi;
   double       Ry;       // Initializing the PitchRotation counter
   double       Rx;       // Initializing the YawRotation counter
@@ -23,12 +35,19 @@ public:
   const double RyF_max_degree;
   const double RyB_max_degree;
   const double Rx_max_degree;
+  // Maximum allowed movement for minimum leg seperation(top of WS)
   const double Top_max_travel;
+  // Maximum allowed movement for maximum leg seperation(bottom of WS)
+  const double Bottom_max_travel;
   const double Lateral_translation_start;
   const double Lateral_translation_end;
-  const double Lateral_resolution;
   const double Probe_insert_max;
   const double Probe_insert_min;
+  const double axial_resolution_;
+  const double Lateral_resolution;
+  const double pitch_resolution_;
+  const double yaw_resolution;
+  const double probe_insertion_resolution;
   int          counter;  // counter for NaN checker
   // Robot axis
   double           AxialHeadTranslation;
