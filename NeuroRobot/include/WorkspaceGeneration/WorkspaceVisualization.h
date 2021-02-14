@@ -45,6 +45,7 @@ public:
   const double Probe_insert_min;
   const double axial_resolution_;
   const double Lateral_resolution;
+  const double desired_resolution;
   const double pitch_resolution_;
   const double yaw_resolution;
   const double probe_insertion_resolution;

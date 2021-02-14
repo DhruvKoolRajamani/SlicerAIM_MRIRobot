@@ -19,6 +19,10 @@ int main(int argc, char* argv[])
   SaveDataToFile   data_writer1(rcm_workspace);
   data_writer1.SaveToXyz("RcmWorkspace.xyz");
 
+  Eigen::Matrix3Xf rcm_pointset = ForwardKinematics_.GetRcmPointSet();
+  SaveDataToFile   data_writer2(rcm_pointset);
+  data_writer2.SaveToXyz("RcmPointset.xyz");
+
   return 0;
 }
 

@@ -29,6 +29,7 @@ ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   , axial_resolution_(65.)
   , pitch_resolution_(10.)
   , yaw_resolution(15.)
+  , desired_resolution(30.)
   , probe_insertion_resolution(10.0)
 
 {
@@ -55,7 +56,7 @@ ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   ProbeInsertion       = 0.0;
   ProbeRotation        = 0.0;
   // RCM point cloud
-  rcm_point_set_   = GetRcmPointSet();
+  // rcm_point_set_   = GetRcmPointSet(); // gives nan have to look int
   NeuroKinematics_ = NeuroKinematics;
 }
 
@@ -771,9 +772,8 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmWorkSpace()
         ii = max_travel / Lateral_resolution)
     {
       AxialFeetTranslation += ii;
-      for (k = counter = Lateral_translation_start;
-           k >= Lateral_translation_end;
-           k += Lateral_translation_start, counter = floor(k))
+      for (k = Lateral_translation_start; k >= Lateral_translation_end;
+           k += Lateral_translation_start)
       {
         LateralTranslation = k;
         LateralTranslation = k;
@@ -794,169 +794,143 @@ Eigen::Matrix3Xf ForwardKinematics::GetRcmWorkSpace()
 Eigen::Matrix3Xf ForwardKinematics::GetRcmPointSet()
 {
   // Object containing the 4x4 transformation matrix
-  Neuro_FK_outputs RCM_PC{};
+  Neuro_FK_outputs RCM{};
+  // Matrix to store point set
+  Eigen::Matrix3Xf rcm_point_set(3, 1);
+  rcm_point_set << 0., 0., 0.;
 
-  // RCM point set generation
+  //  ++++RCM Point Cloud Generation+++
 
-  /* Initializing a 3 X 197,779 Eigen matrix to store total RCM point-set.
-  Change the col length if the coarseness of the PS is changed. The value
-  for this length is printed upon running this method.*/
-  Eigen::Matrix3Xf rcm_point_set(3, 197779);
+  // Visualization of the top of the Workspace
+  AxialFeetTranslation = axial_feet_upper_bound_;
+  AxialHeadTranslation = axial_head_upper_bound_;
+  YawRotation          = 0;
+  PitchRotation        = 0;
+  ProbeInsertion       = Probe_insert_min;
 
-  // Minimum allowed distance between the two legs {71}
-  double min_seperation{71};
-  // Division factor determining the coarseness of the PC in the Z direction
-  // 100
-  const double division{100};
-  // Division factor determining the coarseness of the PC in the X direction
-  // 20
-  const double division_k{20};
-  // Strarting position for the lateral head -49
-  const double lateral_start{-49};
-  const double Abs_min_leg_separation{68};  // 68
-
-  // Loop for visualizing the top
-  AxialFeetTranslation = 68;
-  AxialHeadTranslation = 0;
-  double Top_max_travel{-157};
-  counter = 0;  //-157
-  // initial separation 143, min separation 75 => 143-75 = 68 mm
-  for (i = Top_max_travel / division; i >= Top_max_travel;
-       i += Top_max_travel / division)
+  // initial separation 143, min separation 75=> 143-75 = 68 mm
+  for (i = Top_max_travel / axial_resolution_; i >= Top_max_travel;
+       i += Top_max_travel / axial_resolution_)
   {
-    AxialHeadTranslation += Top_max_travel / division;
-    AxialFeetTranslation += Top_max_travel / division;
-    // max lateral movement 0.0 ~ -49.47 (appx = -49)
-    for (k = lateral_start; k >= lateral_start * 2;
-         k += lateral_start / division_k)
+    AxialHeadTranslation += Top_max_travel / axial_resolution_;
+    AxialFeetTranslation += Top_max_travel / axial_resolution_;
+    for (k = Lateral_translation_start; k >= Lateral_translation_end;
+         k += Lateral_translation_start / Lateral_resolution)
     {
       LateralTranslation = k;
-      RCM_PC             = NeuroKinematics_.GetRcm(
-        AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
-        ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-      StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
-      ++counter;
+      RCM = NeuroKinematics_.GetRcm(AxialHeadTranslation, AxialFeetTranslation,
+                                    LateralTranslation, ProbeInsertion,
+                                    ProbeRotation, PitchRotation, YawRotation);
+      StorePointToEigenMatrix(rcm_point_set, RCM.zFrameToTreatment);
     }
   }
 
   // loop for visualizing the bottom
-  AxialHeadTranslation = 0;
+  AxialHeadTranslation = axial_head_upper_bound_;
   AxialFeetTranslation = -3;
-  double max_travel_bottom{-86};
-  for (i = 0; i >= max_travel_bottom; i += max_travel_bottom / division)
+  for (i = 0; i >= Bottom_max_travel;
+       i += Bottom_max_travel / axial_resolution_)
   {
-    // for the beginning row
-    if (i == 0)
+    AxialHeadTranslation += Bottom_max_travel / axial_resolution_;
+    AxialFeetTranslation += Bottom_max_travel / axial_resolution_;
+    for (k = Lateral_translation_start; k >= Lateral_translation_end;
+         k += Lateral_translation_start / Lateral_resolution)
     {
-      for (k = lateral_start; k >= lateral_start * 2;
-           k += lateral_start / division_k)
-      {
-        LateralTranslation = k;
-        RCM_PC             = NeuroKinematics_.GetRcm(
-          AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
-          ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
-        ++counter;
-      }
-    }
-    else
-    {
-      AxialHeadTranslation += max_travel_bottom / division;
-      AxialFeetTranslation += max_travel_bottom / division;
-      for (k = lateral_start; k >= lateral_start * 2;
-           k += lateral_start / division_k)
-      {
-        LateralTranslation = k;
-        RCM_PC             = NeuroKinematics_.GetRcm(
-          AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
-          ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
-        ++counter;
-      }
+      LateralTranslation = k;
+
+      RCM = NeuroKinematics_.GetRcm(AxialHeadTranslation, AxialFeetTranslation,
+                                    LateralTranslation, ProbeInsertion,
+                                    ProbeRotation, PitchRotation, YawRotation);
+      StorePointToEigenMatrix(rcm_point_set, RCM.zFrameToTreatment);
     }
   }
-  AxialFeetTranslation = -3;
-  AxialHeadTranslation = 0;
 
   // Loop for creating the head face
-  for (j = min_seperation / division; j <= min_seperation;
-       j += min_seperation / division)
-  {
-    AxialFeetTranslation += min_seperation / division;
+  AxialFeetTranslation = -3;
+  AxialHeadTranslation = axial_head_upper_bound_;
 
-    for (k = lateral_start; k >= lateral_start * 2;
-         k += lateral_start / division_k)
+  for (int counter_j = j = -3; j <= max_leg_displacement_;
+       j += max_leg_displacement_ / Lateral_resolution, counter_j = floor(j))
+  {
+    AxialFeetTranslation = j;
+
+    for (k = Lateral_translation_start; k >= Lateral_translation_end;
+         k += Lateral_translation_start / Lateral_resolution)
     {
       LateralTranslation = k;
 
-      RCM_PC = NeuroKinematics_.GetRcm(
-        AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
-        ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-      StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
-      ++counter;
+      RCM = NeuroKinematics_.GetRcm(AxialHeadTranslation, AxialFeetTranslation,
+                                    LateralTranslation, ProbeInsertion,
+                                    ProbeRotation, PitchRotation, YawRotation);
+      StorePointToEigenMatrix(rcm_point_set, RCM.zFrameToTreatment);
     }
   }
-  AxialFeetTranslation = -89;
-  AxialHeadTranslation = -86;
 
   // Loop for creating the feet face
-  for (j = min_seperation / division; j <= min_seperation;
-       j += min_seperation / division)
-  {
-    AxialHeadTranslation -= min_seperation / division;
+  AxialFeetTranslation = axial_feet_lower_bound_;
+  // moving the base to the lowest configuration +3 makes leg separation 146
+  AxialHeadTranslation = axial_feet_lower_bound_ + 3;
 
-    for (k = lateral_start; k >= lateral_start * 2;
-         k += lateral_start / division_k)
+  for (k = counter = Lateral_translation_start; k >= Lateral_translation_end;
+       k += Lateral_translation_start / Lateral_resolution, counter = floor(k))
+  {
+    LateralTranslation = k;
+    RCM = NeuroKinematics_.GetRcm(AxialHeadTranslation, AxialFeetTranslation,
+                                  LateralTranslation, ProbeInsertion,
+                                  ProbeRotation, PitchRotation, YawRotation);
+    StorePointToEigenMatrix(rcm_point_set, RCM.zFrameToTreatment);
+  }
+  // Other levels
+  for (i = axial_feet_lower_bound_; i >= axial_head_lower_bound_;
+       i +=
+       (axial_head_lower_bound_ - axial_feet_lower_bound_) / Lateral_resolution)
+  {
+    AxialHeadTranslation = i;
+    for (k = Lateral_translation_start; k >= Lateral_translation_end;
+         k += Lateral_translation_start / Lateral_resolution)
     {
       LateralTranslation = k;
-
-      RCM_PC = NeuroKinematics_.GetRcm(
-        AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
-        ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-      StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
-      ++counter;
+      RCM = NeuroKinematics_.GetRcm(AxialHeadTranslation, AxialFeetTranslation,
+                                    LateralTranslation, ProbeInsertion,
+                                    ProbeRotation, PitchRotation, YawRotation);
+      StorePointToEigenMatrix(rcm_point_set, RCM.zFrameToTreatment);
     }
   }
 
   // loop for creating the sides
-  AxialFeetTranslation = -3;
-  AxialHeadTranslation = 0;
-  // The max that the robot can move in z direction when at lowest height
-  // (at each hight min travel is changed)
-  double min_travel{-86};
-  // 157 The max that the robot can move in z direction when at highest
-  // height.
-  double max_travel{-146};
-
-  for (j = min_seperation / division; j <= Abs_min_leg_separation;
-       j += min_seperation / division)
+  ProbeInsertion                    = Probe_insert_min;
+  AxialFeetTranslation              = -3;
+  AxialHeadTranslation              = axial_head_upper_bound_;
+  YawRotation                       = 0;
+  PitchRotation                     = 0;
+  double axial_feet_translation_old = AxialFeetTranslation;
+  for (double max_travel = Bottom_max_travel; max_travel >= Top_max_travel;
+       max_travel += (Top_max_travel - Bottom_max_travel) / desired_resolution)
   {
-    // For each loop it will lift the base by a constant value
-    AxialFeetTranslation += j;
-    // Takes care of the amount of Axial travel for the Axial head and feet
-    min_travel -= min_seperation / division;
-
-    // loop to move the base from Head to Feet, based on the allowable max
-    // movement range (min_travel)
-    for (ii = 0; ii > min_travel + 1 && min_travel >= max_travel;
-         ii += min_travel / division)
+    AxialFeetTranslation = axial_feet_translation_old;
+    // Loop for moving feet and head in each level
+    for (ii = AxialHeadTranslation = 0;
+         round(AxialHeadTranslation) >= max_travel;
+         AxialHeadTranslation += max_travel / desired_resolution,
+        ii = max_travel / desired_resolution)
     {
-      AxialHeadTranslation += min_travel / division;
-      AxialFeetTranslation += min_travel / division;
-      for (k = lateral_start; k >= lateral_start * 2;
-           k += lateral_start / division_k)
+      AxialFeetTranslation += ii;
+      for (k = Lateral_translation_start;
+           round(k) >= round(Lateral_translation_end);
+           k += Lateral_translation_start / desired_resolution)
       {
         LateralTranslation = k;
-        RCM_PC             = NeuroKinematics_.GetRcm(
+        LateralTranslation = k;
+        RCM                = NeuroKinematics_.GetRcm(
           AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
           ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-        StorePoint(rcm_point_set, RCM_PC.zFrameToTreatment, counter);
-        ++counter;
+        StorePointToEigenMatrix(rcm_point_set, RCM.zFrameToTreatment);
       }
     }
-    AxialFeetTranslation = -3;
-    AxialHeadTranslation = 0;
+    axial_feet_translation_old -=
+      (Top_max_travel - Bottom_max_travel) / desired_resolution;
   }
+
   return rcm_point_set;
 }
 
