@@ -498,8 +498,6 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
           // For the first level
           if (counter_i == round(Bottom_max_travel))
           {
-            std::cout << AxialHeadTranslation << " , " << max_travel
-                      << std::endl;
             PitchRotation = RyB_max;
             int counter_j{};
             for (counter_j = i = 0.; i >= Rx_max;
@@ -532,7 +530,6 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
               }
             }
           }
-
           // For all levels between bottom and top levels
           else
           {
@@ -540,10 +537,100 @@ Eigen::Matrix3Xf ForwardKinematics::GetGeneralWorkspace()
             for (i = 0; i > Rx_max; i += Rx_max / yaw_resolution)
             {
               YawRotation = i;
-              FK          = NeuroKinematics_.ForwardKinematics(
-                AxialHeadTranslation, AxialFeetTranslation, LateralTranslation,
-                ProbeInsertion, ProbeRotation, PitchRotation, YawRotation);
-              StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+              if (round(AxialHeadTranslation) == round(max_travel))
+              {
+                for (l = 0; l <= (Probe_insert_max);
+                     l += (Probe_insert_max) / probe_insertion_resolution)
+                {
+                  ProbeInsertion = l;
+                  FK             = NeuroKinematics_.ForwardKinematics(
+                    AxialHeadTranslation, AxialFeetTranslation,
+                    LateralTranslation, ProbeInsertion, ProbeRotation,
+                    PitchRotation, YawRotation);
+                  StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+                }
+                ProbeInsertion = Probe_insert_min;
+              }
+              else
+              {
+                PitchRotation = RyB_max;
+                FK            = NeuroKinematics_.ForwardKinematics(
+                  AxialHeadTranslation, AxialFeetTranslation,
+                  LateralTranslation, ProbeInsertion, ProbeRotation,
+                  PitchRotation, YawRotation);
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+              }
+            }
+          }
+        }
+        // face side
+        else  //(counter == floor(Lateral_translation_end))
+        {
+          PitchRotation = RyF_max;
+          // For the first level
+          if (counter_i == round(Bottom_max_travel))
+          {
+            PitchRotation = RyF_max;
+            int counter_j{};
+            for (counter_j = i = 0.; i >= Rx_max;
+                 i += Rx_max / yaw_resolution, counter_j++)
+            {
+              YawRotation = i;
+              if (counter_j == round(yaw_resolution - 1) ||
+                  round(AxialHeadTranslation) == round(max_travel))
+              {
+
+                for (l = 0; l <= (Probe_insert_max);
+                     l += (Probe_insert_max) / probe_insertion_resolution)
+                {
+                  ProbeInsertion = l;
+                  FK             = NeuroKinematics_.ForwardKinematics(
+                    AxialHeadTranslation, AxialFeetTranslation,
+                    LateralTranslation, ProbeInsertion, ProbeRotation,
+                    PitchRotation, YawRotation);
+                  StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+                }
+                ProbeInsertion = Probe_insert_min;
+              }
+              else
+              {
+                FK = NeuroKinematics_.ForwardKinematics(
+                  AxialHeadTranslation, AxialFeetTranslation,
+                  LateralTranslation, ProbeInsertion, ProbeRotation,
+                  PitchRotation, YawRotation);
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+              }
+            }
+          }
+          // For all levels between bottom and top levels
+          else
+          {
+            PitchRotation = RyF_max;
+            for (i = 0; i > Rx_max; i += Rx_max / yaw_resolution)
+            {
+              YawRotation = i;
+              if (round(AxialHeadTranslation) == round(max_travel))
+              {
+                for (l = 0; l <= (Probe_insert_max);
+                     l += (Probe_insert_max) / probe_insertion_resolution)
+                {
+                  ProbeInsertion = l;
+                  FK             = NeuroKinematics_.ForwardKinematics(
+                    AxialHeadTranslation, AxialFeetTranslation,
+                    LateralTranslation, ProbeInsertion, ProbeRotation,
+                    PitchRotation, YawRotation);
+                  StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+                }
+                ProbeInsertion = Probe_insert_min;
+              }
+              else
+              {
+                FK = NeuroKinematics_.ForwardKinematics(
+                  AxialHeadTranslation, AxialFeetTranslation,
+                  LateralTranslation, ProbeInsertion, ProbeRotation,
+                  PitchRotation, YawRotation);
+                StorePointToEigenMatrix(point_set, FK.zFrameToTreatment);
+              }
             }
           }
         }
