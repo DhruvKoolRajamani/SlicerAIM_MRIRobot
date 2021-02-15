@@ -55,9 +55,9 @@ ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   YawRotation          = 0.0;
   ProbeInsertion       = 0.0;
   ProbeRotation        = 0.0;
+  NeuroKinematics_     = NeuroKinematics;
   // RCM point cloud
-  // rcm_point_set_   = GetRcmPointSet(); // gives nan have to look int
-  NeuroKinematics_ = NeuroKinematics;
+  rcm_point_set_ = GetRcmPointSet();  // gives nan have to look int
 }
 
 // Method to generate Point cloud of the surface of general reachable Workspace
@@ -939,12 +939,12 @@ Eigen::Matrix3Xf
   ForwardKinematics::GetSubWorkspace(Eigen::Vector3d ep_in_robot_coordinate)
 {
 
-  // Number of points inside the RCM point set
+  // Number of points inside the RCM pointset
   int no_cols_rcm_pc = rcm_point_set_.cols();
 
   Eigen::Vector3f rcm_point_to_check;
   // Matrix which stores the validated point set after checking the sphere
-  // cond
+  // condition
   Eigen::Matrix3Xf validated_point_set(3, 1);
   /* Loop which goes through each RCM points and checks for the validity of
   each point based on the sphere criteria.*/
@@ -991,9 +991,9 @@ bool ForwardKinematics::CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
   /*Whether a point lies inside a sphere or not, depends upon its distance
   from the centre. A point (x, y, z) is inside the sphere with center (cx,
   cy, cz) and radius r if ( x-cx ) ^2 + (y-cy) ^2 + (z-cz) ^ 2 < r^2 */
-  float       B_value = NeuroKinematics_._probe->_robotToEntry;
-  const float radius  = 72.5 - B_value;  // RCM offset from Robot to RCM
-                                         // point
+  float B_value = NeuroKinematics_._probe->_robotToEntry;
+  // RCM offset from Robot to RCM point
+  const float radius = 72.5 - B_value;
 
   float distance{0};
   distance = pow(ep_in_robot_coordinate(0) - rcm_point_set(0), 2) +
@@ -1146,17 +1146,59 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
 {
   /* Step to create a full representative point cloud based on the
   sub-workspace In this step, additional points will be added starting from
-  the Entry Point and passing through each RCM points which account for the
-  full probe insertion. The final workspace will be returned to the VTK
+  the Entry Point and passing through each validated point, which account for
+  the full probe insertion. The final workspace will be returned to the VTK
   method to generate the 3D mesh for visualization.*/
 
   // Total number of points in the RCM sub-workspace
   int no_cols = validated_inverse_kinematic_rcm_pointset.cols();
-  // Maximum range of motion for the Probe Insertion Axis
-  float max_probe_insertion = 40.0;
+
   // Max point where the treatment can reach past the RCM point
-  float distance_past_rcm =
-    max_probe_insertion + NeuroKinematics_.RCMToTreatment(2, 3);
+
+  // ** this should be a vector of doubles for each point
+
+  // float distance_past_rcm =
+  // max_probe_insertion + NeuroKinematics_.RCMToTreatment(2, 3);
+  Eigen::VectorXd dist_past_rcm(no_cols);
+  dist_past_rcm.setZero();
+
+  // Distance from entry point to the treatment location
+  double ep_to_treatment =
+    abs(NeuroKinematics_._probe->_robotToEntry -
+        NeuroKinematics_._probe->_robotToTreatmentAtHome);
+
+  Eigen::VectorXd tp_to_treatment_dist(no_cols);
+  tp_to_treatment_dist.setZero();
+
+  /*loop to find the distance past each validated target points for full probe
+  insertion
+  Workflow:
+  1) find ep to treatment distance
+  2) find distance of each validated point to ep
+  3) subtract 2 from 1
+  4) subtract max probe insertion value from 3 */
+  for (i = 0; i < no_cols; i++)
+  {
+    dist_past_rcm(i) = sqrt(pow(validated_inverse_kinematic_rcm_pointset(0, i) -
+                                  ep_in_robot_coordinate(0),
+                                2) +
+                            pow(validated_inverse_kinematic_rcm_pointset(1, i) -
+                                  ep_in_robot_coordinate(1),
+                                2) +
+                            pow(validated_inverse_kinematic_rcm_pointset(2, i) -
+                                  ep_in_robot_coordinate(2),
+                                2));
+    if (ep_to_treatment > dist_past_rcm(i))
+    {
+      dist_past_rcm(i) = Probe_insert_max;
+    }
+    else
+    {
+      dist_past_rcm(i) =
+        abs(abs(dist_past_rcm(i) - ep_to_treatment) - Probe_insert_max);
+    }
+  }
+
   // Vector starting from the entry point and ending at the RCM point,i.e.
   // X2-X1
   Eigen::Vector3d vector_ep_to_tp(0., 0., 0.);
@@ -1172,7 +1214,7 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
   /* Matrix containing all the points within the sub-workspace starting from
   the EP to the last point*/
   Eigen::Matrix3Xf total_subworkspace_pointset(3, no_cols * division);
-  total_subworkspace_pointset = 0 * total_subworkspace_pointset;
+  total_subworkspace_pointset.setZero();
 
   /*To find the coordinate of the point past the RCM, a series of operations
   need to be evoked. A sphere of size equal to "distance_past_rcm" will be
@@ -1194,7 +1236,7 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
     a               = (pow(vector_ep_to_tp(0), 2) + pow(vector_ep_to_tp(1), 2) +
          pow(vector_ep_to_tp(2), 2));
     b               = -2 * a;
-    c               = a - pow(distance_past_rcm, 2);
+    c               = a - pow(dist_past_rcm(i), 2);
     /* coefficients that will be plugged into the eq of line which give the
     intersection points  coefficients that  will be plugged  into the eq of
     line which give the intersection points*/

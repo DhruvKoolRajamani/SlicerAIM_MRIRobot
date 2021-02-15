@@ -23,6 +23,21 @@ int main(int argc, char* argv[])
   SaveDataToFile   data_writer2(rcm_pointset);
   data_writer2.SaveToXyz("RcmPointset.xyz");
 
+  Eigen::Matrix3Xf rcm_pointset1 = ForwardKinematics_.rcm_point_set_;
+  SaveDataToFile   data_writer3(rcm_pointset1);
+  data_writer3.SaveToXyz("RcmPointset1.xyz");
+  Eigen::Matrix4d registration = Eigen::Matrix4d::Identity();
+  registration(0, 3)           = -0.16;
+  registration(1, 3)           = -124.35;
+  registration(2, 3)           = 10.38;
+  Eigen::Vector4d ep_in_imager(-72.585, 69.324, 52.899, 1);
+  Eigen::Vector4d ep_in_robot = registration.inverse() * ep_in_imager;
+  Eigen::Vector3d ep_in_robot_(ep_in_robot(0), ep_in_robot(1), ep_in_robot(2));
+
+  Eigen::Matrix3Xf final_workspace =
+    ForwardKinematics_.GetSubWorkspace(ep_in_robot_);
+  SaveDataToFile data_writer4(final_workspace);
+  data_writer4.SaveToXyz("final_workspace.xyz");
   return 0;
 }
 
