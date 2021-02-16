@@ -49,6 +49,7 @@ public:
   const double pitch_resolution_;
   const double yaw_resolution;
   const double probe_insertion_resolution;
+  const double desired_resolution_general_ws;
   int          counter;  // counter for NaN checker
   // Robot axis
   double           AxialHeadTranslation;

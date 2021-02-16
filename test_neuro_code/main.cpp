@@ -5,7 +5,7 @@ int main(int argc, char* argv[])
   double _cannulaToTreatment{5.0};
   double _treatmentToTip{10.0};
   double _robotToEntry{5.0};
-  double _robotToTreatmentAtHome{41.0};
+  double _robotToTreatmentAtHome{61.0};
   Probe  probe_init = {_cannulaToTreatment, _treatmentToTip, _robotToEntry,
                       _robotToTreatmentAtHome};
   NeuroKinematics   NeuroKinematics_(&probe_init);
