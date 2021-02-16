@@ -50,7 +50,7 @@ public:
   const double yaw_resolution;
   const double probe_insertion_resolution;
   const double desired_resolution_general_ws;
-  int          counter;  // counter for NaN checker
+  int          counter;
   // Robot axis
   double           AxialHeadTranslation;
   double           AxialFeetTranslation;
@@ -85,11 +85,13 @@ public:
 
   Eigen::Matrix3Xf
     GetPointCloudInverseKinematics(Eigen::Matrix3Xf validated_point_set,
-                                   Eigen::Vector3d  ep_in_robot_coordinate);
+                                   Eigen::Vector3d  ep_in_robot_coordinate,
+                                   Eigen::VectorXd& treatment_to_tp_dist);
 
   Eigen::Matrix3Xf GenerateFinalSubworkspacePointset(
     Eigen::Matrix3Xf validated_inverse_kinematic_rcm_pointset,
-    Eigen::Vector3d  ep_in_robot_coordinate);
+    Eigen::Vector3d  ep_in_robot_coordinate,
+    Eigen::VectorXd& treatment_to_tp_dist);
 
   /* Method which takes a 4X4 transformation matrix and extracts the position
   vector and saves it inside an Eigen matrix*/

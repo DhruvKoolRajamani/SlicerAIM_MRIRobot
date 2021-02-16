@@ -2,36 +2,42 @@
 #include "../Utilities/include/SavePointCloudData/SavePointCloudData.hpp"
 int main(int argc, char* argv[])
 {
-  double _cannulaToTreatment{5.0};
-  double _treatmentToTip{10.0};
+  double _cannulaToTreatment{0.0};
+  double _treatmentToTip{0.0};
   double _robotToEntry{5.0};
-  double _robotToTreatmentAtHome{61.0};
+  double _robotToTreatmentAtHome{41.0};
   Probe  probe_init = {_cannulaToTreatment, _treatmentToTip, _robotToEntry,
                       _robotToTreatmentAtHome};
   NeuroKinematics   NeuroKinematics_(&probe_init);
   ForwardKinematics ForwardKinematics_(NeuroKinematics_);
 
-  Eigen::Matrix3Xf general_workspace = ForwardKinematics_.GetGeneralWorkspace();
-  SaveDataToFile   data_writer(general_workspace);
-  data_writer.SaveToXyz("GeneralWorkspace.xyz");
+  // Eigen::Matrix3Xf general_workspace =
+  // ForwardKinematics_.GetGeneralWorkspace(); SaveDataToFile
+  // data_writer(general_workspace);
+  // data_writer.SaveToXyz("GeneralWorkspace.xyz");
 
-  Eigen::Matrix3Xf rcm_workspace = ForwardKinematics_.GetRcmWorkSpace();
-  SaveDataToFile   data_writer1(rcm_workspace);
-  data_writer1.SaveToXyz("RcmWorkspace.xyz");
+  // Eigen::Matrix3Xf rcm_workspace = ForwardKinematics_.GetRcmWorkSpace();
+  // SaveDataToFile   data_writer1(rcm_workspace);
+  // data_writer1.SaveToXyz("RcmWorkspace.xyz");
 
-  Eigen::Matrix3Xf rcm_pointset = ForwardKinematics_.GetRcmPointSet();
-  SaveDataToFile   data_writer2(rcm_pointset);
-  data_writer2.SaveToXyz("RcmPointset.xyz");
+  // Eigen::Matrix3Xf rcm_pointset = ForwardKinematics_.rcm_point_set_;
+  // SaveDataToFile   data_writer3(rcm_pointset);
+  // data_writer3.SaveToXyz("RcmPointset.xyz");
 
-  Eigen::Matrix3Xf rcm_pointset1 = ForwardKinematics_.rcm_point_set_;
-  SaveDataToFile   data_writer3(rcm_pointset1);
-  data_writer3.SaveToXyz("RcmPointset1.xyz");
   Eigen::Matrix4d registration = Eigen::Matrix4d::Identity();
   registration(0, 3)           = -0.16;
   registration(1, 3)           = -124.35;
   registration(2, 3)           = 10.38;
-  Eigen::Vector4d ep_in_imager(-72.585, 69.324, 52.899, 1);
+  Eigen::Vector4d ep_in_imager(-40, 130.172, 80, 1);
+  // Eigen::Vector4d ep_in_imager(-66.598, 60.862, 63.71, 1);
+  // Eigen::Vector4d ep_in_imager(-66.598, 130.861, 63.71, 1);
+
+  // Eigen::Vector4d anamoly(-61.7133, 177.481, -3.77333, 1);
+
   Eigen::Vector4d ep_in_robot = registration.inverse() * ep_in_imager;
+  std::cout << "Entry point in Robot Coordinate is :\n"
+            << ep_in_robot(0) << " , " << ep_in_robot(1) << " , "
+            << ep_in_robot(2) << std::endl;
   Eigen::Vector3d ep_in_robot_(ep_in_robot(0), ep_in_robot(1), ep_in_robot(2));
 
   Eigen::Matrix3Xf final_workspace =

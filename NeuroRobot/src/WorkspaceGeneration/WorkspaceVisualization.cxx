@@ -1,5 +1,6 @@
 #include "../../include/WorkspaceGeneration/WorkspaceVisualization.h"
 using std::endl;
+#include "../../../Utilities/include/SavePointCloudData/SavePointCloudData.hpp"
 
 // A is treatment to tip, B is robot to entry, this allows us to specify how
 // close to the patient the physical robot can be, C is cannula to treatment
@@ -29,8 +30,8 @@ ForwardKinematics::ForwardKinematics(NeuroKinematics& NeuroKinematics)
   , axial_resolution_(65.)
   , pitch_resolution_(10.)
   , yaw_resolution(15.)
-  , desired_resolution(30.)  // 30.
-  , desired_resolution_general_ws(2.)
+  , desired_resolution(30.)
+  , desired_resolution_general_ws(5.)
   , probe_insertion_resolution(10.0)
 
 {
@@ -850,16 +851,24 @@ Eigen::Matrix3Xf
                               rcm_point_set_(1, i), rcm_point_set_(2, i));
     }
   }
+  SaveDataToFile datawriter(validated_point_set);
+  datawriter.SaveToXyz("sphere_checked.xyz");
+  // Vector to store distance from each validated rcm points to the entry
+  // point
+  Eigen::VectorXd treatment_to_tp_dist(1);
+  treatment_to_tp_dist.setZero();
 
   // Step to check the Inverse Kinematics for each validated RCM point set
   Eigen::Matrix3Xf validated_inverse_kinematic_rcm_pointset =
-    GetPointCloudInverseKinematics(validated_point_set, ep_in_robot_coordinate);
+    GetPointCloudInverseKinematics(validated_point_set, ep_in_robot_coordinate,
+                                   treatment_to_tp_dist);
 
   /* Step to populate the point set with equidistance points from the EP to
   each validated rcm points and past them with the max probe insertion
   criteria.*/
   Eigen::Matrix3Xf total_Sub_Workspace = GenerateFinalSubworkspacePointset(
-    validated_inverse_kinematic_rcm_pointset, ep_in_robot_coordinate);
+    validated_inverse_kinematic_rcm_pointset, ep_in_robot_coordinate,
+    treatment_to_tp_dist);
 
   return total_Sub_Workspace;
 }
@@ -906,13 +915,14 @@ bool ForwardKinematics::CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
 /* Method to Check the IK for each point in the Validated point set and
 stores the ones that are valid*/
 Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
-  Eigen::Matrix3Xf validated_point_set, Eigen::Vector3d ep_in_robot_coordnt)
+  Eigen::Matrix3Xf validated_point_set, Eigen::Vector3d ep_in_robot_coordnt,
+  Eigen::VectorXd& treatment_to_tp_dist)
 {
   // Initializng the sub_workspace matrix
   Eigen::Matrix3Xf sub_workspace_rcm_point_set(3, 1);
   sub_workspace_rcm_point_set << 0., 0., 0.;
 
-  int counter{0};
+  counter                         = 0;
   int no_cols_validated_point_set = validated_point_set.cols();
 
   /* The methods checks for validity of the filtered workspace Using
@@ -932,15 +942,15 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
   const double max_Lateral_translation   = -49;
   const double min_Lateral_translation   = -98;
   const double max_AxialHead_translation = 0;
-  const double min_AxialHead_translation = -146;  // it may be -145
+  const double min_AxialHead_translation = -145;
   const double max_AxialFeet_translation = 68;
-  const double min_AxialFeet_translation = -78;
+  const double min_AxialFeet_translation = -77;
   const double max_Pitch_rotation        = +26.0 * pi / 180;
   const double min_Pitch_rotation        = -37.0 * pi / 180;
-  const double max_Yaw_rotation          = 0.0;
+  const double max_Yaw_rotation          = 0.0 * pi / 180;
   const double min_Yaw_rotation          = -88.0 * pi / 180;
   const double min_Probe_insertion       = 0;
-  const double max_probe_insertion       = 50;
+  const double max_probe_insertion       = 40;
   double       Axial_Seperation{0};
 
   /* Object to store the output of the
@@ -955,8 +965,8 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
     tp_in_robot_coordinate << validated_point_set(0, i),
       validated_point_set(1, i), validated_point_set(2, i), 1;
 
-    IK_output = NeuroKinematics_.InverseKinematicsWithZeroProbeInsertion(
-      ep_in_robot_coordinate, tp_in_robot_coordinate);
+    IK_output = NeuroKinematics_.InverseKinematics(ep_in_robot_coordinate,
+                                                   tp_in_robot_coordinate);
 
     Axial_Seperation =
       143 + IK_output.AxialHeadTranslation - IK_output.AxialFeetTranslation;
@@ -967,39 +977,44 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
     }
     /*Axial Heads are farther away than the allowed value or Axial Heads are
     closer than the allowed value.*/
-    if (Axial_Seperation > max_Axial_separation ||
-        Axial_Seperation < min_Axial_separation)
+    else if (Axial_Seperation > max_Axial_separation ||
+             Axial_Seperation < min_Axial_separation)
     {
       continue;
     }
     // If Axial Head travels more than the max or min allowed range
-    if (IK_output.AxialHeadTranslation < min_AxialHead_translation ||
-        IK_output.AxialHeadTranslation > max_AxialHead_translation)
+    else if (IK_output.AxialHeadTranslation < min_AxialHead_translation ||
+             IK_output.AxialHeadTranslation > max_AxialHead_translation)
 
     {
       continue;
     }
     // If Axial Feet travels more than the max or min allowed range
-    if (IK_output.AxialFeetTranslation < min_AxialFeet_translation ||
-        IK_output.AxialFeetTranslation > max_AxialFeet_translation)
+    else if (IK_output.AxialFeetTranslation < min_AxialFeet_translation ||
+             IK_output.AxialFeetTranslation > max_AxialFeet_translation)
     {
       continue;
     }
     // If Lateral travels more than the max or min allowed range
-    if (IK_output.LateralTranslation < min_Lateral_translation ||
-        IK_output.LateralTranslation > max_Lateral_translation)
+    else if (IK_output.LateralTranslation < min_Lateral_translation ||
+             IK_output.LateralTranslation > max_Lateral_translation)
     {
       continue;
     }
     // If Yaw rotates more than the max or min allowed range
-    if (IK_output.YawRotation < min_Yaw_rotation ||
-        IK_output.YawRotation > max_Yaw_rotation)
+    else if (IK_output.YawRotation < min_Yaw_rotation ||
+             IK_output.YawRotation > max_Yaw_rotation)
     {
       continue;
     }
     // If Pitch rotates more than the max or min allowed range
-    if (IK_output.PitchRotation < min_Pitch_rotation ||
-        IK_output.PitchRotation > max_Pitch_rotation)
+    else if (IK_output.PitchRotation < min_Pitch_rotation ||
+             IK_output.PitchRotation > max_Pitch_rotation)
+    {
+      continue;
+    }
+    // If probe insertion is more or less than the allowable limits
+    else if (IK_output.ProbeInsertion > max_probe_insertion)
     {
       continue;
     }
@@ -1009,6 +1024,7 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
     {
       sub_workspace_rcm_point_set.conservativeResize(
         3, sub_workspace_rcm_point_set.cols() + 1);
+      treatment_to_tp_dist.conservativeResize(treatment_to_tp_dist.size() + 1);
     }
 
     // Storing the IK validated point in the sub-workspace matrix
@@ -1016,8 +1032,21 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
     sub_workspace_rcm_point_set(1, counter) = tp_in_robot_coordinate(1);
     sub_workspace_rcm_point_set(2, counter) = tp_in_robot_coordinate(2);
 
+    // Storing the distance from treatment to each IK validated point
+    // If the target point is not yet reached by the treatment
+    if (IK_output.ProbeInsertion <= Probe_insert_max &&
+        IK_output.ProbeInsertion >= 0.)
+    {
+      treatment_to_tp_dist(counter) = IK_output.ProbeInsertion;
+    }
+    // If the target point is reached by the treatment
+    else
+    {
+      treatment_to_tp_dist(counter) = round(0);
+    }
     counter++;
   }
+
   if (sub_workspace_rcm_point_set.cols() == 1 &&
       sub_workspace_rcm_point_set(0, 0) == 0. &&
       sub_workspace_rcm_point_set(1, 0) == 0. &&
@@ -1027,14 +1056,16 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
                  "another "
                  "point."
               << std::endl;
-  }
+  };
+  SaveDataToFile data_w(sub_workspace_rcm_point_set);
+  data_w.SaveToXyz("IK_ckecked.xyz");
   return sub_workspace_rcm_point_set;
 }
 
 // Method to create the 3D representing the sub-workspace
 Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
   Eigen::Matrix3Xf validated_inverse_kinematic_rcm_pointset,
-  Eigen::Vector3d  ep_in_robot_coordinate)
+  Eigen::Vector3d ep_in_robot_coordinate, Eigen::VectorXd& treatment_to_tp_dist)
 {
   /* Step to create a full representative point cloud based on the
   sub-workspace In this step, additional points will be added starting from
@@ -1054,11 +1085,6 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
   Eigen::VectorXd dist_past_rcm(no_cols);
   dist_past_rcm.setZero();
 
-  // Distance from entry point to the treatment location
-  double ep_to_treatment =
-    abs(NeuroKinematics_._probe->_robotToEntry -
-        NeuroKinematics_._probe->_robotToTreatmentAtHome);
-
   Eigen::VectorXd tp_to_treatment_dist(no_cols);
   tp_to_treatment_dist.setZero();
 
@@ -1072,25 +1098,13 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
 
   for (i = 0; i < no_cols; i++)
   {
-    dist_past_rcm(i) =
-      sqrt(pow(ep_in_robot_coordinate(0) -
-                 validated_inverse_kinematic_rcm_pointset(0, i),
-               2) +
-           pow(ep_in_robot_coordinate(1) -
-                 validated_inverse_kinematic_rcm_pointset(1, i),
-               2) +
-           pow(ep_in_robot_coordinate(2) -
-                 validated_inverse_kinematic_rcm_pointset(2, i),
-               2));
-    if (ep_to_treatment > dist_past_rcm(i))
+    if (treatment_to_tp_dist(i) > 0)
     {
-
-      dist_past_rcm(i) = Probe_insert_max;
+      dist_past_rcm(i) = Probe_insert_max - treatment_to_tp_dist(i);
     }
     else
     {
-      dist_past_rcm(i) =
-        abs(abs(dist_past_rcm(i) - ep_to_treatment) - Probe_insert_max);
+      dist_past_rcm(i) = Probe_insert_max;
     }
   }
 
@@ -1104,11 +1118,11 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
 
   /* division is the number of desired points to generate between the EP and
   the last point*/
-  int division{5}, counter{0}, counter1{0};
+  int division{20}, counter{0}, counter1{0};
 
   /* Matrix containing all the points within the sub-workspace starting from
   the EP to the last point*/
-  Eigen::Matrix3Xf total_subworkspace_pointset(3, no_cols * division);
+  Eigen::Matrix3Xf total_subworkspace_pointset(3, no_cols * division + 1);
   total_subworkspace_pointset.setZero();
 
   /*To find the coordinate of the point past the RCM, a series of operations
@@ -1194,7 +1208,38 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
     }
     counter += division;
   }
-  return total_subworkspace_pointset;
+  // This part removes the excess probe insertion from the bottom of the WS
+  // creating the lowest configuration
+  Neuro_FK_outputs lowest_config = NeuroKinematics_.ForwardKinematics(
+    axial_head_upper_bound_, -3, Lateral_translation_end, Probe_insert_max, 0,
+    0, 0);
+  double lowest_y = lowest_config.zFrameToTreatment(1, 3);
+
+  Eigen::Matrix3Xf final_point_set(3, 1);
+  counter = 0;
+  for (int i = 0; i < total_subworkspace_pointset.cols(); i++)
+  {
+    if (total_subworkspace_pointset(1, i) < lowest_y)
+    {
+      continue;
+    }
+    if (counter > 0)
+    {
+      final_point_set.conservativeResize(3, counter + 1);
+    }
+    for (int j = 0; j < 3; j++)
+    {
+      final_point_set(j, counter) = total_subworkspace_pointset(j, i);
+    }
+    counter++;
+  }
+  // Adding entry point to the workspace
+  final_point_set.conservativeResize(3, final_point_set.cols() + 1);
+  for (int i = 0; i < 3; i++)
+  {
+    final_point_set(i, final_point_set.cols() - 1) = ep_in_robot_coordinate(i);
+  }
+  return final_point_set;
 }
 
 /*Method which applies the transform to the given entry point defined in the
