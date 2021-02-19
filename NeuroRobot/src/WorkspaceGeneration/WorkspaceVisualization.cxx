@@ -1003,7 +1003,8 @@ Eigen::Matrix3Xf ForwardKinematics::GetPointCloudInverseKinematics(
     }
     // If Yaw rotates more than the max or min allowed range
     else if (IK_output.YawRotation < min_Yaw_rotation ||
-             IK_output.YawRotation > max_Yaw_rotation)
+             IK_output.YawRotation > max_Yaw_rotation ||
+             IK_output.YawRotation == NAN)
     {
       continue;
     }
@@ -1213,7 +1214,8 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
   Neuro_FK_outputs lowest_config = NeuroKinematics_.ForwardKinematics(
     axial_head_upper_bound_, -3, Lateral_translation_end, Probe_insert_max, 0,
     0, 0);
-  double lowest_y = lowest_config.zFrameToTreatment(1, 3);
+  float lowest_y = lowest_config.zFrameToTreatment(1, 3);
+  std::cout << "Lowest y: " << lowest_y;
 
   Eigen::Matrix3Xf final_point_set(3, 1);
   counter = 0;
@@ -1229,6 +1231,7 @@ Eigen::Matrix3Xf ForwardKinematics::GenerateFinalSubworkspacePointset(
     }
     for (int j = 0; j < 3; j++)
     {
+
       final_point_set(j, counter) = total_subworkspace_pointset(j, i);
     }
     counter++;

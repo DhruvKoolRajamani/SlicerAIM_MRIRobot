@@ -28,9 +28,10 @@ int main(int argc, char* argv[])
   registration(0, 3)           = -0.16;
   registration(1, 3)           = -124.35;
   registration(2, 3)           = 10.38;
-  Eigen::Vector4d ep_in_imager(-40, 130.172, 80, 1);
+  // Eigen::Vector4d ep_in_imager(-40, 130.172, 80, 1);
   // Eigen::Vector4d ep_in_imager(-66.598, 60.862, 63.71, 1);
   // Eigen::Vector4d ep_in_imager(-66.598, 130.861, 63.71, 1);
+  Eigen::Vector4d ep_in_imager(-62.009, 132.697, 65.521, 1);
 
   // Eigen::Vector4d anamoly(-61.7133, 177.481, -3.77333, 1);
 

@@ -83,6 +83,7 @@ public:
   Eigen::Matrix4d zFrameToRCMRotation;
   Eigen::Matrix4d zFrameToRCMPrime;
   Eigen::Matrix4d RCMToTreatment;
+  Eigen::Matrix4d RCMToEntryPoint;
 
   Eigen::Matrix3d xRotationDueToYawRotationIK;
   Eigen::Matrix3d yRotationDueToPitchRotationIK;
@@ -97,6 +98,12 @@ public:
                                      double ProbeInsertion,
                                      double ProbeRotation, double PitchRotation,
                                      double YawRotation);
+
+  // Forward kinematic that returns entry point location instead of treatment
+  Neuro_FK_outputs ForwardKinematics_EntryPoint(
+    double AxialHeadTranslation, double AxialFeetTranslation,
+    double LateralTranslation, double ProbeInsertion, double ProbeRotation,
+    double PitchRotation, double YawRotation);
 
   // Method for the calculation of the location of the RCM w.r.t Z-frame
   Neuro_FK_outputs GetRcm(double AxialHeadTranslation,
