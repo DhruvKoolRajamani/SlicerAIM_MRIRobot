@@ -68,6 +68,10 @@ public:
   // Workspace
   Eigen::Matrix3Xf GetGeneralWorkspace();
 
+  // Method to generate Point cloud of the surface of total entry point
+  // worskpace
+  Eigen::Matrix3Xf GetEntryPointWorkspace();
+
   // Method to generate Point cloud of the surface of the RCM Workspace
   Eigen::Matrix3Xf GetRcmWorkSpace();
 

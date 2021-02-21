@@ -65,6 +65,8 @@ NeuroKinematics::NeuroKinematics(Probe* probe)
   zFrameToRCMPrime = Eigen::Matrix4d::Identity();
   // RCM to the tooltip (probe's tip)
   RCMToTreatment = Eigen::Matrix4d::Identity();
+  // RCM to the Entry point (probe's tip)
+  RCMToEntryPoint = Eigen::Matrix4d::Identity();
 
   // IK related attributes
   xRotationDueToYawRotationIK   = Eigen::Matrix3d::Identity();
