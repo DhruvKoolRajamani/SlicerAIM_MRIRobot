@@ -956,7 +956,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onBHExtremePointChanged(
                 vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
   d->BHExtremePointDisplayNode = bHExtremePointDisplayNode;
 
-  // subscribeToMarkupEvents(bHExtremePointNode);
+  subscribeToMarkupEvents(bHExtremePointNode);
 
   // Create logic to accommodate creating a new annotation ROI node.
   // Should you transfer the data to the new node? Reset all visibility params?
@@ -1419,13 +1419,38 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
       d->ParameterNodeSelector__1_1->currentNode());
 
+  vtkMRMLMarkupsFiducialNode* bHExtremePointNode =
+    workspaceGenerationNode->GetBHExtremePointNode();
+
   vtkMRMLMarkupsFiducialNode* entryPointNode =
     workspaceGenerationNode->GetEntryPointNode();
 
   vtkMRMLMarkupsFiducialNode* targetPointNode =
     workspaceGenerationNode->GetTargetPointNode();
 
+  if (bHExtremePointNode == NULL)
+  {
+    // qWarning() << Q_FUNC_INFO << ": burrhole extreme point has not been
+    // created.";
+    return;
+  }
+
   bool burrholeSet = workspaceGenerationNode->GetBurrHoleDetected();
+
+  if (!burrholeSet)
+  {
+    // qWarning() << Q_FUNC_INFO << ": Burr Hole has not been identified yet.";
+    return;
+  }
+  else
+  {
+    if (markup != NULL &&
+        strcmp(markup->GetName(), bHExtremePointNode->GetName()) == 0)
+    {
+      qDebug() << Q_FUNC_INFO << ": Moved Burr Hole Markup";
+      this->onDetectBurrHoleClick();
+    }
+  }
 
   if (entryPointNode == NULL)
   {
@@ -1436,12 +1461,6 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
   if (targetPointNode == NULL)
   {
     // qWarning() << Q_FUNC_INFO << ": Target point has not been created.";
-    return;
-  }
-
-  if (!burrholeSet)
-  {
-    // qWarning() << Q_FUNC_INFO << ": Burr Hole has not been identified yet.";
     return;
   }
 
