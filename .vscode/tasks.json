@@ -3,12 +3,17 @@
     {
       "label": "(Linux) build",
       "type": "shell",
-      "command": "cmake --build ${workspaceFolder}/build --config Debug --target all -- -j 10 ../"
+      "command": "cmake --build ${workspaceFolder}/build --config Debug --target all -- -j 10 ../",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
     {
       "label": "(Win) build",
       "type": "shell",
-      "command": "cmake --build ${workspaceFolder}/build --config Debug --target all -- /maxcpucount:8",
+      "command": "cmake --build ${workspaceFolder}/build --config Debug --target all -- /maxcpucount:8"
     }
   ],
   "version": "2.0.0"

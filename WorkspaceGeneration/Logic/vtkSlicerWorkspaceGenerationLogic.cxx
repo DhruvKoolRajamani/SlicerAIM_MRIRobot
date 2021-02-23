@@ -38,6 +38,7 @@
 // MRML includes
 #include "vtkMRMLModelNode.h"
 #include "vtkMRMLSelectionNode.h"
+#include <vtkMRMLLabelMapVolumeNode.h>
 #include <vtkMRMLModelDisplayNode.h>
 #include <vtkMRMLModelNode.h>
 #include <vtkMRMLScene.h>
@@ -60,6 +61,7 @@
 #include <vtkPoints.h>
 // #include <vtkPolyDataMapper.h>
 // #include <vtkPowerCrustSurfaceReconstruction.h>
+#include <vtkGaussianSplatter.h>
 #include <vtkMRMLMarkupsNode.h>
 #include <vtkSmartPointer.h>
 #include <vtkTriangleFilter.h>
@@ -442,61 +444,111 @@ void vtkSlicerWorkspaceGenerationLogic::PruneExcessMarkups(
 //-----------------------------------------------------------------------------
 bool vtkSlicerWorkspaceGenerationLogic::UpdateBHSegmentationMask(
   vtkMRMLWorkspaceGenerationNode* wsgn, nvidia::aiaa::PointSet extremePoints,
-  const std::string maskFileName, bool overwriteCurrentSegment,
+  const QString& maskFile, bool overwriteCurrentSegment,
   boost::optional< float > sliceIndex, int* cropBox)
 {
   qInfo() << Q_FUNC_INFO;
   // Start timer (for response?)
   clock_t startTime = clock();
 
-  vtkMRMLSegmentationNode* bHSegNode = wsgn->GetBurrHoleSegmentationNode();
-  if (bHSegNode == NULL)
+  vtkSmartPointer< vtkMRMLSegmentationNode > bHSegNode =
+    wsgn->GetBurrHoleSegmentationNode();
+  if (bHSegNode != NULL)
   {
-    qCritical() << Q_FUNC_INFO << ": Segmentation node has not been created.";
+    qWarning() << Q_FUNC_INFO << ": Segmentation node is not NULL.";
+    wsgn->SetAndObserveBurrHoleSegmentationNodeID(NULL);
+    this->setBurrHoleSegmentationDisplayNode(NULL);
+    // bHSegNode->RemoveAllObservers();
+    this->GetMRMLScene()->RemoveNode(bHSegNode);
+  }
+
+  if (maskFile.isEmpty())
+  {
+    qCritical() << Q_FUNC_INFO << ": mask file is null, exiting.";
     return false;
   }
 
-  vtkSmartPointer< vtkSegmentation > bHSeg = bHSegNode->GetSegmentation();
-
-  if (bHSeg == NULL)
+  if (FILE* file = fopen(maskFile.toUtf8().constData(), "r"))
   {
-    qWarning() << Q_FUNC_INFO
-               << ": No segment has been added to the segmentation node, "
-                  "adding one now.";
-    bHSeg = vtkSmartPointer< vtkSegmentation >::New();
-    bHSeg->AddEmptySegment();
-    bHSegNode->SetAndObserveSegmentation(bHSeg);
-  }
-
-  if (!maskFileName.empty())
-  {
-    qCritical() << Q_FUNC_INFO << ": Input file is null, exiting.";
-    return false;
-  }
-
-  if (FILE* maskFile = fopen(maskFileName.c_str(), "r"))
-  {
-    qDebug() << Q_FUNC_INFO << ": Opened response mask file";
-    fclose(maskFile);
+    qDebug() << Q_FUNC_INFO << ": mask file exists";
+    fclose(file);
   }
   else
   {
-    qCritical() << Q_FUNC_INFO << ": response file does not exist! exiting.";
+    qCritical() << Q_FUNC_INFO << ": mask file does not exist! exiting.";
     return false;
   }
 
-  QFileInfo inFileInfo = QFileInfo(maskFileName.c_str());
+  QFileInfo inFileInfo = QFileInfo(maskFile);
 
+  qSlicerIO::IOFileType fileType =
+    qSlicerCoreApplication::application()->coreIOManager()->fileType(
+      inFileInfo.absoluteFilePath());
+  fileType = "SegmentationFile";
   QList< qSlicerIO::IOProperties > properties;
   qSlicerIO::IOProperties          property;
   property["fileName"] = inFileInfo.absoluteFilePath();
-  // property[""]
+  property["fileType"] = "SegmentationFile";
   properties.append(property);
-  bool success =
-    qSlicerCoreApplication::application()->coreIOManager()->loadNodes(
-      properties);
+  QList< QString > file_types =
+    qSlicerCoreApplication::application()->coreIOManager()->fileTypes(maskFile);
+  qDebug() << Q_FUNC_INFO << ": " << file_types;
+  vtkMRMLNode* node = qSlicerCoreApplication::application()
+                        ->coreIOManager()
+                        ->loadNodesAndGetFirst(fileType, property);
+
+  if (node == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Error loading file " + maskFile;
+    return false;
+  }
+
+  bHSegNode = vtkMRMLSegmentationNode::SafeDownCast(node);
+
+  bHSegNode->SetName("BurrHoleSegmentation");
+
+  wsgn->SetAndObserveBurrHoleSegmentationNodeID(bHSegNode->GetID());
+  if (bHSegNode->GetDisplayNode() == NULL)
+  {
+    qWarning() << Q_FUNC_INFO << ": Creating display node for segmentation";
+    bHSegNode->CreateDefaultDisplayNodes();
+  }
+
+  bHSegNode->CreateClosedSurfaceRepresentation();
+
+  vtkMRMLSegmentationDisplayNode* segDispNode =
+    vtkMRMLSegmentationDisplayNode::SafeDownCast(bHSegNode->GetDisplayNode());
+  segDispNode->Visibility2DOn();
+  segDispNode->Visibility3DOn();
+  segDispNode->SetSliceIntersectionThickness(2);
+  segDispNode->SetAllSegmentsVisibility(true);
+  segDispNode->SetAllSegmentsVisibility3D(true);
+  // bHSegNode->CreateClosedSurfaceRepresentation();
+  this->setBurrHoleSegmentationDisplayNode(segDispNode);
 
   return true;
+}
+
+//-----------------------------------------------------------------------------
+bool vtkSlicerWorkspaceGenerationLogic::DebugIdentifyBurrHole(
+  vtkMRMLWorkspaceGenerationNode* wsgn)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (wsgn == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Workspace Generation Node is not available.";
+    return false;
+  }
+
+  QString maskfile(QDir::currentPath() + QDir::separator() +
+                   "WorkspaceGeneration" + QDir::separator() + "Resources" +
+                   QDir::separator() + "scenes" + QDir::separator() +
+                   "testmask-label.nii.seg.nrrd");
+
+  nvidia::aiaa::PointSet bHExtremePointSet;
+  return UpdateBHSegmentationMask(wsgn, bHExtremePointSet, maskfile);
 }
 
 //-----------------------------------------------------------------------------
@@ -504,6 +556,8 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   vtkMRMLWorkspaceGenerationNode* wsgn)
 {
   qInfo() << Q_FUNC_INFO;
+
+  int result = 0;
 
   if (wsgn == NULL)
   {
@@ -542,7 +596,7 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   QString in_file(QDir::currentPath() + QDir::separator() + "in_file_" +
                   std::to_string(random).c_str());
   QString out_file(QDir::currentPath() + QDir::separator() + "out_file_" +
-                   std::to_string(random).c_str() + ext);
+                   std::to_string(random).c_str() + "-label" + ext);
 
   QFileInfo inFileInfo = QFileInfo(in_file + ext);
   // QFileInfo outFileInfo = QFileInfo(out_file);
@@ -569,16 +623,17 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   {
     try
     {
-      NvidiaAIAAClient =
-        new nvidia::aiaa::Client("http://skull.cs.queensu.ca:8123");
+      NvidiaAIAAClient = new nvidia::aiaa::Client("http://192.168.1.4:8123");
 
       std::string response = NvidiaAIAAClient->createSession(
         std::string(inFileInfo.absoluteFilePath().toUtf8().constData()));
 
-      nlohmann::json j = nlohmann::json::parse(response);
-      sessionID        = j.find("session_id") != j.end() ?
-                           j["session_id"].get< std::string >() :
-                           std::string();
+      sessionID = response;
+      // qDebug() << Q_FUNC_INFO << response.c_str();
+      // nlohmann::json j = nlohmann::json::parse(response);
+      // sessionID        = j.find("session_id") != j.end() ?
+      //                      j["session_id"].get< std::string >() :
+      //                      std::string();
     }
     catch (nvidia::aiaa::exception& e)
     {
@@ -638,20 +693,35 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
     {
       // List all models
       nvidia::aiaa::ModelList modelList = NvidiaAIAAClient->models();
-      // qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
-      //          << modelList.toJson().c_str();
+      qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
+               << modelList.toJson().c_str();
 
       // annotation_mri_brain_tumors_t1ce_tc -> label: brain tumor core
       nvidia::aiaa::Model model = modelList.getMatchingModel(
-        "hippocampus", nvidia::aiaa::Model::annotation);
+        "brain tumor core", nvidia::aiaa::Model::annotation);
 
-      bool segmentedState = NvidiaAIAAClient->dextr3D(
-        model, bHExtremePointSet, in_file.toUtf8().constData(),
+      result = NvidiaAIAAClient->dextr3D(
+        model, bHExtremePointSet, QString(in_file + ext).toUtf8().constData(),
         out_file.toUtf8().constData(), false, sessionID);
 
       // https://github.com/NVIDIA/ai-assisted-annotation-client/blob/df65b44448348f7d0d0af4feaaca772254aae3f1/slicer-plugin/NvidiaAIAA/SegmentEditorNvidiaAIAALib/SegmentEditorEffect.py#L231
-      this->UpdateBHSegmentationMask(wsgn, bHExtremePointSet,
-                                     out_file.toUtf8().constData(), true);
+      if (result == 0)
+      {
+        result = ( int ) this->UpdateBHSegmentationMask(wsgn, bHExtremePointSet,
+                                                        out_file, true);
+        if (result == 0)
+        {
+          qCritical() << Q_FUNC_INFO << ": BHSegmentation Failed, exiting";
+        }
+      }
+      else if (result == -1)
+      {
+        qCritical() << Q_FUNC_INFO << ": Input file doesn't exist";
+      }
+      else if (result == -2)
+      {
+        qCritical() << Q_FUNC_INFO << ": Insufficient points in the input";
+      }
     }
     catch (nvidia::aiaa::exception& e)
     {
@@ -661,7 +731,13 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
     }
   }
 
-  return true;
+  // Clear temp files
+  std::remove(QString(in_file + ext).toUtf8().constData());
+  std::remove(out_file.toUtf8().constData());
+
+  if (result == 1)
+    return true;
+  return false;
 }
 
 /** ------------------------------- DEPRECATED ---------------------------------
@@ -810,6 +886,85 @@ vtkMRMLVolumeNode*
   return volumeNode;
 }
 
+//------------------------------------------------------------------------------
+vtkMRMLVolumeNode* vtkSlicerWorkspaceGenerationLogic::RenderVolume(
+  vtkMRMLVolumeNode*                 volumeNode,
+  vtkMRMLVolumeRenderingDisplayNode* volumeRenderingDisplayNode,
+  vtkMRMLAnnotationROINode* annotationROINode, bool setPreset)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (VolumeRenderingLogic)
+  {
+    VolumeRenderingLogic->SetMRMLScene(this->GetMRMLScene());
+
+    volumeRenderingDisplayNode =
+      VolumeRenderingLogic->GetFirstVolumeRenderingDisplayNode(volumeNode);
+
+    if (volumeRenderingDisplayNode == NULL)
+    {
+      // Volume Rendering will take place in new node.
+
+      qCritical() << Q_FUNC_INFO << ": volumeRenderingDisplayNode Node is NULL";
+      volumeRenderingDisplayNode =
+        VolumeRenderingLogic->CreateDefaultVolumeRenderingNodes(volumeNode);
+    }
+    else
+    {
+      VolumeRenderingLogic->UpdateDisplayNodeFromVolumeNode(
+        volumeRenderingDisplayNode, volumeNode);
+    }
+
+    if (setPreset)
+    {
+      // Get the current Volume Property Node.
+      vtkMRMLVolumePropertyNode* volumePropertyNode =
+        volumeRenderingDisplayNode->GetVolumePropertyNode();
+
+      if (volumePropertyNode == NULL)
+      {
+        qCritical() << Q_FUNC_INFO << ": Volume property node is NULL";
+        volumePropertyNode = vtkMRMLVolumePropertyNode::New();
+      }
+
+      // Copy the MRI preset to the volume property node
+      volumePropertyNode->Copy(
+        VolumeRenderingLogic->GetPresetByName("MR-Default"));
+
+      volumePropertyNode->Delete();
+    }
+  }
+  else
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Volume Rendering Logic not found, returning.";
+
+    return volumeNode;
+  }
+
+  // vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode > displayNode =
+  //   vtkSmartPointer< vtkMRMLVolumeRenderingDisplayNode >::Take(
+  //     this->InputVolumeRenderingDisplayNode);
+
+  // if (!this->GetMRMLScene()->IsNodePresent(
+  //       this->InputVolumeRenderingDisplayNode))
+  // {
+  //   this->GetMRMLScene()->AddNode(this->InputVolumeRenderingDisplayNode);
+  //   volumeNode->AddAndObserveDisplayNodeID(
+  //     this->InputVolumeRenderingDisplayNode->GetID());
+  // VolumeRenderingLogic->UpdateDisplayNodeFromVolumeNode(
+  //   this->InputVolumeRenderingDisplayNode, volumeNode);
+  // }
+
+  annotationROINode = volumeRenderingDisplayNode->GetROINode();
+  if (annotationROINode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Annotation ROI Node is NULL";
+  }
+
+  return volumeNode;
+}
+
 /** ------------------------------- DEPRECATED ---------------------------------
 //------------------------------------------------------------------------------
 bool vtkSlicerWorkspaceGenerationLogic::LoadWorkspace(
@@ -871,30 +1026,52 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   workspacePointCloud = fk.get_General_Workspace(
     vtkSlicerWorkspaceGenerationLogic::convertToEigenMatrix(registrationMatrix),
     workspacePointCloud);
+
   vtkSmartPointer< vtkPolyData > polyDataWorkspace =
     vtkSmartPointer< vtkPolyData >::New();
   polyDataWorkspace->SetPoints(workspacePointCloud.GetPointer());
 
-  // bug: Convert surface model to segmentation. @DhruvKoolRajamani
-  vtkSmartPointer< vtkDelaunay3D > delaunay =
-    vtkSmartPointer< vtkDelaunay3D >::New();
-  delaunay->SetInputData(polyDataWorkspace);
-  delaunay->SetAlpha(2);
-  delaunay->SetTolerance(0.3);
-  delaunay->SetOffset(5.0);
-  delaunay->Update();
-
   vtkSmartPointer< vtkMRMLModelNode > modelNode =
     vtkSmartPointer< vtkMRMLModelNode >::New();
-  vtkSmartPointer< vtkGeometryFilter > surfaceFilter =
-    vtkSmartPointer< vtkGeometryFilter >::New();
-  surfaceFilter->SetInputConnection(delaunay->GetOutputPort());
-  surfaceFilter->Update();
-  modelNode->SetAndObservePolyData(surfaceFilter->GetOutput());
+  if (true)
+  {
+    // bug: Convert surface model to segmentation. @DhruvKoolRajamani
+    vtkSmartPointer< vtkDelaunay3D > delaunay =
+      vtkSmartPointer< vtkDelaunay3D >::New();
+    delaunay->SetInputData(polyDataWorkspace);
+    delaunay->SetAlpha(5);
+    delaunay->SetTolerance(0.3);
+    delaunay->SetOffset(5.0);
+    delaunay->Update();
 
-  // auto segment =
-  // vtkSlicerSegmentationsModuleLogic::CreateSegmentFromModelNode(
-  //   modelNode, segmentationNode);
+    vtkSmartPointer< vtkGeometryFilter > surfaceFilter =
+      vtkSmartPointer< vtkGeometryFilter >::New();
+    surfaceFilter->SetInputConnection(delaunay->GetOutputPort());
+    surfaceFilter->Update();
+    modelNode->SetAndObservePolyData(surfaceFilter->GetOutput());
+
+    // auto segment =
+    // vtkSlicerSegmentationsModuleLogic::CreateSegmentFromModelNode(
+    //   modelNode, segmentationNode);
+  }
+  else
+  {
+    vtkSmartPointer< vtkGaussianSplatter > splatter =
+      vtkSmartPointer< vtkGaussianSplatter >::New();
+    splatter->SetInputData(polyDataWorkspace);
+    splatter->Update();
+    vtkMRMLVolumeNode* volumeNode;
+    volumeNode->SetAndObserveImageData(splatter->GetOutput());
+    vtkMRMLVolumeRenderingDisplayNode*          volRenderingDisplayNode;
+    vtkSmartPointer< vtkMRMLAnnotationROINode > annotationROINode =
+      vtkSmartPointer< vtkMRMLAnnotationROINode >::New();
+    volumeNode = this->RenderVolume(volumeNode, volRenderingDisplayNode,
+                                    annotationROINode, false);
+    modelNode  = vtkMRMLModelNode::SafeDownCast(annotationROINode);
+
+    // SegmentationsLogic->SetMRMLScene(this->GetMRMLScene());
+    // SegmentationsLogic->AddSegmentFromClosedSurfaceRepresentation(model)
+  }
 
   segmentationNode->AddSegmentFromClosedSurfaceRepresentation(
     modelNode->GetPolyData(), "workspace_segment");

@@ -110,6 +110,11 @@ public:
   void ProcessMRMLNodesEvents(vtkObject* caller, unsigned long event,
                               void* callData) VTK_OVERRIDE;
 
+  vtkMRMLVolumeNode* RenderVolume(
+    vtkMRMLVolumeNode*                 volumeNode,
+    vtkMRMLVolumeRenderingDisplayNode* volumeRenderingDisplayNode,
+    vtkMRMLAnnotationROINode* annotationROINode, bool setPreset = true);
+
   vtkMRMLVolumeNode* RenderVolume(vtkMRMLVolumeNode* volumeNode);
 
   // Updates the mouse selection type to create markups or to navigate the
@@ -126,6 +131,7 @@ public:
   void UpdateSubWorkspace(vtkMRMLWorkspaceGenerationNode*, bool);
 
   // Identify the Burr Hole
+  bool DebugIdentifyBurrHole(vtkMRMLWorkspaceGenerationNode*);
   bool IdentifyBurrHole(vtkMRMLWorkspaceGenerationNode*);
 
   // Load workspace mesh
@@ -173,9 +179,9 @@ protected:
   void PruneExcessMarkups(vtkMRMLMarkupsFiducialNode* mfn);
 
   // Update segmentation mask for BurrHole
-  bool UpdateBHSegmentationMask(vtkMRMLWorkspaceGenerationNode* wsgn,
-    nvidia::aiaa::PointSet extremePoints, const std::string maskFileName,
-    bool                     overwriteCurrentSegment = false,
+  bool UpdateBHSegmentationMask(
+    vtkMRMLWorkspaceGenerationNode* wsgn, nvidia::aiaa::PointSet extremePoints,
+    const QString& maskFileName, bool overwriteCurrentSegment = false,
     boost::optional< float > sliceIndex = boost::none, int* cropBox = nullptr);
 
   // Parameter Nodes

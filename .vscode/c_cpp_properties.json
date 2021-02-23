@@ -16,10 +16,12 @@
             "intelliSenseMode": "${default}",
             "configurationProvider": "ms-vscode.cmake-tools",
             "cppStandard": "c++11",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "browse": {
                 "path": [
                     "${HOME}/Slicer/",
-                    "${workspaceFolder}/"
+                    "${workspaceFolder}/",
+                    "${workspaceFolder}/build/"
                 ],
                 "limitSymbolsToIncludedHeaders": true
             }
