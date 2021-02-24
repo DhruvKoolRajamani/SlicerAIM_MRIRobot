@@ -51,7 +51,7 @@
 #include <vtkMRMLVolumeNode.h>
 
 // Neurorobot includes
-#include "NeuroKinematics/ForwardKinematics.h"
+#include "NeuroKinematics/NeuroKinematics.hpp"
 
 class qSlicerWorkspaceGenerationModuleWidgetPrivate;
 class vtkMRMLNode;

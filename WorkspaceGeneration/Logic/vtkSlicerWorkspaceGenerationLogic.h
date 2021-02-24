@@ -80,7 +80,7 @@
 #include <eigen3/Eigen/Core>
 
 // Neurorobot includes
-#include "NeuroKinematics/ForwardKinematics.h"
+#include "WorkspaceVisualization/WorkspaceVisualization.hpp"
 
 // Isosurface creation
 #include <vtkContourFilter.h>

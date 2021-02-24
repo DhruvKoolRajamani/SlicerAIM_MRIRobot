@@ -83,6 +83,8 @@
 #include <itkLabelObject.h>
 #include <itkNiftiImageIO.h>
 
+#include <PointSetUtilities/PointSetUtilities.hpp>
+
 class qSlicerAbstractCoreModule;
 class vtkSlicerVolumeRenderingLogic;
 class vtkMRMLVolumeRenderingDisplayNode;
@@ -1018,14 +1020,14 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   }
 
   // Initialize NeuroKinematics
-  NeuroKinematics   neuro_kinematics(&probe);
-  ForwardKinematics fk(neuro_kinematics);
+  NeuroKinematics        neuro_kinematics(&probe);
+  WorkspaceVisualization ws(neuro_kinematics);
 
   vtkSmartPointer< vtkPoints > workspacePointCloud =
     vtkSmartPointer< vtkPoints >::New();
-  workspacePointCloud = fk.get_General_Workspace(
-    vtkSlicerWorkspaceGenerationLogic::convertToEigenMatrix(registrationMatrix),
-    workspacePointCloud);
+  Eigen::Matrix3Xf  final_workspace = ws.GetGeneralWorkspace();
+  PointSetUtilities utils(final_workspace);
+  workspacePointCloud = utils.getVTKPointSet();
 
   vtkSmartPointer< vtkPolyData > polyDataWorkspace =
     vtkSmartPointer< vtkPolyData >::New();

@@ -6,7 +6,7 @@ include(GenerateExportHeader)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-set(NeuroKinematics_INCLUDE_INSTALL_DESTINATION include/NeuroKinematics)
+set(NeuroRobot_INCLUDE_INSTALL_DESTINATION include/NeuroRobot)
 
 find_package(Eigen3 REQUIRED NO_MODULE)
 find_package(VTK COMPONENTS
@@ -20,8 +20,6 @@ find_package(VTK COMPONENTS
   vtkIOPLY
   vtkIOXML
   vtkInteractionStyle
-  # vtkPoissonReconstruction
-  # Powercrust
   vtkRenderingContextOpenGL2
   vtkRenderingCore
   vtkRenderingFreeType
@@ -36,53 +34,60 @@ endif(NOT VTK_FOUND)
 message(STATUS "VTK_VERSION: ${VTK_VERSION}")
 
 include_directories(include
-  include/Kinematics
   include/NeuroKinematics
+  include/WorkspaceVisualization
 )
 
-file(GLOB_RECURSE NeuroKinematics_SRCS ${PROJECT_SOURCE_DIR}/src/NeuroKinematics/*.cpp)
+file(GLOB_RECURSE NeuroRobot_SRCS 
+  ${PROJECT_SOURCE_DIR}/src/NeuroKinematics/*.cpp
+  ${PROJECT_SOURCE_DIR}/src/WorkspaceVisualization/*.cpp
+)
 
 # create a dynamic library for NeuroKinematics to be loaded at runtime?
-add_library(NeuroKinematics SHARED
-  ${NeuroKinematics_SRCS}
+add_library(NeuroRobot SHARED
+  ${NeuroRobot_SRCS}
 )
 
-generate_export_header(NeuroKinematics)
+generate_export_header(NeuroRobot)
 
-target_include_directories(NeuroKinematics PUBLIC
+target_include_directories(NeuroRobot PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${NeuroKinematics_INCLUDE_INSTALL_DESTINATION}>)
+    $<INSTALL_INTERFACE:${NeuroRobot_INCLUDE_INSTALL_DESTINATION}>)
 
-target_link_libraries(NeuroKinematics PUBLIC Eigen3::Eigen ${VTK_LIBRARIES})
+target_link_libraries(NeuroRobot PUBLIC Eigen3::Eigen ${VTK_LIBRARIES} utilities)
 
-install(TARGETS NeuroKinematics EXPORT NeuroKinematics
+install(TARGETS NeuroRobot EXPORT NeuroRobot
     ARCHIVE DESTINATION lib # static and import libs installed to lib
     LIBRARY DESTINATION lib # .so installed to lib
     RUNTIME DESTINATION bin # .dlls installed to bin
     )
 
 # install directory containing public headers to include/my_lib
-install(DIRECTORY include DESTINATION ${NeuroKinematics_INCLUDE_INSTALL_DESTINATION}
+install(DIRECTORY include DESTINATION ${NeuroRobot_INCLUDE_INSTALL_DESTINATION}
     FILE_PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
     DIRECTORY_PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
 # create cmake config to lib/cmake/my_libConfig.cmake
-install(EXPORT NeuroKinematics
+install(EXPORT NeuroRobot
     DESTINATION cmake
-    FILE NeuroKinematicsConfig.cmake)
+    FILE NeuroRobotConfig.cmake)
 
-export(EXPORT NeuroKinematics FILE NeuroKinematicsConfig.cmake)
+export(EXPORT NeuroRobot FILE NeuroRobotConfig.cmake)
 
 # add_executable(generate_ply src/WorkspaceGeneration/main.cpp)
 # target_link_libraries(generate_ply PRIVATE NeuroKinematics ${VTK_LIBRARIES})
 
-# # Tests
-# message("Adding NeuroRobot Tests")
-# file(GLOB tests "tests/*_test.cpp")
-# foreach(test ${tests})
-#   get_filename_component(FILENAME ${test} NAME_WE)
-#   message("Test: " ${FILENAME})
-#   add_executable(${FILENAME} ${test})
-#   target_link_libraries(${FILENAME} PRIVATE ${VTK_LIBRARIES})
-# endforeach(test ${tests})
-# message("Added NeuroRobot Tests")
+# Tests
+message("Adding NeuroRobot Tests")
+file(GLOB tests "tests/*_test.cpp")
+foreach(test ${tests})
+  get_filename_component(FILENAME ${test} NAME_WE)
+  message("Test: " ${FILENAME})
+  add_executable(${FILENAME} ${test})
+  target_link_libraries(${FILENAME} PRIVATE NeuroRobot Eigen3::Eigen ${VTK_LIBRARIES} utilities)
+endforeach(test ${tests})
+message("Added NeuroRobot Tests")
+
+#=========================================
+
+

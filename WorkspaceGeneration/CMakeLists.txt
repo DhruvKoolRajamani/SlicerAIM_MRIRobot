@@ -67,7 +67,7 @@ set(MODULE_TARGET_LIBRARIES
   vtkSlicerSegmentationsModuleLogic
   vtkSlicerSegmentationsModuleMRML
   utilities
-  NeuroKinematics
+  NeuroRobot
   )
 
 set(MODULE_RESOURCES

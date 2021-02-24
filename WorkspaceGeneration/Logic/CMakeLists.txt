@@ -38,7 +38,7 @@ set(${KIT}_TARGET_LIBRARIES
   vtkSlicerMarkupsModuleLogic
   vtkSlicerSegmentationsModuleLogic
   # utilities
-  NeuroKinematics
+  NeuroRobot
   NvidiaAIAAClient
   # nlohmann_json
   ${Boost_LIBRARIES}

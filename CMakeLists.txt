@@ -35,7 +35,7 @@ set(EXTENSION_DEPENDS "${nvidia_extension}") # Specified as a list or "NA" if no
 # Extension modules
 add_subdirectory(Utilities)
 add_subdirectory(NeuroRobot)
-set(NeuroKinematics_DIR ${CMAKE_BINARY_DIR}/NeuroRobot/CMakeFiles/Export/cmake/)
+set(NeuroRobot_DIR ${CMAKE_BINARY_DIR}/NeuroRobot/CMakeFiles/Export/cmake/)
 
 # set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/)
 add_definitions(-DUSE_SUPERBUILD:BOOL=ON -DTHIRDPARTY_BINARY_DIR=${CMAKE_BINARY_DIR}/3rdparty -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/install)
