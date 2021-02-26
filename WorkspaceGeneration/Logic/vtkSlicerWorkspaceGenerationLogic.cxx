@@ -55,10 +55,12 @@
 #include <vtkCollectionIterator.h>
 #include <vtkDelaunay3D.h>
 #include <vtkGeometryFilter.h>
+#include <vtkImageData.h>
 #include <vtkMath.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkPoints.h>
+#include <vtkXMLImageDataWriter.h>
 // #include <vtkPolyDataMapper.h>
 // #include <vtkPowerCrustSurfaceReconstruction.h>
 #include <vtkGaussianSplatter.h>
@@ -68,6 +70,7 @@
 
 // STD includes
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <set>
 #include <vector>
@@ -1023,11 +1026,28 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   NeuroKinematics        neuro_kinematics(&probe);
   WorkspaceVisualization ws(neuro_kinematics);
 
+  auto start = std::chrono::high_resolution_clock::now();
   vtkSmartPointer< vtkPoints > workspacePointCloud =
     vtkSmartPointer< vtkPoints >::New();
-  Eigen::Matrix3Xf  final_workspace = ws.GetGeneralWorkspace();
+  Eigen::Matrix3Xf final_workspace = ws.GetGeneralWorkspace();
+  auto checkpoint_workspace_gen    = std::chrono::high_resolution_clock::now();
   PointSetUtilities utils(final_workspace);
-  workspacePointCloud = utils.getVTKPointSet();
+  workspacePointCloud          = utils.getVTKPointSet();
+  auto checkpoint_vtk_pointset = std::chrono::high_resolution_clock::now();
+
+  auto duration_workspace_gen =
+    std::chrono::duration_cast< std::chrono::microseconds >(
+      checkpoint_workspace_gen - start);
+
+  auto duration_vtk_pointset =
+    std::chrono::duration_cast< std::chrono::microseconds >(
+      checkpoint_vtk_pointset - checkpoint_workspace_gen);
+
+  qDebug() << Q_FUNC_INFO << ": Time taken to generate workspace = "
+           << duration_workspace_gen.count();
+
+  qDebug() << Q_FUNC_INFO << ": Time taken to cast Eigen Mat to pointset = "
+           << duration_vtk_pointset.count();
 
   vtkSmartPointer< vtkPolyData > polyDataWorkspace =
     vtkSmartPointer< vtkPolyData >::New();
@@ -1052,6 +1072,9 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
     surfaceFilter->Update();
     modelNode->SetAndObservePolyData(surfaceFilter->GetOutput());
 
+    segmentationNode->AddSegmentFromClosedSurfaceRepresentation(
+      modelNode->GetPolyData(), "workspace_segment");
+
     // auto segment =
     // vtkSlicerSegmentationsModuleLogic::CreateSegmentFromModelNode(
     //   modelNode, segmentationNode);
@@ -1062,21 +1085,45 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
       vtkSmartPointer< vtkGaussianSplatter >::New();
     splatter->SetInputData(polyDataWorkspace);
     splatter->Update();
-    vtkMRMLVolumeNode* volumeNode;
-    volumeNode->SetAndObserveImageData(splatter->GetOutput());
-    vtkMRMLVolumeRenderingDisplayNode*          volRenderingDisplayNode;
-    vtkSmartPointer< vtkMRMLAnnotationROINode > annotationROINode =
-      vtkSmartPointer< vtkMRMLAnnotationROINode >::New();
-    volumeNode = this->RenderVolume(volumeNode, volRenderingDisplayNode,
-                                    annotationROINode, false);
-    modelNode  = vtkMRMLModelNode::SafeDownCast(annotationROINode);
+
+    vtkSmartPointer< vtkMRMLLabelMapVolumeNode > labelMapVolumeNode =
+      vtkSmartPointer< vtkMRMLLabelMapVolumeNode >::New();
+
+    labelMapVolumeNode->SetAndObserveImageData(splatter->GetOutput());
+
+    vtkIntArray* labelsArr = vtkIntArray::New();
+    vtkSlicerSegmentationsModuleLogic::GetAllLabelValues(
+      labelsArr, labelMapVolumeNode->GetImageData());
+
+    QString   labels = "[";
+    vtkIdType num    = labelsArr->GetNumberOfTuples();
+    qDebug() << Q_FUNC_INFO << "Total lables: ";
+    for (vtkIdType id = 0; id < num; ++id)
+    {
+      labels += labelsArr->GetValue(id) + ", ";
+    }
+    labels += "]";
+    qDebug() << Q_FUNC_INFO << "Labelmap lables: " << labels;
+
+    SegmentationsLogic->CreateSegmentFromLabelmapVolumeNode(labelMapVolumeNode,
+                                                            segmentationNode);
+
+    // vtkSmartPointer< vtkMRMLVolumeNode > volumeNode = labelMapVolumeNode;
+    // if (volumeNode == NULL)
+    // {
+    //   qCritical() << Q_FUNC_INFO << ": Unable to create volume node";
+    //   return;
+    // }
+
+    // vtkMRMLVolumeRenderingDisplayNode* volRenderingDisplayNode;
+    // vtkMRMLAnnotationROINode*          annotationROINode;
+    // volumeNode = this->RenderVolume(volumeNode, volRenderingDisplayNode,
+    //                                 annotationROINode, false);
+    // modelNode  = vtkMRMLModelNode::SafeDownCast(annotationROINode);
 
     // SegmentationsLogic->SetMRMLScene(this->GetMRMLScene());
     // SegmentationsLogic->AddSegmentFromClosedSurfaceRepresentation(model)
   }
-
-  segmentationNode->AddSegmentFromClosedSurfaceRepresentation(
-    modelNode->GetPolyData(), "workspace_segment");
 
   WorkspaceMeshSegmentationNode = segmentationNode;
   // Attach a display node if needed
