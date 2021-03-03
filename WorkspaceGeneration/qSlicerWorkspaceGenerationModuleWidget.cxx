@@ -1000,6 +1000,36 @@ void qSlicerWorkspaceGenerationModuleWidget::onDetectBurrHoleClick()
 
   bool burrholeSet = d->logic()->DebugIdentifyBurrHole(workspaceGenerationNode);
 
+  if (burrholeSet)
+  {
+    double* bHCenter = workspaceGenerationNode->GetBurrHoleCenter();
+
+    QString bHCenterString("[");
+    for (int i = 0; i < 3; i++)
+    {
+      bHCenterString += std::string(std::to_string(bHCenter[i]) + ",").c_str();
+    }
+    bHCenterString += "]";
+
+    qDebug() << Q_FUNC_INFO << ": Center of Burrhole: " << bHCenterString;
+
+    d->EntryPointFiducialSelector__5_2->addNode();
+
+    vtkSmartPointer< vtkMRMLMarkupsFiducialNode > entryPointFiducialsNode =
+      workspaceGenerationNode->GetEntryPointNode();
+
+    if (entryPointFiducialsNode != NULL)
+    {
+      entryPointFiducialsNode->AddControlPointWorld(vtkVector3d(bHCenter),
+                                                    "EntryPoint");
+
+      d->logic()->MarkupsLogic->JumpSlicesToNthPointInMarkup(
+        entryPointFiducialsNode->GetID(), 0, true);
+    }
+
+    // workspaceGenerationNode->SetAndObserveEntryPointNodeId()
+  }
+
   // Should be ideally moved to burr hole detection.
   workspaceGenerationNode->SetBurrHoleDetected(burrholeSet);
 }

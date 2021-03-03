@@ -50,23 +50,22 @@
 
 // VTK includes
 #include "vtkMRMLVolumePropertyNode.h"
+#include <vtkCenterOfMass.h>
 #include <vtkCleanPolyData.h>
 #include <vtkCollection.h>
 #include <vtkCollectionIterator.h>
 #include <vtkDelaunay3D.h>
+#include <vtkGaussianSplatter.h>
 #include <vtkGeometryFilter.h>
 #include <vtkImageData.h>
+#include <vtkMRMLMarkupsNode.h>
 #include <vtkMath.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkPoints.h>
-#include <vtkXMLImageDataWriter.h>
-// #include <vtkPolyDataMapper.h>
-// #include <vtkPowerCrustSurfaceReconstruction.h>
-#include <vtkGaussianSplatter.h>
-#include <vtkMRMLMarkupsNode.h>
 #include <vtkSmartPointer.h>
 #include <vtkTriangleFilter.h>
+#include <vtkXMLImageDataWriter.h>
 
 // STD includes
 #include <cassert>
@@ -530,6 +529,16 @@ bool vtkSlicerWorkspaceGenerationLogic::UpdateBHSegmentationMask(
   segDispNode->SetAllSegmentsVisibility3D(true);
   // bHSegNode->CreateClosedSurfaceRepresentation();
   this->setBurrHoleSegmentationDisplayNode(segDispNode);
+
+  // Testing GetSegmentCenter
+  double* bHCenter = bHSegNode->GetSegmentCenterRAS("Segment_1");
+
+  if (bHCenter != NULL)
+  {
+    this->WorkspaceGenerationNode->SetBurrHoleCenter(bHCenter);
+  }
+  // // Calculate COM of polygon
+  // vtkSmartPointer< vtkPolyData > burrHolePlyData =
 
   return true;
 }

@@ -161,6 +161,10 @@ public:
   void setBurrHoleSegmentationDisplayNode(
     vtkMRMLSegmentationDisplayNode* burrHoleSegmentationDisplayNode);
 
+  // Markups Logic
+  vtkSlicerMarkupsLogic*     MarkupsLogic;
+  qSlicerAbstractCoreModule* MarkupsModule;
+
 protected:
   vtkSlicerWorkspaceGenerationLogic();
   virtual ~vtkSlicerWorkspaceGenerationLogic();
@@ -205,10 +209,6 @@ protected:
   // Models Logic
   vtkSlicerModelsLogic*      ModelsLogic;
   qSlicerAbstractCoreModule* ModelsModule;
-
-  // Markups Logic
-  vtkSlicerMarkupsLogic*     MarkupsLogic;
-  qSlicerAbstractCoreModule* MarkupsModule;
 
   // Segmentations Logic
   vtkSlicerSegmentationsModuleLogic* SegmentationsLogic;
