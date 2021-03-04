@@ -1477,8 +1477,8 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
     if (markup != NULL &&
         strcmp(markup->GetName(), bHExtremePointNode->GetName()) == 0)
     {
-      qDebug() << Q_FUNC_INFO << ": Moved Burr Hole Markup";
-      this->onDetectBurrHoleClick();
+      // qDebug() << Q_FUNC_INFO << ": Moved Burr Hole Markup";
+      // this->onDetectBurrHoleClick();
     }
   }
 

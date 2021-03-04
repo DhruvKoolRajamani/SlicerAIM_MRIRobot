@@ -537,8 +537,6 @@ bool vtkSlicerWorkspaceGenerationLogic::UpdateBHSegmentationMask(
   {
     this->WorkspaceGenerationNode->SetBurrHoleCenter(bHCenter);
   }
-  // // Calculate COM of polygon
-  // vtkSmartPointer< vtkPolyData > burrHolePlyData =
 
   return true;
 }
