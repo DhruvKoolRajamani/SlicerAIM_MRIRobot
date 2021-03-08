@@ -1,6 +1,6 @@
 /**
  * @file PointSetUtilities.hpp
- * @author Farid Tavakol (ftavakol@wpi.edu)
+ * @author Farid Tavakol (ftavakkolmoghadd@wpi.edu)
  * @brief
  * @version 0.1
  * @date 2021-02-23
@@ -14,6 +14,9 @@
 #include <eigen3/Eigen/Dense>
 #include <vtkPoints.h>
 #include <vtkSmartPointer.h>
+// QT Includes
+#include <QDir>
+#include <QString>
 
 class PointSetUtilities
 {
@@ -32,6 +35,7 @@ public:
 
   // Methods
   void saveToXyz(const char* fileName);
+  void saveToXyz(Qstring fileName);
 };
 
 #endif  // POINTSETUTILITES_HPP

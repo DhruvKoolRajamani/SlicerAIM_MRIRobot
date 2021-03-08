@@ -1,4 +1,8 @@
 {
+    // "env": {
+    //     "Slicer_BUILD_DIR": "",
+    //     "myCompilerPath": "/usr/local/bin/gcc-7"
+    //   },
     "configurations": [
         {
             "name": "Linux",
@@ -6,9 +10,8 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/build/**",
                 "${workspaceFolder}/build/WorkspaceGeneration/**",
-                "${HOME}/Slicer/build/Slicer-build/**",
-                "${HOME}/Slicer/build/**",
-                "${HOME}/Slicer/build/Slicer-build/**"
+                "${env:Slicer_BUILD_DIR}/Slicer-build/**",
+                "${env:Slicer_BUILD_DIR}/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",
@@ -19,7 +22,6 @@
             "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "browse": {
                 "path": [
-                    "${HOME}/Slicer/",
                     "${workspaceFolder}/",
                     "${workspaceFolder}/build/"
                 ],

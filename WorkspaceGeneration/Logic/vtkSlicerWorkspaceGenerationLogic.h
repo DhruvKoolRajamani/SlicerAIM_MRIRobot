@@ -141,8 +141,8 @@ public:
   static Eigen::Matrix4d convertToEigenMatrix(vtkMatrix4x4* vtkMat);
 
   // Generate Workspace
-  void GenerateWorkspace(vtkMRMLSegmentationNode* segmentationNode, Probe probe,
-                         vtkMatrix4x4* registrationMatrix);
+  void GenerateWorkspace(vtkMRMLSegmentationNode* segmentationNode,
+                         Probe                    probe);
 
   // Getters
   vtkSlicerVolumeRenderingLogic* getVolumeRenderingLogic();

@@ -76,7 +76,8 @@
     "typeinfo": "cpp",
     "valarray": "cpp",
     "variant": "cpp",
-    "dense": "cpp"
+    "dense": "cpp",
+    "qstring": "cpp"
   },
   "C_Cpp.default.intelliSenseMode": "gcc-x86",
   "cmake.saveBeforeBuild": true,

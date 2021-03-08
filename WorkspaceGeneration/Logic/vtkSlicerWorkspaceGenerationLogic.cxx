@@ -71,6 +71,7 @@
 #include <cassert>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <set>
 #include <vector>
 
@@ -489,14 +490,12 @@ bool vtkSlicerWorkspaceGenerationLogic::UpdateBHSegmentationMask(
     qSlicerCoreApplication::application()->coreIOManager()->fileType(
       inFileInfo.absoluteFilePath());
   fileType = "SegmentationFile";
-  QList< qSlicerIO::IOProperties > properties;
-  qSlicerIO::IOProperties          property;
+  qSlicerIO::IOProperties property;
   property["fileName"] = inFileInfo.absoluteFilePath();
   property["fileType"] = "SegmentationFile";
-  properties.append(property);
-  QList< QString > file_types =
-    qSlicerCoreApplication::application()->coreIOManager()->fileTypes(maskFile);
-  qDebug() << Q_FUNC_INFO << ": " << file_types;
+  // QList< QString > file_types =
+  //   qSlicerCoreApplication::application()->coreIOManager()->fileTypes(maskFile);
+  // qDebug() << Q_FUNC_INFO << ": " << file_types;
   vtkMRMLNode* node = qSlicerCoreApplication::application()
                         ->coreIOManager()
                         ->loadNodesAndGetFirst(fileType, property);
@@ -826,6 +825,22 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSubWorkspace(
 {
   qInfo() << Q_FUNC_INFO;
 
+  vtkMRMLMarkupsFiducialNode* entryPointNode = wsgn->GetEntryPointNode();
+
+  if (entryPointNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Entry Point is empty";
+    return;
+  }
+
+  double entryPoint[3] = {0.0, 0.0, 0.0};
+  entryPointNode->GetNthFiducialWorldCoordinates(0, entryPoint);
+
+  double* entryPointPtr = entryPoint;
+  double  simple        = 0.0;
+
+  double* simplePtr = &simple;
+
   if (apriori)
   {
     // Get Default burr hole parameters to perform fit
@@ -1018,8 +1033,7 @@ Eigen::Matrix4d
 
 //------------------------------------------------------------------------------
 void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
-  vtkMRMLSegmentationNode* segmentationNode, Probe probe,
-  vtkMatrix4x4* registrationMatrix)
+  vtkMRMLSegmentationNode* segmentationNode, Probe probe)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -1036,9 +1050,24 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   auto start = std::chrono::high_resolution_clock::now();
   vtkSmartPointer< vtkPoints > workspacePointCloud =
     vtkSmartPointer< vtkPoints >::New();
-  Eigen::Matrix3Xf final_workspace = ws.GetGeneralWorkspace();
-  auto checkpoint_workspace_gen    = std::chrono::high_resolution_clock::now();
-  PointSetUtilities utils(final_workspace);
+  Eigen::Matrix3Xf ep_workspace = ws.GetEntryPointWorkspace();
+  auto checkpoint_workspace_gen = std::chrono::high_resolution_clock::now();
+  PointSetUtilities utils(ep_workspace);
+
+  const char* XYZfilename = "ep_workspace.xyz";
+  const char* PLYfilename = "ep_workspace.ply";
+
+  utils.saveToXyz(XYZfilename);
+  // Calling Meshlab to create a PLY file from the ep_workspace.xyz
+  std::system(
+    "/home/aimlab/Documents/NRI_Project/meshlab/src/install/usr/bin/"
+    "meshlabserver -i "
+    "/home/aimlab/Documents/NRI_Project/meshlab/src/install/usr/bin/"
+    "ep_workspace.xyz -o "
+    "/home/aimlab/Documents/NRI_Project/meshlab/src/install/usr/bin/"
+    "ep_workspace.ply -s "
+    "mesh_generation_script.mlx");
+
   workspacePointCloud          = utils.getVTKPointSet();
   auto checkpoint_vtk_pointset = std::chrono::high_resolution_clock::now();
 
