@@ -1088,7 +1088,8 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
            << duration_vtk_pointset.count();
 
   //
-  vtkMRMLWorkspaceGenerationNode*            wsgn{NULL};
+  vtkMRMLWorkspaceGenerationNode* wsgn(NULL);
+
   vtkSmartPointer< vtkMRMLSegmentationNode > ep_workspace_seg_node =
     wsgn->GetWorkspaceMeshSegmentationNode();
   if (ep_workspace_seg_node != NULL)
