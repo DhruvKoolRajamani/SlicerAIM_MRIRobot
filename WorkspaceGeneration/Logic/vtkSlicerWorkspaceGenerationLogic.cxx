@@ -1057,7 +1057,6 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
 
   const char* XYZfilename     = "ep_workspace.xyz";
   QString     output_filename = "ep_workspace.ply";
-  // const char* PLYfilename = "ep_workspace.ply";
 
   utils.saveToXyz(XYZfilename);
   // Calling Meshlab to create a PLY file from the ep_workspace.xyz
