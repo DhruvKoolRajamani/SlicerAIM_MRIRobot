@@ -35,7 +35,7 @@ public:
 
   // Methods
   void saveToXyz(const char* fileName);
-  void saveToXyz(Qstring fileName);
+  // void saveToXyz(Qstring fileName);
 };
 
 #endif  // POINTSETUTILITES_HPP

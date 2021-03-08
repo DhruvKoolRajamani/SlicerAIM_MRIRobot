@@ -704,8 +704,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
     d->RegistrationMatrix__3_10->values().data());
 
   d->logic()->GenerateWorkspace(workspaceMeshSegmentationNode,
-                                d->ProbeSpecs.convertToProbe(),
-                                d->WorkspaceMeshRegistrationMatrix);
+                                d->ProbeSpecs.convertToProbe());
 
   // d->WorkspaceMeshSegmentationNode =
   // d->logic()->getWorkspaceMeshSegmentationNode();
