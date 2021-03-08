@@ -1035,6 +1035,7 @@ Eigen::Matrix4d
 void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   vtkMRMLSegmentationNode* segmentationNode, Probe probe)
 {
+  // vtkMRMLWorkspaceGenerationNode* wsgn
   qInfo() << Q_FUNC_INFO;
 
   if (segmentationNode == NULL)
@@ -1054,21 +1055,22 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   auto checkpoint_workspace_gen = std::chrono::high_resolution_clock::now();
   PointSetUtilities utils(ep_workspace);
 
-  const char* XYZfilename = "ep_workspace.xyz";
-  const char* PLYfilename = "ep_workspace.ply";
+  const char* XYZfilename     = "ep_workspace.xyz";
+  QString     output_filename = "ep_workspace.ply";
+  // const char* PLYfilename = "ep_workspace.ply";
 
   utils.saveToXyz(XYZfilename);
   // Calling Meshlab to create a PLY file from the ep_workspace.xyz
   std::system(
-    "/home/aimlab/Documents/NRI_Project/meshlab/src/install/usr/bin/"
+    "/home/aimlab/Documents/NRI_Project/SlicerAIM_MRIRobot/build/"
     "meshlabserver -i "
-    "/home/aimlab/Documents/NRI_Project/meshlab/src/install/usr/bin/"
+    "/home/aimlab/Documents/NRI_ProjectSlicerAIM_MRIRobot/build/"
     "ep_workspace.xyz -o "
-    "/home/aimlab/Documents/NRI_Project/meshlab/src/install/usr/bin/"
+    "/home/aimlab/Documents/NRI_Project/SlicerAIM_MRIRobot/WorkspaceGeneration/"
+    "Resources/meshes/"
     "ep_workspace.ply -s "
     "mesh_generation_script.mlx");
 
-  workspacePointCloud          = utils.getVTKPointSet();
   auto checkpoint_vtk_pointset = std::chrono::high_resolution_clock::now();
 
   auto duration_workspace_gen =
@@ -1085,114 +1087,86 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   qDebug() << Q_FUNC_INFO << ": Time taken to cast Eigen Mat to pointset = "
            << duration_vtk_pointset.count();
 
-  vtkSmartPointer< vtkPolyData > polyDataWorkspace =
-    vtkSmartPointer< vtkPolyData >::New();
-  polyDataWorkspace->SetPoints(workspacePointCloud.GetPointer());
-
-  vtkSmartPointer< vtkMRMLModelNode > modelNode =
-    vtkSmartPointer< vtkMRMLModelNode >::New();
-  if (true)
+  //
+  vtkMRMLWorkspaceGenerationNode*            wsgn{NULL};
+  vtkSmartPointer< vtkMRMLSegmentationNode > ep_workspace_seg_node =
+    wsgn->GetWorkspaceMeshSegmentationNode();
+  if (ep_workspace_seg_node != NULL)
   {
-    // bug: Convert surface model to segmentation. @DhruvKoolRajamani
-    vtkSmartPointer< vtkDelaunay3D > delaunay =
-      vtkSmartPointer< vtkDelaunay3D >::New();
-    delaunay->SetInputData(polyDataWorkspace);
-    delaunay->SetAlpha(5);
-    delaunay->SetTolerance(0.3);
-    delaunay->SetOffset(5.0);
-    delaunay->Update();
+    qWarning() << Q_FUNC_INFO << ": Segmentation node is not NULL.";
+    wsgn->SetAndObserveWorkspaceMeshSegmentationNodeID(NULL);
+    this->setWorkspaceMeshSegmentationDisplayNode(NULL);
+    this->GetMRMLScene()->RemoveNode(ep_workspace_seg_node);
+  }
 
-    vtkSmartPointer< vtkGeometryFilter > surfaceFilter =
-      vtkSmartPointer< vtkGeometryFilter >::New();
-    surfaceFilter->SetInputConnection(delaunay->GetOutputPort());
-    surfaceFilter->Update();
-    modelNode->SetAndObservePolyData(surfaceFilter->GetOutput());
+  if (output_filename.isEmpty())
+  {
+    qCritical() << Q_FUNC_INFO << ": mask file is null, exiting.";
+    return;
+  }
 
-    segmentationNode->AddSegmentFromClosedSurfaceRepresentation(
-      modelNode->GetPolyData(), "workspace_segment");
-
-    // auto segment =
-    // vtkSlicerSegmentationsModuleLogic::CreateSegmentFromModelNode(
-    //   modelNode, segmentationNode);
+  if (FILE* file = fopen(output_filename.toUtf8().constData(), "r"))
+  {
+    qDebug() << Q_FUNC_INFO << ": mask file exists";
+    fclose(file);
   }
   else
   {
-    vtkSmartPointer< vtkGaussianSplatter > splatter =
-      vtkSmartPointer< vtkGaussianSplatter >::New();
-    splatter->SetInputData(polyDataWorkspace);
-    splatter->Update();
-
-    vtkSmartPointer< vtkMRMLLabelMapVolumeNode > labelMapVolumeNode =
-      vtkSmartPointer< vtkMRMLLabelMapVolumeNode >::New();
-
-    labelMapVolumeNode->SetAndObserveImageData(splatter->GetOutput());
-
-    vtkIntArray* labelsArr = vtkIntArray::New();
-    vtkSlicerSegmentationsModuleLogic::GetAllLabelValues(
-      labelsArr, labelMapVolumeNode->GetImageData());
-
-    QString   labels = "[";
-    vtkIdType num    = labelsArr->GetNumberOfTuples();
-    qDebug() << Q_FUNC_INFO << "Total lables: ";
-    for (vtkIdType id = 0; id < num; ++id)
-    {
-      labels += labelsArr->GetValue(id) + ", ";
-    }
-    labels += "]";
-    qDebug() << Q_FUNC_INFO << "Labelmap lables: " << labels;
-
-    SegmentationsLogic->CreateSegmentFromLabelmapVolumeNode(labelMapVolumeNode,
-                                                            segmentationNode);
-
-    // vtkSmartPointer< vtkMRMLVolumeNode > volumeNode = labelMapVolumeNode;
-    // if (volumeNode == NULL)
-    // {
-    //   qCritical() << Q_FUNC_INFO << ": Unable to create volume node";
-    //   return;
-    // }
-
-    // vtkMRMLVolumeRenderingDisplayNode* volRenderingDisplayNode;
-    // vtkMRMLAnnotationROINode*          annotationROINode;
-    // volumeNode = this->RenderVolume(volumeNode, volRenderingDisplayNode,
-    //                                 annotationROINode, false);
-    // modelNode  = vtkMRMLModelNode::SafeDownCast(annotationROINode);
-
-    // SegmentationsLogic->SetMRMLScene(this->GetMRMLScene());
-    // SegmentationsLogic->AddSegmentFromClosedSurfaceRepresentation(model)
+    qCritical() << Q_FUNC_INFO << ": mask file does not exist! exiting.";
+    return;
   }
 
-  WorkspaceMeshSegmentationNode = segmentationNode;
-  // Attach a display node if needed
-  vtkMRMLSegmentationDisplayNode* displayNode =
+  QFileInfo inFileInfo = QFileInfo(output_filename);
+
+  qSlicerIO::IOFileType fileType =
+    qSlicerCoreApplication::application()->coreIOManager()->fileType(
+      inFileInfo.absoluteFilePath());
+  fileType = "SegmentationFile";
+  qSlicerIO::IOProperties property;
+  property["fileName"] = inFileInfo.absoluteFilePath();
+  property["fileType"] = "SegmentationFile";
+  vtkMRMLNode* node    = qSlicerCoreApplication::application()
+                        ->coreIOManager()
+                        ->loadNodesAndGetFirst(fileType, property);
+
+  if (node == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Error loading file " + output_filename;
+    return;
+  }
+
+  ep_workspace_seg_node = vtkMRMLSegmentationNode::SafeDownCast(node);
+
+  ep_workspace_seg_node->SetName("EntryPointWorkspaceSegmentation");
+
+  wsgn->SetAndObserveWorkspaceMeshSegmentationNodeID(
+    ep_workspace_seg_node->GetID());
+  if (ep_workspace_seg_node->GetDisplayNode() == NULL)
+  {
+    qWarning() << Q_FUNC_INFO << ": Creating display node for segmentation";
+    ep_workspace_seg_node->CreateDefaultDisplayNodes();
+  }
+
+  ep_workspace_seg_node->SetMasterRepresentationToClosedSurface();
+  ep_workspace_seg_node->CreateClosedSurfaceRepresentation();
+
+  vtkMRMLSegmentationDisplayNode* segDispNode =
     vtkMRMLSegmentationDisplayNode::SafeDownCast(
-      segmentationNode->GetDisplayNode());
-  if (displayNode == NULL)
-  {
-    qWarning() << Q_FUNC_INFO << ": Display node is null, creating a new one ";
+      ep_workspace_seg_node->GetDisplayNode());
+  segDispNode->Visibility2DOn();
+  segDispNode->Visibility3DOn();
+  segDispNode->SetSliceIntersectionThickness(5);
+  segDispNode->SetAllSegmentsVisibility(true);
+  segDispNode->SetAllSegmentsVisibility3D(true);
 
-    segmentationNode->CreateDefaultDisplayNodes();
-    displayNode = vtkMRMLSegmentationDisplayNode::SafeDownCast(
-      segmentationNode->GetDisplayNode());
-  }
+  // WorkspaceSegNode->CreateClosedSurfaceRepresentation();
+  this->setWorkspaceMeshSegmentationDisplayNode(segDispNode);
 
-  if (displayNode)
-  {
-    std::string name =
-      std::string(segmentationNode->GetName()).append("SegmentationDisplay");
-    displayNode->SetName(name.c_str());
-    // displayNode->SetColor(1, 1, 0);
-    displayNode->Visibility2DOn();
-    displayNode->Visibility3DOn();
-    // displayNode->SetSliceDisplayModeToIntersection();
-    // displayNode->SetSliceIntersectionVisibility(true);
-    // displayNode->SetVisibility(true);
-    displayNode->SetSliceIntersectionThickness(2);
-    // qDebug() << Q_FUNC_INFO
-    //          << displayNode->GetSliceDisplayModeAsString(
-    //               displayNode->GetSliceDisplayMode());
-  }
+  //
+  // segmentationNode->AddSegmentFromClosedSurfaceRepresentation(
+  //   modelNode->GetPolyData(), "workspace_segment");
 
-  WorkspaceMeshSegmentationNode = segmentationNode;
+  WorkspaceMeshSegmentationNode = ep_workspace_seg_node;
 }
 
 //------------------------------------------------------------------------------
