@@ -73,6 +73,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <set>
+#include <stdio.h>  /* printf */
+#include <stdlib.h> /* getenv */
 #include <vector>
 
 // NvidiaAIAA includes
@@ -715,7 +717,6 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
         model, bHExtremePointSet, QString(in_file + ext).toUtf8().constData(),
         out_file.toUtf8().constData(), false, sessionID);
 
-      // https://github.com/NVIDIA/ai-assisted-annotation-client/blob/df65b44448348f7d0d0af4feaaca772254aae3f1/slicer-plugin/NvidiaAIAA/SegmentEditorNvidiaAIAALib/SegmentEditorEffect.py#L231
       if (result == 0)
       {
         result = ( int ) this->UpdateBHSegmentationMask(wsgn, bHExtremePointSet,
@@ -877,12 +878,12 @@ vtkMRMLVolumeNode*
     }
 
     // Get the current Volume Property Node.
-    vtkMRMLVolumePropertyNode* volumePropertyNode =
-      this->InputVolumeRenderingDisplayNode->GetVolumePropertyNode();
+    // vtkMRMLVolumePropertyNode* volumePropertyNode =
+    //   this->InputVolumeRenderingDisplayNode->GetVolumePropertyNode();
 
     // Copy the MRI preset to the volume property node
-    volumePropertyNode->Copy(
-      VolumeRenderingLogic->GetPresetByName("MR-Default"));
+    // volumePropertyNode->Copy(
+    //   VolumeRenderingLogic->GetPresetByName("MR-Default"));
   }
   else
   {
@@ -1035,7 +1036,6 @@ Eigen::Matrix4d
 void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   vtkMRMLSegmentationNode* segmentationNode, Probe probe)
 {
-  // vtkMRMLWorkspaceGenerationNode* wsgn
   qInfo() << Q_FUNC_INFO;
 
   if (segmentationNode == NULL)
@@ -1051,122 +1051,108 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   auto start = std::chrono::high_resolution_clock::now();
   vtkSmartPointer< vtkPoints > workspacePointCloud =
     vtkSmartPointer< vtkPoints >::New();
-  Eigen::Matrix3Xf ep_workspace = ws.GetEntryPointWorkspace();
+  Eigen::Matrix3Xf ep_workspace = ws.GetGeneralWorkspace();
   auto checkpoint_workspace_gen = std::chrono::high_resolution_clock::now();
   PointSetUtilities utils(ep_workspace);
 
-  const char* XYZfilename     = "ep_workspace.xyz";
-  QString     output_filename = "ep_workspace.ply";
+  QString input_filename =
+    "WorkspaceGeneration/Resources/meshes/general_workspace.xyz";
+  QString output_filename =
+    "WorkspaceGeneration/Resources/meshes/general_workspace.ply";
+  QString mesh_generation_script_filename =
+    "WorkspaceGeneration/Resources/meshes/mesh_generation_script.mlx";
+  QFileInfo input_filepath(input_filename);
+  QFileInfo output_filepath(output_filename);
+  QFileInfo mesh_gen_filepath(mesh_generation_script_filename);
+  utils.saveToXyz(input_filepath.absoluteFilePath().toUtf8().data());
 
-  utils.saveToXyz(XYZfilename);
-  // Calling Meshlab to create a PLY file from the ep_workspace.xyz
-  std::system(
-    "/home/aimlab/Documents/NRI_Project/meshlab/src/install/usr/bin/"
-    "meshlabserver -i "
-    "/home/aimlab/Documents/NRI_Project/SlicerAIM_MRIRobot/"
-    "ep_workspace.xyz -o "
-    "/home/aimlab/Documents/NRI_Project/SlicerAIM_MRIRobot/WorkspaceGeneration/"
-    "Resources/meshes/"
-    "ep_workspace.ply -s "
-    "mesh_generation_script.mlx");
+  // Get environment variable for Meshlab Path
+  // Also set this path in your bashrc, or in the same terminal as this script
+  // export MESHLAB_BIN_DIR='~/meshlab/src/install/usr/bin/' OR
+  // export MESHLAB_BIN_DIR='/usr/bin/' if you have installed it using sudo
+  char* meshlab_dir_path;
+  meshlab_dir_path = getenv("MESHLAB_BIN_DIR");
 
-  auto checkpoint_vtk_pointset = std::chrono::high_resolution_clock::now();
+  if (meshlab_dir_path == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Meshlab dir path is not in the environment";
+  }
+
+  QString meshlab_bin_path(meshlab_dir_path);
+  meshlab_bin_path += "meshlabserver";
+
+  // Calling Meshlab to create a PLY file from the general_workspace.xyz
+  QString generate_ws_command =
+    meshlab_bin_path + QString(" -i ") + input_filepath.absoluteFilePath() +
+    QString(" -o ") + output_filepath.absoluteFilePath() + QString(" -s ") +
+    mesh_gen_filepath.absoluteFilePath() +
+    QString(" 1> meshlab_output.log 2> meshlab_output_err.log");
+
+  qDebug() << Q_FUNC_INFO << ": Command is - " << generate_ws_command;
+
+  std::system(generate_ws_command.toUtf8().data());
+
+  auto checkpoint_meshlab = std::chrono::high_resolution_clock::now();
 
   auto duration_workspace_gen =
     std::chrono::duration_cast< std::chrono::microseconds >(
       checkpoint_workspace_gen - start);
 
-  auto duration_vtk_pointset =
+  auto duration_meshlab_gen =
     std::chrono::duration_cast< std::chrono::microseconds >(
-      checkpoint_vtk_pointset - checkpoint_workspace_gen);
+      checkpoint_meshlab - checkpoint_workspace_gen);
 
   qDebug() << Q_FUNC_INFO << ": Time taken to generate workspace = "
            << duration_workspace_gen.count();
 
-  qDebug() << Q_FUNC_INFO << ": Time taken to cast Eigen Mat to pointset = "
-           << duration_vtk_pointset.count();
+  qDebug() << Q_FUNC_INFO
+           << ": Time taken to run meshlab server in background = "
+           << duration_meshlab_gen.count();
 
-  //
-  vtkMRMLWorkspaceGenerationNode* wsgn(NULL);
-
-  vtkSmartPointer< vtkMRMLSegmentationNode > ep_workspace_seg_node =
-    wsgn->GetWorkspaceMeshSegmentationNode();
-  if (ep_workspace_seg_node != NULL)
+  if (this->ModelsLogic != NULL)
   {
-    qWarning() << Q_FUNC_INFO << ": Segmentation node is not NULL.";
-    wsgn->SetAndObserveWorkspaceMeshSegmentationNodeID(NULL);
-    this->setWorkspaceMeshSegmentationDisplayNode(NULL);
-    this->GetMRMLScene()->RemoveNode(ep_workspace_seg_node);
+    if (FILE* file =
+          fopen(output_filepath.absoluteFilePath().toUtf8().constData(), "r"))
+    {
+      qDebug() << Q_FUNC_INFO << ": workspace file exists";
+      fclose(file);
+    }
+    else
+    {
+      qCritical() << Q_FUNC_INFO << ": workspace file does not exist! exiting.";
+      return;
+    }
+
+    this->ModelsLogic->SetMRMLScene(this->GetMRMLScene());
+    vtkMRMLModelNode* workspaceModelNode = this->ModelsLogic->AddModel(
+      output_filepath.absoluteFilePath().toUtf8().data(),
+      vtkMRMLStorageNode::RAS);
+
+    if (workspaceModelNode == NULL)
+    {
+      qCritical() << Q_FUNC_INFO << ": Failed to load workspace as model";
+      return;
+    }
+
+    if (this->SegmentationsLogic != NULL)
+    {
+      vtkSmartPointer< vtkSegment > segment =
+        vtkSmartPointer< vtkSegment >::Take(
+          this->SegmentationsLogic->CreateSegmentFromModelNode(
+            workspaceModelNode, segmentationNode));
+      if (segment == NULL)
+      {
+        qCritical() << Q_FUNC_INFO
+                    << ": Unable to convert workspace model to segmentation";
+        return;
+      }
+      else
+      {
+        this->WorkspaceMeshSegmentationNode = segmentationNode;
+      }
+    }
   }
-
-  if (output_filename.isEmpty())
-  {
-    qCritical() << Q_FUNC_INFO << ": mask file is null, exiting.";
-    return;
-  }
-
-  if (FILE* file = fopen(output_filename.toUtf8().constData(), "r"))
-  {
-    qDebug() << Q_FUNC_INFO << ": mask file exists";
-    fclose(file);
-  }
-  else
-  {
-    qCritical() << Q_FUNC_INFO << ": mask file does not exist! exiting.";
-    return;
-  }
-
-  QFileInfo inFileInfo = QFileInfo(output_filename);
-
-  qSlicerIO::IOFileType fileType =
-    qSlicerCoreApplication::application()->coreIOManager()->fileType(
-      inFileInfo.absoluteFilePath());
-  fileType = "SegmentationFile";
-  qSlicerIO::IOProperties property;
-  property["fileName"] = inFileInfo.absoluteFilePath();
-  property["fileType"] = "SegmentationFile";
-  vtkMRMLNode* node    = qSlicerCoreApplication::application()
-                        ->coreIOManager()
-                        ->loadNodesAndGetFirst(fileType, property);
-
-  if (node == NULL)
-  {
-    qCritical() << Q_FUNC_INFO << ": Error loading file " + output_filename;
-    return;
-  }
-
-  ep_workspace_seg_node = vtkMRMLSegmentationNode::SafeDownCast(node);
-
-  ep_workspace_seg_node->SetName("EntryPointWorkspaceSegmentation");
-
-  wsgn->SetAndObserveWorkspaceMeshSegmentationNodeID(
-    ep_workspace_seg_node->GetID());
-  if (ep_workspace_seg_node->GetDisplayNode() == NULL)
-  {
-    qWarning() << Q_FUNC_INFO << ": Creating display node for segmentation";
-    ep_workspace_seg_node->CreateDefaultDisplayNodes();
-  }
-
-  ep_workspace_seg_node->SetMasterRepresentationToClosedSurface();
-  ep_workspace_seg_node->CreateClosedSurfaceRepresentation();
-
-  vtkMRMLSegmentationDisplayNode* segDispNode =
-    vtkMRMLSegmentationDisplayNode::SafeDownCast(
-      ep_workspace_seg_node->GetDisplayNode());
-  segDispNode->Visibility2DOn();
-  segDispNode->Visibility3DOn();
-  segDispNode->SetSliceIntersectionThickness(5);
-  segDispNode->SetAllSegmentsVisibility(true);
-  segDispNode->SetAllSegmentsVisibility3D(true);
-
-  // WorkspaceSegNode->CreateClosedSurfaceRepresentation();
-  this->setWorkspaceMeshSegmentationDisplayNode(segDispNode);
-
-  //
-  // segmentationNode->AddSegmentFromClosedSurfaceRepresentation(
-  //   modelNode->GetPolyData(), "workspace_segment");
-
-  WorkspaceMeshSegmentationNode = ep_workspace_seg_node;
 }
 
 //------------------------------------------------------------------------------

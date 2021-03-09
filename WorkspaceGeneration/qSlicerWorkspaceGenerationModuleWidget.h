@@ -102,6 +102,10 @@ protected slots:
   void onPresetComboBoxNodeChanged(vtkMRMLNode*);
   void onBurrHoleSegmentationNodeAdded(vtkMRMLNode*);
   void onBurrHoleSegmentationNodeChanged(vtkMRMLNode*);
+  void onEntryPointWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode*);
+  void onEntryPointWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode*);
+  void onGenerateEntryPointWorkspaceClick();
+  void onEntryPointWorkspaceMeshVisibilityChanged(bool visible);
   void onBHExtremePointAdded(vtkMRMLNode*);
   void onBHExtremePointChanged(vtkMRMLNode*);
   void onEntryPointAdded(vtkMRMLNode*);
