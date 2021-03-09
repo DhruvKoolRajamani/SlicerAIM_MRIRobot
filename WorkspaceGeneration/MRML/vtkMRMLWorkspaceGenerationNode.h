@@ -155,6 +155,10 @@ public:
   void SetAndObserveAnnotationROINodeID(const char* annotationROINodeId);
   void SetAndObserveWorkspaceMeshSegmentationNodeID(
     const char* workspaceMeshSegmentationNodeId);
+  void SetAndObserveEPWorkspaceMeshSegmentationNodeID(
+    const char* ePWorkspaceMeshSegmentationNodeId);
+  void SetAndObserveSubWorkspaceMeshSegmentationNodeID(
+    const char* SubWorkspaceMeshSegmentationNodeId);
   void SetAndObserveBurrHoleSegmentationNodeID(
     const char* burrHoleSegmentationNodeId);
   void SetAndObserveBHExtremePointNodeId(const char* bHExtremePointNodeId);
@@ -166,6 +170,8 @@ public:
   vtkMRMLVolumeNode*          GetInputVolumeNode();
   vtkMRMLAnnotationROINode*   GetAnnotationROINode();
   vtkMRMLSegmentationNode*    GetWorkspaceMeshSegmentationNode();
+  vtkMRMLSegmentationNode*    GetEPWorkspaceMeshSegmentationNode();
+  vtkMRMLSegmentationNode*    GetSubWorkspaceMeshSegmentationNode();
   vtkMRMLSegmentationNode*    GetBurrHoleSegmentationNode();
   vtkMRMLMarkupsFiducialNode* GetBHExtremePointNode();
   vtkMRMLMarkupsFiducialNode* GetEntryPointNode();
