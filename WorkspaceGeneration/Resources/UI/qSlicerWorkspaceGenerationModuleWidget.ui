@@ -80,6 +80,77 @@
       <property name="horizontalSpacing">
        <number>7</number>
       </property>
+      <item row="1" column="0">
+       <widget class="QLabel" name="InputVolumeNodeLabel">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Input Volume</string>
+        </property>
+        <property name="margin">
+         <number>5</number>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="ctkPushButton" name="InputVolumeSetVisibilityCheckBox__2_3">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Visibility</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="2">
+       <widget class="qMRMLNodeComboBox" name="InputVolumeNodeSelector__2_2">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="nodeTypes">
+         <stringlist>
+          <string>vtkMRMLVolumeNode</string>
+         </stringlist>
+        </property>
+        <property name="noneEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="removeEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="renameEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="selectNodeUponCreation">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
       <item row="2" column="1">
        <widget class="qMRMLNodeComboBox" name="ROINodeSelector__2_4">
         <property name="font">
@@ -123,75 +194,32 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="InputVolumeNodeLabel">
+      <item row="3" column="0" colspan="3">
+       <widget class="ctkCollapsibleButton" name="InputVolumeRenderingPresetSettingsCollapsibleButton__2_5">
         <property name="font">
          <font>
+          <family>DejaVu Sans</family>
           <weight>50</weight>
           <bold>false</bold>
          </font>
         </property>
         <property name="text">
-         <string>Input Volume</string>
+         <string>Volume Rendering Preset Settings</string>
         </property>
-        <property name="margin">
-         <number>5</number>
+        <property name="buttonTextAlignment">
+         <set>Qt::AlignCenter</set>
         </property>
-       </widget>
-      </item>
-      <item row="1" column="1" colspan="2">
-       <widget class="qMRMLNodeComboBox" name="InputVolumeNodeSelector__2_2">
-        <property name="font">
-         <font>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="nodeTypes">
-         <stringlist>
-          <string>vtkMRMLVolumeNode</string>
-         </stringlist>
-        </property>
-        <property name="noneEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="removeEnabled">
-         <bool>false</bool>
-        </property>
-        <property name="renameEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="selectNodeUponCreation">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="ctkPushButton" name="InputVolumeSetVisibilityCheckBox__2_3">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="font">
-         <font>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Visibility</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-        <property name="flat">
-         <bool>true</bool>
-        </property>
+        <layout class="QGridLayout" name="InputLayout">
+         <property name="leftMargin">
+          <number>5</number>
+         </property>
+         <property name="horizontalSpacing">
+          <number>7</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="qSlicerVolumeRenderingPresetComboBox" name="InputVolumeRenderingPresetComboBox__2_6"/>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>
@@ -219,14 +247,35 @@
       <property name="horizontalSpacing">
        <number>7</number>
       </property>
-      <item row="1" column="3">
-       <widget class="ctkPushButton" name="WorkspaceVisibilityToggle__3_12">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+      <item row="2" column="1">
+       <widget class="qMRMLNodeComboBox" name="WorkspaceModelSelector__3_2">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
         </property>
+        <property name="nodeTypes">
+         <stringlist>
+          <string>vtkMRMLSegmentationNode</string>
+         </stringlist>
+        </property>
+        <property name="noneEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="addEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="renameEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="selectNodeUponCreation">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="EntryPointWorkspaceMeshLabel">
         <property name="font">
          <font>
           <weight>50</weight>
@@ -234,20 +283,24 @@
          </font>
         </property>
         <property name="text">
-         <string>Visibility</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-        <property name="flat">
-         <bool>true</bool>
+         <string>Entry Point WS</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="0" colspan="4">
+      <item row="2" column="0">
+       <widget class="QLabel" name="WorkspaceMeshLabel">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Workspace Mesh</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="3">
        <widget class="ctkCollapsibleButton" name="RegistrationMatrixCollapsibleButton__3_9">
         <property name="font">
          <font>
@@ -315,7 +368,7 @@
         </layout>
        </widget>
       </item>
-      <item row="2" column="0" colspan="4">
+      <item row="0" column="0" colspan="3">
        <widget class="ctkCollapsibleButton" name="ProbeSpecsCollapsibleButton__3_3">
         <property name="font">
          <font>
@@ -546,21 +599,8 @@
         </layout>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="WorkspaceMeshLabel">
-        <property name="font">
-         <font>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Workspace Mesh</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="qMRMLNodeComboBox" name="WorkspaceModelSelector__3_2">
+      <item row="3" column="1">
+       <widget class="qMRMLNodeComboBox" name="EntryPointWorkspaceModelSelector__3_13">
         <property name="font">
          <font>
           <weight>50</weight>
@@ -586,8 +626,8 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="0" colspan="4">
-       <widget class="QPushButton" name="GenerateWorkspaceButton__3_11">
+      <item row="3" column="2">
+       <widget class="ctkPushButton" name="EntryPointWorkspaceVisibilityToggle__3_14">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
           <horstretch>0</horstretch>
@@ -601,12 +641,91 @@
          </font>
         </property>
         <property name="text">
-         <string>Generate Workspace</string>
+         <string>Visibility</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
         <property name="flat">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
        </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="ctkPushButton" name="WorkspaceVisibilityToggle__3_12">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Visibility</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="3">
+       <layout class="QGridLayout" name="MeshGenerationGridLayout">
+        <property name="leftMargin">
+         <number>5</number>
+        </property>
+        <property name="horizontalSpacing">
+         <number>7</number>
+        </property>
+        <item row="0" column="0">
+         <widget class="QPushButton" name="GenerateWorkspaceButton__3_11">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Generate Workspace</string>
+          </property>
+          <property name="flat">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="GenerateEntryPointWorkspaceButton__3_15">
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Generate Entry Point WS</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
@@ -673,7 +792,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Extreme Point Markups</string>
+         <string>Boundary Markups</string>
         </property>
        </widget>
       </item>
@@ -996,6 +1115,11 @@
    <class>qSlicerMarkupsPlaceWidget</class>
    <extends>qSlicerWidget</extends>
    <header>qSlicerMarkupsPlaceWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qSlicerVolumeRenderingPresetComboBox</class>
+   <extends>qSlicerWidget</extends>
+   <header>qSlicerVolumeRenderingPresetComboBox.h</header>
   </customwidget>
   <customwidget>
    <class>ctkCollapsibleButton</class>

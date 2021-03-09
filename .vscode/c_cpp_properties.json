@@ -1,8 +1,7 @@
 {
-    // "env": {
-    //     "Slicer_BUILD_DIR": "",
-    //     "myCompilerPath": "/usr/local/bin/gcc-7"
-    //   },
+    "env": {
+        "MESHLAB_BIN_DIR": "/usr/bin/"
+    },
     "configurations": [
         {
             "name": "Linux",
