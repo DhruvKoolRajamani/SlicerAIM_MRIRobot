@@ -1086,22 +1086,25 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   qDebug() << Q_FUNC_INFO << ": Time taken to cast Eigen Mat to pointset = "
            << duration_vtk_pointset.count();
 
-  //
-  vtkMRMLWorkspaceGenerationNode* wsgn(NULL);
+  vtkMRMLWorkspaceGenerationNode* wsgn;
 
-  vtkSmartPointer< vtkMRMLSegmentationNode > ep_workspace_seg_node =
-    wsgn->GetWorkspaceMeshSegmentationNode();
-  if (ep_workspace_seg_node != NULL)
+  segmentationNode = wsgn->GetWorkspaceMeshSegmentationNode();
+  std::cout << "I'm here\n";
+
+  // issue: exits on the above line
+
+  if (segmentationNode != NULL)
   {
     qWarning() << Q_FUNC_INFO << ": Segmentation node is not NULL.";
     wsgn->SetAndObserveWorkspaceMeshSegmentationNodeID(NULL);
     this->setWorkspaceMeshSegmentationDisplayNode(NULL);
-    this->GetMRMLScene()->RemoveNode(ep_workspace_seg_node);
+    this->GetMRMLScene()->RemoveNode(segmentationNode);
   }
 
   if (output_filename.isEmpty())
   {
     qCritical() << Q_FUNC_INFO << ": mask file is null, exiting.";
+    std::cout << "I'm here3!\n";
     return;
   }
 
@@ -1113,6 +1116,7 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   else
   {
     qCritical() << Q_FUNC_INFO << ": mask file does not exist! exiting.";
+    std::cout << "I'm here4!\n";
     return;
   }
 
@@ -1135,24 +1139,23 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
     return;
   }
 
-  ep_workspace_seg_node = vtkMRMLSegmentationNode::SafeDownCast(node);
+  segmentationNode = vtkMRMLSegmentationNode::SafeDownCast(node);
 
-  ep_workspace_seg_node->SetName("EntryPointWorkspaceSegmentation");
+  segmentationNode->SetName("EntryPointWorkspaceSegmentation");
 
-  wsgn->SetAndObserveWorkspaceMeshSegmentationNodeID(
-    ep_workspace_seg_node->GetID());
-  if (ep_workspace_seg_node->GetDisplayNode() == NULL)
+  wsgn->SetAndObserveWorkspaceMeshSegmentationNodeID(segmentationNode->GetID());
+  if (segmentationNode->GetDisplayNode() == NULL)
   {
     qWarning() << Q_FUNC_INFO << ": Creating display node for segmentation";
-    ep_workspace_seg_node->CreateDefaultDisplayNodes();
+    segmentationNode->CreateDefaultDisplayNodes();
   }
 
-  ep_workspace_seg_node->SetMasterRepresentationToClosedSurface();
-  ep_workspace_seg_node->CreateClosedSurfaceRepresentation();
+  segmentationNode->SetMasterRepresentationToClosedSurface();
+  segmentationNode->CreateClosedSurfaceRepresentation();
 
   vtkMRMLSegmentationDisplayNode* segDispNode =
     vtkMRMLSegmentationDisplayNode::SafeDownCast(
-      ep_workspace_seg_node->GetDisplayNode());
+      segmentationNode->GetDisplayNode());
   segDispNode->Visibility2DOn();
   segDispNode->Visibility3DOn();
   segDispNode->SetSliceIntersectionThickness(5);
@@ -1166,7 +1169,7 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   // segmentationNode->AddSegmentFromClosedSurfaceRepresentation(
   //   modelNode->GetPolyData(), "workspace_segment");
 
-  WorkspaceMeshSegmentationNode = ep_workspace_seg_node;
+  WorkspaceMeshSegmentationNode = segmentationNode;
 }
 
 //------------------------------------------------------------------------------
