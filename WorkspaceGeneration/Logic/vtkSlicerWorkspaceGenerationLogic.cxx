@@ -175,6 +175,42 @@ void vtkSlicerWorkspaceGenerationLogic::setWorkspaceMeshSegmentationDisplayNode(
 }
 
 //------------------------------------------------------------------------------
+void vtkSlicerWorkspaceGenerationLogic::
+  setEPWorkspaceMeshSegmentationDisplayNode(
+    vtkMRMLSegmentationDisplayNode* ePWorkspaceMeshSegmentationDisplayNode)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (!ePWorkspaceMeshSegmentationDisplayNode)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Entry Point Workspace Mesh Model Display Node is NULL";
+    return;
+  }
+
+  this->EPWorkspaceMeshSegmentationDisplayNode =
+    ePWorkspaceMeshSegmentationDisplayNode;
+}
+
+//------------------------------------------------------------------------------
+void vtkSlicerWorkspaceGenerationLogic::
+  setSubWorkspaceMeshSegmentationDisplayNode(
+    vtkMRMLSegmentationDisplayNode* subWorkspaceMeshSegmentationDisplayNode)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (!subWorkspaceMeshSegmentationDisplayNode)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Sub Workspace Mesh Model Display Node is NULL";
+    return;
+  }
+
+  this->SubWorkspaceMeshSegmentationDisplayNode =
+    subWorkspaceMeshSegmentationDisplayNode;
+}
+
+//------------------------------------------------------------------------------
 void vtkSlicerWorkspaceGenerationLogic::setBurrHoleSegmentationDisplayNode(
   vtkMRMLSegmentationDisplayNode* burrHoleSegmentationDisplayNode)
 {
@@ -1033,7 +1069,7 @@ Eigen::Matrix4d
 }
 
 //------------------------------------------------------------------------------
-void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
+void vtkSlicerWorkspaceGenerationLogic::GenerateGeneralWorkspace(
   vtkMRMLSegmentationNode* segmentationNode, Probe probe)
 {
   qInfo() << Q_FUNC_INFO;
@@ -1048,17 +1084,75 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
   NeuroKinematics        neuro_kinematics(&probe);
   WorkspaceVisualization ws(neuro_kinematics);
 
-  auto start = std::chrono::high_resolution_clock::now();
+  std::chrono::_V2::system_clock::time_point start =
+    std::chrono::high_resolution_clock::now();
   vtkSmartPointer< vtkPoints > workspacePointCloud =
     vtkSmartPointer< vtkPoints >::New();
-  Eigen::Matrix3Xf ep_workspace = ws.GetGeneralWorkspace();
+  Eigen::Matrix3Xf general_workspace = ws.GetGeneralWorkspace();
+
+  QString workspace_name = "general_workspace";
+
+  bool isWSLoadedState = this->LoadWorkspaceAsSegmentation(
+    segmentationNode, workspace_name, general_workspace, &start);
+
+  if (!isWSLoadedState)
+  {
+    qCritical() << Q_FUNC_INFO << ": Workspace loading failed";
+    return;
+  }
+
+  this->WorkspaceMeshSegmentationNode = segmentationNode;
+}
+
+//------------------------------------------------------------------------------
+void vtkSlicerWorkspaceGenerationLogic::GenerateEPWorkspace(
+  vtkMRMLSegmentationNode* segmentationNode, Probe probe)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (segmentationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": output model node is invalid";
+    return;
+  }
+
+  // Initialize NeuroKinematics
+  NeuroKinematics        neuro_kinematics(&probe);
+  WorkspaceVisualization ws(neuro_kinematics);
+
+  std::chrono::_V2::system_clock::time_point start =
+    std::chrono::high_resolution_clock::now();
+  vtkSmartPointer< vtkPoints > workspacePointCloud =
+    vtkSmartPointer< vtkPoints >::New();
+  Eigen::Matrix3Xf entry_point_workspace = ws.GetEntryPointWorkspace();
+
+  QString workspace_name = "entry_point_workspace";
+
+  bool isWSLoadedState = this->LoadWorkspaceAsSegmentation(
+    segmentationNode, workspace_name, entry_point_workspace, &start);
+
+  if (!isWSLoadedState)
+  {
+    qCritical() << Q_FUNC_INFO << ": Workspace loading failed";
+    return;
+  }
+
+  this->WorkspaceMeshSegmentationNode = segmentationNode;
+}
+
+//------------------------------------------------------------------------------
+bool vtkSlicerWorkspaceGenerationLogic::LoadWorkspaceAsSegmentation(
+  vtkMRMLSegmentationNode* segmentationNode, QString& workspace_name,
+  Eigen::Matrix3Xf&                           workspace,
+  std::chrono::_V2::system_clock::time_point* start)
+{
   auto checkpoint_workspace_gen = std::chrono::high_resolution_clock::now();
-  PointSetUtilities utils(ep_workspace);
+  PointSetUtilities utils(workspace);
 
   QString input_filename =
-    "WorkspaceGeneration/Resources/meshes/general_workspace.xyz";
+    "WorkspaceGeneration/Resources/meshes/" + workspace_name + ".xyz";
   QString output_filename =
-    "WorkspaceGeneration/Resources/meshes/general_workspace.ply";
+    "WorkspaceGeneration/Resources/meshes/" + workspace_name + ".ply";
   QString mesh_generation_script_filename =
     "WorkspaceGeneration/Resources/meshes/mesh_generation_script.mlx";
   QFileInfo input_filepath(input_filename);
@@ -1068,8 +1162,8 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
 
   // Get environment variable for Meshlab Path
   // Also set this path in your bashrc, or in the same terminal as this script
-  // export MESHLAB_BIN_DIR='~/meshlab/src/install/usr/bin/' OR
-  // export MESHLAB_BIN_DIR='/usr/bin/' if you have installed it using sudo
+  // export MESHLAB_BIN_DIR=~/meshlab/src/install/usr/bin/ OR
+  // export MESHLAB_BIN_DIR=/usr/bin/ if you have installed it using sudo
   char* meshlab_dir_path;
   meshlab_dir_path = getenv("MESHLAB_BIN_DIR");
 
@@ -1097,7 +1191,7 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
 
   auto duration_workspace_gen =
     std::chrono::duration_cast< std::chrono::microseconds >(
-      checkpoint_workspace_gen - start);
+      checkpoint_workspace_gen - *start);
 
   auto duration_meshlab_gen =
     std::chrono::duration_cast< std::chrono::microseconds >(
@@ -1121,7 +1215,7 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
     else
     {
       qCritical() << Q_FUNC_INFO << ": workspace file does not exist! exiting.";
-      return;
+      return false;
     }
 
     this->ModelsLogic->SetMRMLScene(this->GetMRMLScene());
@@ -1132,7 +1226,7 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
     if (workspaceModelNode == NULL)
     {
       qCritical() << Q_FUNC_INFO << ": Failed to load workspace as model";
-      return;
+      return false;
     }
 
     if (this->SegmentationsLogic != NULL)
@@ -1145,14 +1239,12 @@ void vtkSlicerWorkspaceGenerationLogic::GenerateWorkspace(
       {
         qCritical() << Q_FUNC_INFO
                     << ": Unable to convert workspace model to segmentation";
-        return;
-      }
-      else
-      {
-        this->WorkspaceMeshSegmentationNode = segmentationNode;
+        return false;
       }
     }
   }
+
+  return true;
 }
 
 //------------------------------------------------------------------------------
@@ -1176,6 +1268,54 @@ vtkMRMLSegmentationNode*
   }
 
   return this->WorkspaceMeshSegmentationNode;
+}
+
+//------------------------------------------------------------------------------
+vtkMRMLSegmentationNode*
+  vtkSlicerWorkspaceGenerationLogic::getEPWorkspaceMeshSegmentationNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (!this->EPWorkspaceMeshSegmentationNode &&
+      !WorkspaceGenerationNode->GetEPWorkspaceMeshSegmentationNode())
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": No entry point workspace mesh model node available";
+    return NULL;
+  }
+
+  if (this->EPWorkspaceMeshSegmentationNode !=
+      this->WorkspaceGenerationNode->GetEPWorkspaceMeshSegmentationNode())
+  {
+    this->EPWorkspaceMeshSegmentationNode =
+      this->WorkspaceGenerationNode->GetEPWorkspaceMeshSegmentationNode();
+  }
+
+  return this->EPWorkspaceMeshSegmentationNode;
+}
+
+//------------------------------------------------------------------------------
+vtkMRMLSegmentationNode*
+  vtkSlicerWorkspaceGenerationLogic::getSubWorkspaceMeshSegmentationNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (!this->SubWorkspaceMeshSegmentationNode &&
+      !WorkspaceGenerationNode->GetSubWorkspaceMeshSegmentationNode())
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": No sub workspace mesh model node available";
+    return NULL;
+  }
+
+  if (this->SubWorkspaceMeshSegmentationNode !=
+      this->WorkspaceGenerationNode->GetSubWorkspaceMeshSegmentationNode())
+  {
+    this->SubWorkspaceMeshSegmentationNode =
+      this->WorkspaceGenerationNode->GetSubWorkspaceMeshSegmentationNode();
+  }
+
+  return this->SubWorkspaceMeshSegmentationNode;
 }
 
 //------------------------------------------------------------------------------

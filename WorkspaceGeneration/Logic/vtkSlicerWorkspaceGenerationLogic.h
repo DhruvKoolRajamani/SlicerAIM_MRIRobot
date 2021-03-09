@@ -140,14 +140,19 @@ public:
   // Convert vtkMatrix to eigen Matrix
   static Eigen::Matrix4d convertToEigenMatrix(vtkMatrix4x4* vtkMat);
 
-  // Generate Workspace
-  void GenerateWorkspace(vtkMRMLSegmentationNode* segmentationNode,
-                         Probe                    probe);
+  // Generate General Workspace
+  void GenerateGeneralWorkspace(vtkMRMLSegmentationNode* segmentationNode,
+                                Probe                    probe);
+  // Generate Entry Point Workspace
+  void GenerateEPWorkspace(vtkMRMLSegmentationNode* segmentationNode,
+                           Probe                    probe);
 
   // Getters
   vtkSlicerVolumeRenderingLogic* getVolumeRenderingLogic();
   qSlicerAbstractCoreModule*     getVolumeRenderingModule();
   vtkMRMLSegmentationNode*       getWorkspaceMeshSegmentationNode();
+  vtkMRMLSegmentationNode*       getEPWorkspaceMeshSegmentationNode();
+  vtkMRMLSegmentationNode*       getSubWorkspaceMeshSegmentationNode();
   vtkMRMLSegmentationNode*       getBurrHoleSegmentationNode();
   vtkMRMLVolumeRenderingDisplayNode*
     getCurrentInputVolumeRenderingDisplayNode();
@@ -158,6 +163,10 @@ public:
   void setWorkspaceGenerationNode(vtkMRMLWorkspaceGenerationNode* wgn);
   void setWorkspaceMeshSegmentationDisplayNode(
     vtkMRMLSegmentationDisplayNode* workspaceMeshSegmentationDisplayNode);
+  void setEPWorkspaceMeshSegmentationDisplayNode(
+    vtkMRMLSegmentationDisplayNode* ePWorkspaceMeshSegmentationDisplayNode);
+  void setSubWorkspaceMeshSegmentationDisplayNode(
+    vtkMRMLSegmentationDisplayNode* subWorkspaceMeshSegmentationDisplayNode);
   void setBurrHoleSegmentationDisplayNode(
     vtkMRMLSegmentationDisplayNode* burrHoleSegmentationDisplayNode);
 
@@ -188,6 +197,12 @@ protected:
     const QString& maskFileName, bool overwriteCurrentSegment = false,
     boost::optional< float > sliceIndex = boost::none, int* cropBox = nullptr);
 
+  // Load a workspace model as a segmentation
+  bool LoadWorkspaceAsSegmentation(
+    vtkMRMLSegmentationNode* segmentationNode, QString& workspace_name,
+    Eigen::Matrix3Xf&                           workspace,
+    std::chrono::_V2::system_clock::time_point* start = nullptr);
+
   // Parameter Nodes
   vtkMRMLWorkspaceGenerationNode* WorkspaceGenerationNode;
 
@@ -197,10 +212,14 @@ protected:
 
   // Robot Workspace Nodes
   vtkMRMLSegmentationNode* WorkspaceMeshSegmentationNode;
+  vtkMRMLSegmentationNode* EPWorkspaceMeshSegmentationNode;
+  vtkMRMLSegmentationNode* SubWorkspaceMeshSegmentationNode;
 
   // Display Nodes
   vtkMRMLVolumeRenderingDisplayNode* InputVolumeRenderingDisplayNode;
   vtkMRMLSegmentationDisplayNode*    WorkspaceMeshSegmentationDisplayNode;
+  vtkMRMLSegmentationDisplayNode*    EPWorkspaceMeshSegmentationDisplayNode;
+  vtkMRMLSegmentationDisplayNode*    SubWorkspaceMeshSegmentationDisplayNode;
 
   // Volume Rendering Logic
   vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;

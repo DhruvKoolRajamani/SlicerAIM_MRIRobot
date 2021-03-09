@@ -24,6 +24,10 @@ static const char* INPUT_ROLE = "InputVolume";
 static const char* ROI_ROLE   = "ROI";
 static const char* WORKSPACEMESH_SEGMENTATION_ROLE =
   "WorkspaceMeshSegmentation";
+static const char* EP_WORKSPACEMESH_SEGMENTATION_ROLE =
+  "EntryPointWorkspaceMeshSegmentation";
+static const char* SUB_WORKSPACEMESH_SEGMENTATION_ROLE =
+  "SubWorkspaceMeshSegmentation";
 static const char* BURRHOLE_SEGMENTATION_ROLE = "BurrHoleSegmentation";
 static const char* BH_EXTREME_POINT_ROLE      = "BHExtremePoint";
 static const char* ENTRY_POINT_ROLE           = "EntryPoint";
@@ -73,6 +77,14 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
   workspaceMeshEvents->InsertNextValue(vtkCommand::ModifiedEvent);
   workspaceMeshEvents->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
 
+  vtkNew< vtkIntArray > ePWorkspaceMeshEvents;
+  ePWorkspaceMeshEvents->InsertNextValue(vtkCommand::ModifiedEvent);
+  ePWorkspaceMeshEvents->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
+
+  vtkNew< vtkIntArray > subWorkspaceMeshEvents;
+  subWorkspaceMeshEvents->InsertNextValue(vtkCommand::ModifiedEvent);
+  subWorkspaceMeshEvents->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
+
   vtkNew< vtkIntArray > burrHoleSegEvents;
   burrHoleSegEvents->InsertNextValue(vtkCommand::ModifiedEvent);
   burrHoleSegEvents->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
@@ -108,6 +120,10 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
   this->AddNodeReferenceRole(ROI_ROLE);
   this->AddNodeReferenceRole(WORKSPACEMESH_SEGMENTATION_ROLE, NULL,
                              workspaceMeshEvents.GetPointer());
+  this->AddNodeReferenceRole(EP_WORKSPACEMESH_SEGMENTATION_ROLE, NULL,
+                             ePWorkspaceMeshEvents.GetPointer());
+  this->AddNodeReferenceRole(SUB_WORKSPACEMESH_SEGMENTATION_ROLE, NULL,
+                             subWorkspaceMeshEvents.GetPointer());
   this->AddNodeReferenceRole(BURRHOLE_SEGMENTATION_ROLE, NULL,
                              burrHoleSegEvents.GetPointer());
   this->AddNodeReferenceRole(BH_EXTREME_POINT_ROLE, NULL,
@@ -269,6 +285,46 @@ vtkMRMLSegmentationNode*
 
 //-----------------------------------------------------------------
 vtkMRMLSegmentationNode*
+  vtkMRMLWorkspaceGenerationNode::GetEPWorkspaceMeshSegmentationNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLSegmentationNode* ePWorkspaceMeshSegmentationNode =
+    vtkMRMLSegmentationNode::SafeDownCast(
+      this->GetNodeReference(EP_WORKSPACEMESH_SEGMENTATION_ROLE));
+
+  if (!ePWorkspaceMeshSegmentationNode)
+  {
+    qWarning() << Q_FUNC_INFO
+               << ": ePWorkspaceMeshSegmentationNode node is null";
+    return NULL;
+  }
+
+  return ePWorkspaceMeshSegmentationNode;
+}
+
+//-----------------------------------------------------------------
+vtkMRMLSegmentationNode*
+  vtkMRMLWorkspaceGenerationNode::GetSubWorkspaceMeshSegmentationNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLSegmentationNode* subWorkspaceMeshSegmentationNode =
+    vtkMRMLSegmentationNode::SafeDownCast(
+      this->GetNodeReference(SUB_WORKSPACEMESH_SEGMENTATION_ROLE));
+
+  if (!subWorkspaceMeshSegmentationNode)
+  {
+    qWarning() << Q_FUNC_INFO
+               << ": subWorkspaceMeshSegmentationNode node is null";
+    return NULL;
+  }
+
+  return subWorkspaceMeshSegmentationNode;
+}
+
+//-----------------------------------------------------------------
+vtkMRMLSegmentationNode*
   vtkMRMLWorkspaceGenerationNode::GetBurrHoleSegmentationNode()
 {
   qInfo() << Q_FUNC_INFO;
@@ -370,17 +426,86 @@ void vtkMRMLWorkspaceGenerationNode::
   qInfo() << Q_FUNC_INFO;
 
   // error check
+  const char* ePWorkspaceMeshSegmentationNodeId =
+    this->GetNodeReferenceID(EP_WORKSPACEMESH_SEGMENTATION_ROLE);
+  const char* subWorkspaceMeshSegmentationNodeId =
+    this->GetNodeReferenceID(SUB_WORKSPACEMESH_SEGMENTATION_ROLE);
   const char* roiId = this->GetNodeReferenceID(ROI_ROLE);
-  if (workspaceMeshSegmentationNodeId != NULL && roiId != NULL &&
+  if (workspaceMeshSegmentationNodeId != NULL &&
+      ePWorkspaceMeshSegmentationNodeId != NULL &&
+      subWorkspaceMeshSegmentationNodeId != NULL && roiId != NULL &&
+      strcmp(workspaceMeshSegmentationNodeId,
+             ePWorkspaceMeshSegmentationNodeId) == 0 &&
+      strcmp(workspaceMeshSegmentationNodeId,
+             subWorkspaceMeshSegmentationNodeId) == 0 &&
       strcmp(workspaceMeshSegmentationNodeId, roiId) == 0)
   {
-    vtkErrorMacro(
-      "Workspace Mesh node and Annotation ROI Node cannot be same.");
+    vtkErrorMacro("Workspace Mesh node cannot match any other node");
     return;
   }
 
   this->SetAndObserveNodeReferenceID(WORKSPACEMESH_SEGMENTATION_ROLE,
                                      workspaceMeshSegmentationNodeId);
+}
+
+//-----------------------------------------------------------------
+void vtkMRMLWorkspaceGenerationNode::
+  SetAndObserveEPWorkspaceMeshSegmentationNodeID(
+    const char* ePWorkspaceMeshSegmentationNodeId)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  // error check
+  const char* workspaceMeshSegmentationNodeId =
+    this->GetNodeReferenceID(WORKSPACEMESH_SEGMENTATION_ROLE);
+  const char* subWorkspaceMeshSegmentationNodeId =
+    this->GetNodeReferenceID(SUB_WORKSPACEMESH_SEGMENTATION_ROLE);
+  const char* roiId = this->GetNodeReferenceID(ROI_ROLE);
+  if (ePWorkspaceMeshSegmentationNodeId != NULL &&
+      workspaceMeshSegmentationNodeId != NULL &&
+      subWorkspaceMeshSegmentationNodeId != NULL && roiId != NULL &&
+      strcmp(ePWorkspaceMeshSegmentationNodeId,
+             workspaceMeshSegmentationNodeId) == 0 &&
+      strcmp(ePWorkspaceMeshSegmentationNodeId,
+             subWorkspaceMeshSegmentationNodeId) == 0 &&
+      strcmp(ePWorkspaceMeshSegmentationNodeId, roiId) == 0)
+  {
+    vtkErrorMacro("EP Workspace Mesh node cannot match any other node");
+    return;
+  }
+
+  this->SetAndObserveNodeReferenceID(EP_WORKSPACEMESH_SEGMENTATION_ROLE,
+                                     ePWorkspaceMeshSegmentationNodeId);
+}
+
+//-----------------------------------------------------------------
+void vtkMRMLWorkspaceGenerationNode::
+  SetAndObserveSubWorkspaceMeshSegmentationNodeID(
+    const char* subWorkspaceMeshSegmentationNodeId)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  // error check
+  const char* workspaceMeshSegmentationNodeId =
+    this->GetNodeReferenceID(WORKSPACEMESH_SEGMENTATION_ROLE);
+  const char* ePWorkspaceMeshSegmentationNodeId =
+    this->GetNodeReferenceID(SUB_WORKSPACEMESH_SEGMENTATION_ROLE);
+  const char* roiId = this->GetNodeReferenceID(ROI_ROLE);
+  if (subWorkspaceMeshSegmentationNodeId != NULL &&
+      workspaceMeshSegmentationNodeId != NULL &&
+      ePWorkspaceMeshSegmentationNodeId != NULL && roiId != NULL &&
+      strcmp(subWorkspaceMeshSegmentationNodeId,
+             workspaceMeshSegmentationNodeId) == 0 &&
+      strcmp(subWorkspaceMeshSegmentationNodeId,
+             ePWorkspaceMeshSegmentationNodeId) == 0 &&
+      strcmp(subWorkspaceMeshSegmentationNodeId, roiId) == 0)
+  {
+    vtkErrorMacro("Sub Workspace Mesh node cannot match any other node");
+    return;
+  }
+
+  this->SetAndObserveNodeReferenceID(SUB_WORKSPACEMESH_SEGMENTATION_ROLE,
+                                     subWorkspaceMeshSegmentationNodeId);
 }
 
 //-----------------------------------------------------------------

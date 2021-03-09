@@ -78,10 +78,14 @@ public:
   // vtkMRMLVolumeNode* InputVolumeNode;
   // vtkMRMLAnnotationROINode* AnnotationROINode;
   vtkMRMLSegmentationNode* WorkspaceMeshSegmentationNode;
+  vtkMRMLSegmentationNode* EPWorkspaceMeshSegmentationNode;
+  vtkMRMLSegmentationNode* SubWorkspaceMeshSegmentationNode;
   vtkMRMLSegmentationNode* BurrHoleSegmentationNode;
 
   vtkMRMLVolumeRenderingDisplayNode* InputVolumeRenderingDisplayNode;
   vtkMRMLSegmentationDisplayNode*    WorkspaceMeshSegmentationDisplayNode;
+  vtkMRMLSegmentationDisplayNode*    EPWorkspaceMeshSegmentationDisplayNode;
+  vtkMRMLSegmentationDisplayNode*    SubWorkspaceMeshSegmentationDisplayNode;
   vtkMRMLSegmentationDisplayNode*    BurrHoleSegmentationDisplayNode;
   vtkMRMLMarkupsDisplayNode*         BHExtremePointDisplayNode;
   vtkMRMLMarkupsDisplayNode*         EntryPointDisplayNode;
@@ -728,8 +732,8 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
   d->WorkspaceMeshRegistrationMatrix->DeepCopy(
     d->RegistrationMatrix__3_10->values().data());
 
-  d->logic()->GenerateWorkspace(workspaceMeshSegmentationNode,
-                                d->ProbeSpecs.convertToProbe());
+  d->logic()->GenerateGeneralWorkspace(workspaceMeshSegmentationNode,
+                                       d->ProbeSpecs.convertToProbe());
 
   // d->WorkspaceMeshSegmentationNode =
   // d->logic()->getWorkspaceMeshSegmentationNode();
@@ -809,7 +813,7 @@ void qSlicerWorkspaceGenerationModuleWidget::
 
   if (modelNode->GetName())
   {
-    std::string outputModelNodeName = "GeneralWorkspace";
+    std::string outputModelNodeName = "EntryPointWorkspace";
     // std::string(modelNode->GetName()).append("GeneralWorkspace");
     modelNode->SetName(outputModelNodeName.c_str());
   }
@@ -831,9 +835,10 @@ void qSlicerWorkspaceGenerationModuleWidget::
     qCritical() << Q_FUNC_INFO
                 << ": invalid Entry Point Workspace Generation Node";
 
-    workspaceGenerationNode->SetAndObserveWorkspaceMeshSegmentationNodeID(NULL);
+    workspaceGenerationNode->SetAndObserveEPWorkspaceMeshSegmentationNodeID(
+      NULL);
     d->RegistrationMatrix__3_10->setDisabled(true);
-    d->WorkspaceMeshSegmentationDisplayNode = NULL;
+    d->EPWorkspaceMeshSegmentationDisplayNode = NULL;
 
     return;
   }
@@ -842,37 +847,38 @@ void qSlicerWorkspaceGenerationModuleWidget::
   {
     qCritical() << Q_FUNC_INFO << ": unexpected workspace mesh model node type";
 
-    workspaceGenerationNode->SetAndObserveWorkspaceMeshSegmentationNodeID(NULL);
-    d->RegistrationMatrix__3_10->setDisabled(true);
-    d->WorkspaceMeshSegmentationDisplayNode = NULL;
+    workspaceGenerationNode->SetAndObserveEPWorkspaceMeshSegmentationNodeID(
+      NULL);
+    d->EPWorkspaceMeshSegmentationDisplayNode = NULL;
 
     return;
   }
 
-  vtkMRMLSegmentationNode* workspaceMeshSegmentationNode =
+  vtkMRMLSegmentationNode* ePWorkspaceMeshSegmentationNode =
     vtkMRMLSegmentationNode::SafeDownCast(nodeSelected);
 
-  if (workspaceMeshSegmentationNode == NULL)
+  if (ePWorkspaceMeshSegmentationNode == NULL)
   {
     qCritical() << Q_FUNC_INFO
-                << ": workspace mesh node has not been added yet.";
+                << ": entry point workspace mesh node has not been added yet.";
 
-    workspaceGenerationNode->SetAndObserveWorkspaceMeshSegmentationNodeID(NULL);
-    d->RegistrationMatrix__3_10->setDisabled(true);
-    d->WorkspaceMeshSegmentationDisplayNode = NULL;
+    workspaceGenerationNode->SetAndObserveEPWorkspaceMeshSegmentationNodeID(
+      NULL);
+    d->EPWorkspaceMeshSegmentationDisplayNode = NULL;
 
     return;
   }
 
-  workspaceGenerationNode->SetAndObserveWorkspaceMeshSegmentationNodeID(
-    workspaceMeshSegmentationNode->GetID());
+  workspaceGenerationNode->SetAndObserveEPWorkspaceMeshSegmentationNodeID(
+    ePWorkspaceMeshSegmentationNode->GetID());
   auto segmentationDisplayNode = vtkMRMLSegmentationDisplayNode::SafeDownCast(
-    workspaceMeshSegmentationNode->GetDisplayNode());
-  qvtkReconnect(d->WorkspaceMeshSegmentationDisplayNode,
+    ePWorkspaceMeshSegmentationNode->GetDisplayNode());
+  qvtkReconnect(d->EPWorkspaceMeshSegmentationDisplayNode,
                 segmentationDisplayNode, vtkCommand::ModifiedEvent, this,
                 SLOT(updateGUIFromMRML()));
   // d->WorkspaceMeshSegmentationDisplayNode = segmentationDisplayNode;
-  d->logic()->setWorkspaceMeshSegmentationDisplayNode(segmentationDisplayNode);
+  d->logic()->setEPWorkspaceMeshSegmentationDisplayNode(
+    segmentationDisplayNode);
 
   // Create logic to accommodate creating a new annotation ROI node.
   // Should you transfer the data to the new node? Reset all visibility params?
@@ -897,10 +903,10 @@ void qSlicerWorkspaceGenerationModuleWidget::
     return;
   }
 
-  vtkMRMLSegmentationNode* workspaceMeshSegmentationNode =
-    workspaceGenerationNode->GetWorkspaceMeshSegmentationNode();
+  vtkMRMLSegmentationNode* ePWorkspaceMeshSegmentationNode =
+    workspaceGenerationNode->GetEPWorkspaceMeshSegmentationNode();
 
-  if (!workspaceMeshSegmentationNode)
+  if (!ePWorkspaceMeshSegmentationNode)
   {
     qCritical() << Q_FUNC_INFO << ": No workspace mesh model node created";
     return;
@@ -917,17 +923,18 @@ void qSlicerWorkspaceGenerationModuleWidget::
   d->WorkspaceMeshRegistrationMatrix->DeepCopy(
     d->RegistrationMatrix__3_10->values().data());
 
-  d->logic()->GenerateWorkspace(workspaceMeshSegmentationNode,
-                                d->ProbeSpecs.convertToProbe());
+  d->logic()->GenerateEPWorkspace(ePWorkspaceMeshSegmentationNode,
+                                  d->ProbeSpecs.convertToProbe());
   // ,
   // d->WorkspaceMeshRegistrationMatrix);
 
   // d->WorkspaceMeshSegmentationNode =
   // d->logic()->getWorkspaceMeshSegmentationNode();
-  d->WorkspaceMeshSegmentationNode = workspaceMeshSegmentationNode;
-  d->WorkspaceModelSelector__3_2->setCurrentNode(workspaceMeshSegmentationNode);
+  d->EPWorkspaceMeshSegmentationNode = ePWorkspaceMeshSegmentationNode;
+  d->EntryPointWorkspaceModelSelector__3_13->setCurrentNode(
+    ePWorkspaceMeshSegmentationNode);
 
-  workspaceMeshSegmentationNode->ApplyTransformMatrix(
+  ePWorkspaceMeshSegmentationNode->ApplyTransformMatrix(
     d->WorkspaceMeshRegistrationMatrix);
 
   this->updateGUIFromMRML();
@@ -950,23 +957,25 @@ void qSlicerWorkspaceGenerationModuleWidget::
     return;
   }
 
-  vtkMRMLSegmentationNode* workspaceMeshSegmentationNode =
-    d->logic()->getWorkspaceMeshSegmentationNode();
+  vtkMRMLSegmentationNode* ePWorkspaceMeshSegmentationNode =
+    d->logic()->getEPWorkspaceMeshSegmentationNode();
 
-  if (!workspaceMeshSegmentationNode)
+  if (!ePWorkspaceMeshSegmentationNode)
   {
-    qCritical() << Q_FUNC_INFO << ": No workspace mesh model node created";
+    qCritical() << Q_FUNC_INFO
+                << ": No entry point workspace mesh model node created";
     return;
   }
 
   // Get volume rendering display node for volume. Create if absent.
-  if (!d->WorkspaceMeshSegmentationDisplayNode)
+  if (!d->EPWorkspaceMeshSegmentationDisplayNode)
   {
-    qCritical() << Q_FUNC_INFO << ": No workspace mesh model display node";
+    qCritical() << Q_FUNC_INFO
+                << ": No entry point workspace mesh model display node";
     return;
   }
 
-  d->WorkspaceMeshSegmentationDisplayNode->SetVisibility(visible);
+  d->EPWorkspaceMeshSegmentationDisplayNode->SetVisibility(visible);
 
   // Update widget from display node of the volume node
   this->updateGUIFromMRML();
@@ -1846,7 +1855,6 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
     setCheckState(d->WorkspaceVisibilityToggle__3_12, false);
     qWarning() << Q_FUNC_INFO << ": No Workspace Mesh Node available.";
     d->WorkspaceMeshSegmentationDisplayNode = NULL;
-    setCheckState(d->WorkspaceVisibilityToggle__3_12, false);
   }
   else
   {
@@ -1866,6 +1874,42 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
     else
     {
       setCheckState(d->WorkspaceVisibilityToggle__3_12, false);
+    }
+  }
+
+  d->EntryPointWorkspaceModelSelector__3_13->setMRMLScene(this->mrmlScene());
+
+  vtkMRMLSegmentationNode* ePWorkspaceMeshSegmentationNode =
+    workspaceGenerationNode->GetEPWorkspaceMeshSegmentationNode();
+
+  d->EntryPointWorkspaceModelSelector__3_13->setCurrentNode(
+    ePWorkspaceMeshSegmentationNode);
+
+  if (!ePWorkspaceMeshSegmentationNode)
+  {
+    setCheckState(d->EntryPointWorkspaceVisibilityToggle__3_14, false);
+    qWarning() << Q_FUNC_INFO
+               << ": No Entry Point Workspace Mesh Node available.";
+    d->EPWorkspaceMeshSegmentationDisplayNode = NULL;
+  }
+  else
+  {
+    d->EPWorkspaceMeshSegmentationNode = ePWorkspaceMeshSegmentationNode;
+
+    // Workspace Generation display options
+    d->EPWorkspaceMeshSegmentationDisplayNode =
+      vtkMRMLSegmentationDisplayNode::SafeDownCast(
+        ePWorkspaceMeshSegmentationNode->GetDisplayNode());
+
+    if (d->EPWorkspaceMeshSegmentationDisplayNode != NULL)
+    {
+      auto visibility =
+        d->EPWorkspaceMeshSegmentationDisplayNode->GetVisibility();
+      setCheckState(d->EntryPointWorkspaceVisibilityToggle__3_14, visibility);
+    }
+    else
+    {
+      setCheckState(d->EntryPointWorkspaceVisibilityToggle__3_14, false);
     }
   }
 
