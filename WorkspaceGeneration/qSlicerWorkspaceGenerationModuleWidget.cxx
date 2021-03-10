@@ -339,10 +339,10 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
   setCheckState(d->WorkspaceVisibilityToggle__3_12, false);
 
   // Set default probe specs
-  double _cannulaToTreatment{5.0};       // C
-  double _treatmentToTip{10.0};          // A
+  double _cannulaToTreatment{0.0};       // C
+  double _treatmentToTip{7.0};           // A
   double _robotToEntry{5.0};             // B
-  double _robotToTreatmentAtHome{41.0};  // D
+  double _robotToTreatmentAtHome{33.0};  // D
 
   d->A_DoubleSpinBox__3_5->setValue(_treatmentToTip);
   d->B_DoubleSpinBox__3_6->setValue(_robotToEntry);
@@ -359,9 +359,9 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
   // Set temporary values for temp mri image.
   // TODO: Remove once testing pig images
   auto regMat = d->RegistrationMatrix__3_10->values();
-  regMat[3]   = -100;
-  regMat[7]   = 300;
-  regMat[11]  = 100;
+  regMat[3]   = 3.59;
+  regMat[7]   = -131.75;
+  regMat[11]  = -15.38;
   qDebug() << Q_FUNC_INFO << regMat;
   d->RegistrationMatrix__3_10->setValues(regMat);
 
