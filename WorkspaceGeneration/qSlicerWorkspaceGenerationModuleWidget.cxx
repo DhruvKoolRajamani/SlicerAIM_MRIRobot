@@ -150,7 +150,12 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
   allInteractiveWidgets = QList< QWidget* >();
   foreach (QWidget* w, allWidgets)
   {
-    if (QString::compare(w->objectName(), "") != 0)
+    if (QString::compare(w->objectName(),
+                         "InputVolumeRenderingPresetComboBox__2_6") == 0)
+    {
+      continue;
+    }
+    else if (QString::compare(w->objectName(), "") != 0)
     {
       allInteractiveWidgets.append(w);
     }
@@ -362,6 +367,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
 
   d->InputVolumeRenderingPresetSettingsCollapsibleButton__2_5->setCollapsed(
     true);
+  d->InputVolumeRenderingPresetComboBox__2_6->setDisabled(true);
 
   d->ProbeSpecsCollapsibleButton__3_3->setCollapsed(true);
   d->RegistrationMatrixCollapsibleButton__3_9->setCollapsed(true);
@@ -409,7 +415,8 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeNodeSelectionChanged(
   }
 
   d->InputVolumeRenderingPresetSettingsCollapsibleButton__2_5->setCollapsed(
-    false);
+    true);
+  d->InputVolumeRenderingPresetComboBox__2_6->setDisabled(true);
 
   d->WorkspaceModelSelector__3_2->addNode();
   d->ProbeSpecsCollapsibleButton__3_3->setCollapsed(false);
@@ -740,8 +747,8 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
   d->WorkspaceMeshSegmentationNode = workspaceMeshSegmentationNode;
   d->WorkspaceModelSelector__3_2->setCurrentNode(workspaceMeshSegmentationNode);
 
-  // workspaceMeshSegmentationNode->ApplyTransformMatrix(
-  //   d->WorkspaceMeshRegistrationMatrix);
+  workspaceMeshSegmentationNode->ApplyTransformMatrix(
+    d->WorkspaceMeshRegistrationMatrix);
 
   this->updateGUIFromMRML();
 }
@@ -1221,7 +1228,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onDetectBurrHoleClick()
     return;
   }
 
-  bool burrholeSet = d->logic()->DebugIdentifyBurrHole(workspaceGenerationNode);
+  bool burrholeSet = d->logic()->IdentifyBurrHole(workspaceGenerationNode);
 
   if (burrholeSet)
   {
@@ -2035,26 +2042,26 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
 
     if (d->InputVolumeRenderingDisplayNode != NULL)
     {
-      // Get the current Volume Property Node.
-      d->VolumePropertyNode =
-        d->InputVolumeRenderingDisplayNode->GetVolumePropertyNode();
+      // // Get the current Volume Property Node.
+      // d->VolumePropertyNode =
+      //   d->InputVolumeRenderingDisplayNode->GetVolumePropertyNode();
 
-      // Copy the MRI preset to the volume property node
-      d->VolumePropertyNode->Copy(
-        this->VolumeRenderingLogic->GetPresetByName("MR-Default"));
+      // // Copy the MRI preset to the volume property node
+      // d->VolumePropertyNode->Copy(
+      //   this->VolumeRenderingLogic->GetPresetByName("MR-Default"));
 
-      // Set the current mrml scene in the preset combo box widget
-      d->InputVolumeRenderingPresetComboBox__2_6->setMRMLScene(
-        this->mrmlScene());
+      // // Set the current mrml scene in the preset combo box widget
+      // d->InputVolumeRenderingPresetComboBox__2_6->setMRMLScene(
+      //   this->mrmlScene());
 
-      // Have the preset combo box observe the vol rendering display property
-      // node.
-      d->InputVolumeRenderingPresetComboBox__2_6->setMRMLVolumePropertyNode(
-        d->VolumePropertyNode);
+      // // Have the preset combo box observe the vol rendering display property
+      // // node.
+      // d->InputVolumeRenderingPresetComboBox__2_6->setMRMLVolumePropertyNode(
+      //   d->VolumePropertyNode);
 
-      // Set the current node to the preset combo box
-      d->InputVolumeRenderingPresetComboBox__2_6->setCurrentNode(
-        this->VolumeRenderingLogic->GetPresetByName("MR-Default"));
+      // // Set the current node to the preset combo box
+      // d->InputVolumeRenderingPresetComboBox__2_6->setCurrentNode(
+      //   this->VolumeRenderingLogic->GetPresetByName("MR-Default"));
 
       auto visibility = d->InputVolumeRenderingDisplayNode->GetVisibility();
       setCheckState(d->InputVolumeSetVisibilityCheckBox__2_3, visibility);

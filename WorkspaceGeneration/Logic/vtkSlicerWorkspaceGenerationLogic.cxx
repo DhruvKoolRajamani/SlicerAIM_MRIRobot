@@ -672,7 +672,7 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   {
     try
     {
-      NvidiaAIAAClient = new nvidia::aiaa::Client("http://192.168.1.4:8123");
+      NvidiaAIAAClient = new nvidia::aiaa::Client("http://172.0.0.1:8123");
 
       std::string response = NvidiaAIAAClient->createSession(
         std::string(inFileInfo.absoluteFilePath().toUtf8().constData()));
@@ -1229,18 +1229,57 @@ bool vtkSlicerWorkspaceGenerationLogic::LoadWorkspaceAsSegmentation(
       return false;
     }
 
-    if (this->SegmentationsLogic != NULL)
+    vtkNew< vtkPolyData > modelPolyData;
+    modelPolyData->DeepCopy(workspaceModelNode->GetPolyData());
+
+    this->GetMRMLScene()->RemoveReferencesToNode(workspaceModelNode);
+    this->GetMRMLScene()->RemoveNode(workspaceModelNode);
+
+    std::string segment_name =
+      QString(workspace_name + QString("_segment")).toUtf8().data();
+
+    vtkSmartPointer< vtkSegment > segment =
+      segmentationNode->GetSegmentation()->GetSegment(segment_name);
+
+    if (segment != NULL)
     {
-      vtkSmartPointer< vtkSegment > segment =
-        vtkSmartPointer< vtkSegment >::Take(
-          this->SegmentationsLogic->CreateSegmentFromModelNode(
-            workspaceModelNode, segmentationNode));
-      if (segment == NULL)
-      {
-        qCritical() << Q_FUNC_INFO
-                    << ": Unable to convert workspace model to segmentation";
-        return false;
-      }
+      qDebug() << Q_FUNC_INFO << ": Removing previous segment";
+      segmentationNode->GetSegmentation()->RemoveSegment(segment);
+    }
+
+    segmentationNode->SetMasterRepresentationToClosedSurface();
+    segmentationNode->AddSegmentFromClosedSurfaceRepresentation(modelPolyData,
+                                                                segment_name);
+
+    // Attach a display node if needed
+    vtkMRMLSegmentationDisplayNode* displayNode =
+      vtkMRMLSegmentationDisplayNode::SafeDownCast(
+        segmentationNode->GetDisplayNode());
+    if (displayNode == NULL)
+    {
+      qWarning() << Q_FUNC_INFO
+                 << ": Display node is null, creating a new one ";
+
+      segmentationNode->CreateDefaultDisplayNodes();
+      displayNode = vtkMRMLSegmentationDisplayNode::SafeDownCast(
+        segmentationNode->GetDisplayNode());
+    }
+
+    if (displayNode)
+    {
+      std::string name =
+        std::string(segmentationNode->GetName()).append("SegmentationDisplay");
+      displayNode->SetName(name.c_str());
+      displayNode->SetColor(1, 1, 0);
+      displayNode->Visibility2DOn();
+      displayNode->Visibility3DOn();
+      // displayNode->SetSliceDisplayModeToIntersection();
+      // displayNode->SetSliceIntersectionVisibility(true);
+      // displayNode->SetVisibility(true);
+      displayNode->SetSliceIntersectionThickness(2);
+      // qDebug() << Q_FUNC_INFO
+      //          << displayNode->GetSliceDisplayModeAsString(
+      //               displayNode->GetSliceDisplayMode());
     }
   }
 
