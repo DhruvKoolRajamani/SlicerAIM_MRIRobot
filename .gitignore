@@ -291,4 +291,4 @@ compile_commands.json
 *.log
 *.ply
 *.xyz
-!WorkspaceGeneration/Resources/meshes/*
+!WorkspaceGeneration/Resources/meshes/mesh_generation_script.mlx

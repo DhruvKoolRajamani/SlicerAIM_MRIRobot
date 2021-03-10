@@ -37,7 +37,7 @@ NeuroKinematics::NeuroKinematics()
   zFrameToTargetPointFinal      = Eigen::Matrix4d::Identity();
 }
 
-NeuroKinematics::NeuroKinematics(Probe* probe)
+NeuroKinematics::NeuroKinematics(Probe* probe) : _probe(probe)
 {
   // All values are in units of mm
   _lengthOfAxialTrapezoidSideLink = 60;   // L1 link
@@ -47,9 +47,6 @@ NeuroKinematics::NeuroKinematics(Probe* probe)
   _yInitialRCM                    = 178.39;
   _zInitialRCM                    = 72.91;
   _robotToRCMOffset               = 72.5;
-
-  // Object that stores probe specific configurations
-  _probe = probe;
 
   // Transformation that accounts for change in rotation between zFrame and RCM
   _zFrameToRCM << -1, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 1;

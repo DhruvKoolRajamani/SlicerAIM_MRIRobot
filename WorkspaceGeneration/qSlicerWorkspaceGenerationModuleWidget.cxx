@@ -735,9 +735,15 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
     d->D_DoubleSpinBox__3_8->value()   // _robotToTreatmentAtHome
   };
 
-  d->WorkspaceMeshRegistrationMatrix = vtkMatrix4x4::New();
-  d->WorkspaceMeshRegistrationMatrix->DeepCopy(
-    d->RegistrationMatrix__3_10->values().data());
+  vtkNew< vtkMatrix4x4 > registration_matrix;
+  registration_matrix->DeepCopy(d->RegistrationMatrix__3_10->values().data());
+
+  Probe probe = d->ProbeSpecs.convertToProbe();
+  qDebug() << Q_FUNC_INFO
+           << ": Probe Specifications are: A=" << probe._treatmentToTip
+           << " B= " << probe._robotToEntry
+           << " C= " << probe._cannulaToTreatment
+           << " D= " << probe._robotToTreatmentAtHome;
 
   d->logic()->GenerateGeneralWorkspace(workspaceMeshSegmentationNode,
                                        d->ProbeSpecs.convertToProbe());
@@ -747,8 +753,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
   d->WorkspaceMeshSegmentationNode = workspaceMeshSegmentationNode;
   d->WorkspaceModelSelector__3_2->setCurrentNode(workspaceMeshSegmentationNode);
 
-  workspaceMeshSegmentationNode->ApplyTransformMatrix(
-    d->WorkspaceMeshRegistrationMatrix);
+  workspaceMeshSegmentationNode->ApplyTransformMatrix(registration_matrix);
 
   this->updateGUIFromMRML();
 }
@@ -926,9 +931,8 @@ void qSlicerWorkspaceGenerationModuleWidget::
     d->D_DoubleSpinBox__3_8->value()   // _robotToTreatmentAtHome
   };
 
-  d->WorkspaceMeshRegistrationMatrix = vtkMatrix4x4::New();
-  d->WorkspaceMeshRegistrationMatrix->DeepCopy(
-    d->RegistrationMatrix__3_10->values().data());
+  vtkNew< vtkMatrix4x4 > registration_matrix;
+  registration_matrix->DeepCopy(d->RegistrationMatrix__3_10->values().data());
 
   d->logic()->GenerateEPWorkspace(ePWorkspaceMeshSegmentationNode,
                                   d->ProbeSpecs.convertToProbe());
@@ -941,8 +945,7 @@ void qSlicerWorkspaceGenerationModuleWidget::
   d->EntryPointWorkspaceModelSelector__3_13->setCurrentNode(
     ePWorkspaceMeshSegmentationNode);
 
-  ePWorkspaceMeshSegmentationNode->ApplyTransformMatrix(
-    d->WorkspaceMeshRegistrationMatrix);
+  ePWorkspaceMeshSegmentationNode->ApplyTransformMatrix(registration_matrix);
 
   this->updateGUIFromMRML();
 }
