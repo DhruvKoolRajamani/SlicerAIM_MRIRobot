@@ -128,7 +128,8 @@ public:
   void UpdateMarkupFiducialNodes();
 
   // Update the subworkspace
-  void UpdateSubWorkspace(vtkMRMLWorkspaceGenerationNode*, bool);
+  void UpdateSubWorkspace(vtkMRMLWorkspaceGenerationNode*, Probe probe,
+                          vtkMatrix4x4* registration_matrix);
 
   // Identify the Burr Hole
   bool DebugIdentifyBurrHole(vtkMRMLWorkspaceGenerationNode*);

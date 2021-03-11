@@ -110,6 +110,10 @@ protected slots:
   void onBHExtremePointChanged(vtkMRMLNode*);
   void onEntryPointAdded(vtkMRMLNode*);
   void onEntryPointSelectionChanged(vtkMRMLNode*);
+  void onSubWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode*);
+  void onSubWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode*);
+  void onGenerateSubWorkspaceClick();
+  void onSubWorkspaceMeshVisibilityChanged(bool visible);
   void onTargetPointSelectionChanged(vtkMRMLNode*);
   void onTargetPointAdded(vtkMRMLNode*);
   void onMarkupChanged(vtkObject*, unsigned long, void*);

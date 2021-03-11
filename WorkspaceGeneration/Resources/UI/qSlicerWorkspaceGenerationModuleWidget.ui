@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>709</width>
-    <height>898</height>
+    <height>983</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -33,6 +33,11 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="font">
+        <font>
+         <family>DejaVu Sans</family>
+        </font>
+       </property>
        <property name="text">
         <string>Parameter Node</string>
        </property>
@@ -43,6 +48,11 @@
      </item>
      <item row="0" column="1" colspan="3">
       <widget class="qMRMLNodeComboBox" name="ParameterNodeSelector__1_1">
+       <property name="font">
+        <font>
+         <family>DejaVu Sans</family>
+        </font>
+       </property>
        <property name="nodeTypes">
         <stringlist>
          <string>vtkMRMLWorkspaceGenerationNode</string>
@@ -783,46 +793,6 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="BurrHoleExtremePointMarkupsLabel">
-        <property name="font">
-         <font>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Boundary Markups</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="qMRMLNodeComboBox" name="BurrHoleExtremeMarkupsFiducialSelector__4_2">
-        <property name="font">
-         <font>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="nodeTypes">
-         <stringlist>
-          <string>vtkMRMLMarkupsFiducialNode</string>
-         </stringlist>
-        </property>
-        <property name="noneEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="addEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="renameEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="selectNodeUponCreation">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="1">
        <widget class="qMRMLNodeComboBox" name="BurrHoleSegmentationSelector__4_5">
         <property name="font">
@@ -874,6 +844,46 @@
          <bool>true</bool>
         </property>
         <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="BurrHoleExtremePointMarkupsLabel">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Boundary Markups</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="qMRMLNodeComboBox" name="BurrHoleExtremeMarkupsFiducialSelector__4_2">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="nodeTypes">
+         <stringlist>
+          <string>vtkMRMLMarkupsFiducialNode</string>
+         </stringlist>
+        </property>
+        <property name="noneEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="addEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="renameEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="selectNodeUponCreation">
          <bool>true</bool>
         </property>
        </widget>
@@ -978,7 +988,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="TargetPointSelectLabel">
         <property name="font">
          <font>
@@ -1018,8 +1028,8 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="qMRMLNodeComboBox" name="TargetPointFiducialSelector__5_4">
+      <item row="3" column="1">
+       <widget class="qMRMLNodeComboBox" name="TargetPointFiducialSelector__5_7">
         <property name="font">
          <font>
           <weight>50</weight>
@@ -1045,8 +1055,8 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="qSlicerMarkupsPlaceWidget" name="TargetPointMarkupsPlaceWidget__5_5">
+      <item row="3" column="2">
+       <widget class="qSlicerMarkupsPlaceWidget" name="TargetPointMarkupsPlaceWidget__5_8">
         <property name="buttonsVisible">
          <bool>true</bool>
         </property>
@@ -1072,6 +1082,96 @@
         </property>
         <property name="text">
          <string>Entry Point (EP)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="SubWorkspaceMeshSelectionLabel">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Burr Hole Segmentation</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="qMRMLNodeComboBox" name="SubWorkspaceMeshSelector__5_4">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="nodeTypes">
+         <stringlist>
+          <string>vtkMRMLSegmentationNode</string>
+         </stringlist>
+        </property>
+        <property name="noneEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="addEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="renameEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="selectNodeUponCreation">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="ctkPushButton" name="SubWorkspaceMeshSetVisibilityCheckBox__5_5">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Visibility</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="3">
+       <widget class="QPushButton" name="GenerateSubWorkspaceButton__5_6">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Generate Sub Workspace</string>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
         </property>
        </widget>
       </item>

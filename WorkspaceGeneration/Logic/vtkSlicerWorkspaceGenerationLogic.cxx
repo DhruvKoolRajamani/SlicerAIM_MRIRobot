@@ -672,7 +672,7 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   {
     try
     {
-      NvidiaAIAAClient = new nvidia::aiaa::Client("http://172.0.0.1:8123");
+      NvidiaAIAAClient = new nvidia::aiaa::Client("http://127.0.0.1:8123");
 
       std::string response = NvidiaAIAAClient->createSession(
         std::string(inFileInfo.absoluteFilePath().toUtf8().constData()));
@@ -858,7 +858,8 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
 // feature: #18 Generate subworkspace given markup points. @FaridTavakol
 //------------------------------------------------------------------------------
 void vtkSlicerWorkspaceGenerationLogic::UpdateSubWorkspace(
-  vtkMRMLWorkspaceGenerationNode* wsgn, bool apriori)
+  vtkMRMLWorkspaceGenerationNode* wsgn, Probe probe,
+  vtkMatrix4x4* registration_matrix)
 {
   qInfo() << Q_FUNC_INFO;
 
@@ -870,22 +871,58 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSubWorkspace(
     return;
   }
 
-  double entryPoint[3] = {0.0, 0.0, 0.0};
-  entryPointNode->GetNthFiducialWorldCoordinates(0, entryPoint);
+  double* entryPoint = entryPointNode->GetNthControlPointPosition(0);
+  // convert LPS to RAS
+  entryPoint[0] = -entryPoint[0];
 
-  double* entryPointPtr = entryPoint;
-  double  simple        = 0.0;
-
-  double* simplePtr = &simple;
-
-  if (apriori)
+  if (true)
   {
-    // Get Default burr hole parameters to perform fit
-    // Use Burrholeparameters class, as of now assume radius to be constant.
-    // center vector will change in xyz. initial step take:
-    //      BurrHoleCenter = (Registration Matrix*(???)) Vector(TargetPoint -
-    //      EntryPoint)
+    QString epstr;
+    for (int i = 0; i < 3; i++)
+    {
+      epstr += std::to_string(entryPoint[i]).c_str();
+      epstr += ", ";
+    }
+
+    qDebug() << Q_FUNC_INFO << ": Coordinates are: [" << epstr << "]";
   }
+
+  vtkSmartPointer< vtkMRMLSegmentationNode > segmentationNode =
+    wsgn->GetSubWorkspaceMeshSegmentationNode();
+  if (segmentationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": subworkspace generation model node is invalid";
+    return;
+  }
+
+  // Initialize NeuroKinematics
+  NeuroKinematics        neuro_kinematics(&probe);
+  WorkspaceVisualization ws(neuro_kinematics);
+
+  std::chrono::_V2::system_clock::time_point start =
+    std::chrono::high_resolution_clock::now();
+  vtkSmartPointer< vtkPoints > workspacePointCloud =
+    vtkSmartPointer< vtkPoints >::New();
+
+  double output_point[4] = {0, 0, 0, 0};
+  registration_matrix->MultiplyPoint(entryPoint, output_point);
+
+  Eigen::Vector3d  ep = {output_point[0], output_point[1], output_point[2]};
+  Eigen::Matrix3Xf sub_workspace = ws.GetSubWorkspace(ep);
+
+  QString workspace_name = "sub_workspace";
+
+  bool isWSLoadedState = this->LoadWorkspaceAsSegmentation(
+    segmentationNode, workspace_name, sub_workspace, &start);
+
+  if (!isWSLoadedState)
+  {
+    qCritical() << Q_FUNC_INFO << ": Workspace loading failed";
+    return;
+  }
+
+  this->SubWorkspaceMeshSegmentationNode = segmentationNode;
 }
 
 //------------------------------------------------------------------------------
