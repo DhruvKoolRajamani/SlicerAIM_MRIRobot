@@ -873,7 +873,7 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSubWorkspace(
 
   double* entryPoint = entryPointNode->GetNthControlPointPosition(0);
   // convert LPS to RAS
-  entryPoint[0] = -entryPoint[0];
+  // entryPoint[0] = -entryPoint[0];
 
   if (true)
   {
@@ -906,6 +906,7 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSubWorkspace(
     vtkSmartPointer< vtkPoints >::New();
 
   double output_point[4] = {0, 0, 0, 0};
+  registration_matrix->Invert();
   registration_matrix->MultiplyPoint(entryPoint, output_point);
 
   Eigen::Vector3d  ep = {output_point[0], output_point[1], output_point[2]};

@@ -1784,7 +1784,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateSubWorkspaceClick()
   d->SubWorkspaceMeshSelector__5_4->setCurrentNode(
     subWorkspaceMeshSegmentationNode);
 
-  subWorkspaceMeshSegmentationNode->ApplyTransformMatrix(registration_matrix);
+  // subWorkspaceMeshSegmentationNode->ApplyTransformMatrix(registration_matrix);
 
   this->updateGUIFromMRML();
 }
