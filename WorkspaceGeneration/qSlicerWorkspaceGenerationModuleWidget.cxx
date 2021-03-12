@@ -18,6 +18,7 @@
 // Qt includes
 #include <QButtonGroup>
 #include <QFileDialog>
+#include <QMessageBox>
 #include <QtGui>
 
 #include "../Utilities/include/debug/errorhandler.hpp"
@@ -2084,8 +2085,8 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
 
   if (!burrholeSet)
   {
-    // qWarning() << Q_FUNC_INFO << ": Burr Hole has not been identified yet.";
-    return;
+    // qWarning() << Q_FUNC_INFO << ": Burr Hole has not been identified
+    yet."; return;
   }
   else
   {
@@ -2124,14 +2125,30 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
     return;
   }
 
-  // Easy to modify this to a lock if asynchronousity is required.
-  // if (!burrholeSet)
-  // {
-  //   burrholeSet = d->logic()->IdentifyBurrHole(workspaceGenerationNode);
+  double* entryPoint  = entryPointNode->GetNthControlPointPosition(0);
+  double* targetPoint = targetPointNode->GetNthControlPointPosition(0);
 
-  //   // Should be ideally moved to burr hole detection.
-  //   workspaceGenerationNode->SetBurrHoleDetected(burrholeSet);
-  // }
+  std::string entryPointStr  = "Entry Point Coordinates: [";
+  std::string targetPointStr = "Target Point Coordinates: [";
+  for (int i = 0; i < 3; i++)
+  {
+    if (i < 2)
+    {
+      entryPointStr += std::to_string(entryPoint[i]) + ", ";
+      targetPointStr += std::to_string(targetPoint[i]) + ", ";
+    }
+    else
+    {
+      entryPointStr += std::to_string(entryPoint[i]) + "]";
+      targetPointStr += std::to_string(targetPoint[i]) + "]";
+    }
+  }
+
+  std::string fiducialStr = entryPointStr + "\n" + targetPointStr;
+
+  QMessageBox fiducialCoordPopup;
+  fiducialCoordPopup.setText(fiducialStr.c_str());
+  fiducialCoordPopup.exec();
 }
 
 //-----------------------------------------------------------------------------
