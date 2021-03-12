@@ -62,6 +62,12 @@ public:
   NeuroKinematics  NeuroKinematics_;
   Eigen::Matrix3Xf rcm_point_set_;
 
+  enum WS_ERRORS_ENUM
+  {
+    WS_SAFE          = 1,
+    WS_NOT_REACHABLE = 0,
+  };
+
   // methods
 
   // Method to generate Point cloud of the surface of general reachable
@@ -79,7 +85,8 @@ public:
   Eigen::Matrix3Xf GetRcmPointSet();
 
   // Method to return a point set based on a given EP.
-  Eigen::Matrix3Xf GetSubWorkspace(Eigen::Vector3d ep_in_robot_coordinate);
+  int GetSubWorkspace(Eigen::Vector3d  ep_in_robot_coordinate,
+                      Eigen::Matrix3Xf& workspace);
 
   void StorePoint(Eigen::Matrix3Xf& rcm_point_cloud,
                   Eigen::Matrix4d transformation_matrix, int counter);
@@ -87,10 +94,11 @@ public:
   bool CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
                    Eigen::Vector3f rcm_point_set);
 
-  Eigen::Matrix3Xf
-    GetPointCloudInverseKinematics(Eigen::Matrix3Xf validated_point_set,
-                                   Eigen::Vector3d  ep_in_robot_coordinate,
-                                   Eigen::VectorXd& treatment_to_tp_dist);
+  int GetPointCloudInverseKinematics(
+    Eigen::Matrix3Xf validated_point_set,
+    Eigen::Vector3d  ep_in_robot_coordinate,
+    Eigen::VectorXd& treatment_to_tp_dist,
+    Eigen::Matrix3Xf& validated_inverse_kinematic_rcm_pointset);
 
   Eigen::Matrix3Xf GenerateFinalSubworkspacePointset(
     Eigen::Matrix3Xf validated_inverse_kinematic_rcm_pointset,

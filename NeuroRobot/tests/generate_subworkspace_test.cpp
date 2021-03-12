@@ -44,8 +44,9 @@ int main(int argc, char** argv)
             << ep_in_robot(2) << std::endl;
   Eigen::Vector3d ep_in_robot_(ep_in_robot(0), ep_in_robot(1), ep_in_robot(2));
 
-  Eigen::Matrix3Xf final_workspace =
-    WorkspaceVisualization_.GetSubWorkspace(ep_in_robot_);
+  Eigen::Matrix3Xf final_workspace;
+  int              status =
+    WorkspaceVisualization_.GetSubWorkspace(ep_in_robot_, final_workspace);
   PointSetUtilities data_writer4(final_workspace);
   data_writer4.saveToXyz("final_workspace.xyz");
   vtkSmartPointer< vtkPoints > vpointSet = data_writer4.getVTKPointSet();

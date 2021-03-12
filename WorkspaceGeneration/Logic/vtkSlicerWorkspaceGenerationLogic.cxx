@@ -18,6 +18,7 @@
 // QT includes
 #include <QDebug>
 #include <QDir>
+#include <QMessageBox>
 #include <QTemporaryDir>
 #include <QTemporaryFile>
 #include <ctime>
@@ -905,12 +906,28 @@ void vtkSlicerWorkspaceGenerationLogic::UpdateSubWorkspace(
   vtkSmartPointer< vtkPoints > workspacePointCloud =
     vtkSmartPointer< vtkPoints >::New();
 
-  double output_point[4] = {0, 0, 0, 0};
-  registration_matrix->Invert();
-  registration_matrix->MultiplyPoint(entryPoint, output_point);
+  double                 output_point[4] = {0, 0, 0, 0};
+  vtkNew< vtkMatrix4x4 > invertedRegMatrix;
+  invertedRegMatrix->DeepCopy(registration_matrix);
+  invertedRegMatrix->Invert();
+  invertedRegMatrix->MultiplyPoint(entryPoint, output_point);
 
   Eigen::Vector3d  ep = {output_point[0], output_point[1], output_point[2]};
-  Eigen::Matrix3Xf sub_workspace = ws.GetSubWorkspace(ep);
+  Eigen::Matrix3Xf sub_workspace;
+  int              ws_status = ws.GetSubWorkspace(ep, sub_workspace);
+
+  if (ws_status == WorkspaceVisualization::WS_NOT_REACHABLE)
+  {
+    qCritical() << Q_FUNC_INFO << ": Workspace is not reachable";
+    QMessageBox wsNotReachableErrorModal;
+    wsNotReachableErrorModal.setText(
+      "Workspace is not reachable, please move Entry Point inside Entry Point "
+      "Workspace");
+    wsNotReachableErrorModal.exec();
+    // while (wsNotReachableModal.exec() == QDialog::Accepted)
+
+    return;
+  }
 
   QString workspace_name = "sub_workspace";
 

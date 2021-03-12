@@ -1274,8 +1274,8 @@ Eigen::Matrix3Xf WorkspaceVisualization::GetRcmPointSet()
 }
 
 // Method to return a point set based on a given EP.
-Eigen::Matrix3Xf WorkspaceVisualization::GetSubWorkspace(
-  Eigen::Vector3d ep_in_robot_coordinate)
+int WorkspaceVisualization::GetSubWorkspace(
+  Eigen::Vector3d ep_in_robot_coordinate, Eigen::Matrix3Xf& workspace)
 {
 
   // Number of points inside the RCM pointset
@@ -1297,26 +1297,35 @@ Eigen::Matrix3Xf WorkspaceVisualization::GetSubWorkspace(
                               rcm_point_set_(1, i), rcm_point_set_(2, i));
     }
   }
-  PointSetUtilities datawriter(validated_point_set);
-  datawriter.saveToXyz("sphere_checked.xyz");
+  // PointSetUtilities datawriter(validated_point_set);
+  // datawriter.saveToXyz("sphere_checked.xyz");
   // Vector to store distance from each validated rcm points to the entry
   // point
   Eigen::VectorXd treatment_to_tp_dist(1);
   treatment_to_tp_dist.setZero();
 
   // Step to check the Inverse Kinematics for each validated RCM point set
-  Eigen::Matrix3Xf validated_inverse_kinematic_rcm_pointset =
-    GetPointCloudInverseKinematics(validated_point_set, ep_in_robot_coordinate,
-                                   treatment_to_tp_dist);
+  Eigen::Matrix3Xf validated_inverse_kinematic_rcm_pointset;
+  int              status = GetPointCloudInverseKinematics(
+    validated_point_set, ep_in_robot_coordinate, treatment_to_tp_dist,
+    validated_inverse_kinematic_rcm_pointset);
 
-  /* Step to populate the point set with equidistance points from the EP to
-  each validated rcm points and past them with the max probe insertion
-  criteria.*/
-  Eigen::Matrix3Xf total_Sub_Workspace = GenerateFinalSubworkspacePointset(
-    validated_inverse_kinematic_rcm_pointset, ep_in_robot_coordinate,
-    treatment_to_tp_dist);
+  if (status == WS_SAFE)
+  {
 
-  return total_Sub_Workspace;
+    /* Step to populate the point set with equidistance points from the EP to
+    each validated rcm points and past them with the max probe insertion
+    criteria.*/
+    workspace = GenerateFinalSubworkspacePointset(
+      validated_inverse_kinematic_rcm_pointset, ep_in_robot_coordinate,
+      treatment_to_tp_dist);
+  }
+  else
+  {
+    return WS_NOT_REACHABLE;
+  }
+
+  return WS_SAFE;
 }
 
 /* Method to store a point of the RCM Point Cloud. Points are stored inside
@@ -1360,12 +1369,13 @@ bool WorkspaceVisualization::CheckSphere(Eigen::Vector3d ep_in_robot_coordinate,
 
 /* Method to Check the IK for each point in the Validated point set and
 stores the ones that are valid*/
-Eigen::Matrix3Xf WorkspaceVisualization::GetPointCloudInverseKinematics(
+int WorkspaceVisualization::GetPointCloudInverseKinematics(
   Eigen::Matrix3Xf validated_point_set, Eigen::Vector3d ep_in_robot_coordnt,
-  Eigen::VectorXd& treatment_to_tp_dist)
+  Eigen::VectorXd&  treatment_to_tp_dist,
+  Eigen::Matrix3Xf& sub_workspace_rcm_point_set)
 {
   // Initializng the sub_workspace matrix
-  Eigen::Matrix3Xf sub_workspace_rcm_point_set(3, 1);
+  sub_workspace_rcm_point_set.resize(3, 1);
   sub_workspace_rcm_point_set << 0., 0., 0.;
 
   counter                         = 0;
@@ -1499,14 +1509,15 @@ Eigen::Matrix3Xf WorkspaceVisualization::GetPointCloudInverseKinematics(
       sub_workspace_rcm_point_set(1, 0) == 0. &&
       sub_workspace_rcm_point_set(2, 0) == 0.)
   {
-    std::cerr << "\nThe entry point is NOT reachable! Please select "
-                 "another "
-                 "point."
-              << std::endl;
+    // std::cerr << "\nThe entry point is NOT reachable! Please select "
+    //              "another "
+    //              "point."
+    //           << std::endl;
+    return WS_NOT_REACHABLE;
   };
-  PointSetUtilities data_w(sub_workspace_rcm_point_set);
-  data_w.saveToXyz("IK_ckecked.xyz");
-  return sub_workspace_rcm_point_set;
+  // PointSetUtilities data_w(sub_workspace_rcm_point_set);
+  // data_w.saveToXyz("IK_ckecked.xyz");
+  return WS_SAFE;
 }
 
 // Method to create the 3D representing the sub-workspace
