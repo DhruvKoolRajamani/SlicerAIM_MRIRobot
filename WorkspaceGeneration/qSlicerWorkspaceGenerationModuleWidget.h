@@ -46,10 +46,12 @@
 #include "qSlicerWorkspaceGenerationModuleExport.h"
 #include <vtkMRMLModelDisplayNode.h>
 #include <vtkMRMLModelNode.h>
+#include <vtkMRMLSegmentationDisplayNode.h>
+#include <vtkMRMLSegmentationNode.h>
 #include <vtkMRMLVolumeNode.h>
 
 // Neurorobot includes
-#include "NeuroKinematics/ForwardKinematics.h"
+#include "NeuroKinematics/NeuroKinematics.hpp"
 
 class qSlicerWorkspaceGenerationModuleWidgetPrivate;
 class vtkMRMLNode;
@@ -98,15 +100,28 @@ protected slots:
   void onAnnotationROINodeAdded(vtkMRMLNode*);
   void onAnnotationROISelectionChanged(vtkMRMLNode*);
   void onPresetComboBoxNodeChanged(vtkMRMLNode*);
+  void onBurrHoleSegmentationNodeAdded(vtkMRMLNode*);
+  void onBurrHoleSegmentationNodeChanged(vtkMRMLNode*);
+  void onEntryPointWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode*);
+  void onEntryPointWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode*);
+  void onGenerateEntryPointWorkspaceClick();
+  void onEntryPointWorkspaceMeshVisibilityChanged(bool visible);
+  void onBHExtremePointAdded(vtkMRMLNode*);
+  void onBHExtremePointChanged(vtkMRMLNode*);
   void onEntryPointAdded(vtkMRMLNode*);
   void onEntryPointSelectionChanged(vtkMRMLNode*);
+  void onSubWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode*);
+  void onSubWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode*);
+  void onGenerateSubWorkspaceClick();
+  void onSubWorkspaceMeshVisibilityChanged(bool visible);
   void onTargetPointSelectionChanged(vtkMRMLNode*);
   void onTargetPointAdded(vtkMRMLNode*);
   void onMarkupChanged(vtkObject*, unsigned long, void*);
   void onPresetOffsetChanged(double, double, bool);
-  void onWorkspaceMeshModelNodeChanged(vtkMRMLNode*);
-  void onWorkspaceMeshModelNodeAdded(vtkMRMLNode*);
+  void onWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode*);
+  void onWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode*);
   void onGenerateWorkspaceClick();
+  void onDetectBurrHoleClick();
   void onSceneImportedEvent();
 
   // // DEPRECATED
@@ -130,6 +145,7 @@ protected slots:
 
   void onInputVolumeVisibilityChanged(bool visible);
   void onWorkspaceMeshVisibilityChanged(bool visible);
+  void onBurrHoleVisibilityChanged(bool visible);
 
   void UpdateVolumeRendering();
 

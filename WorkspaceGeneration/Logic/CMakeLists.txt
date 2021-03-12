@@ -13,14 +13,19 @@ set(${KIT}_INCLUDE_DIRECTORIES
   ${vtkVolumeRenderingModuleLogic_SRCS}
   ${vtkSlicerModelsModuleLogic_INCLUDE_DIRECTORIES}
   ${vtkSlicerModelsModuleLogic_SRCS}
+  ${vtkSlicerSegmentationsModuleLogic_INCLUDE_DIRS}
+  ${vtkSlicerSegmentationsModuleLogic_SRCS}
   ${utilities_INCLUDE_DIRS}
   ${neurorobot_INCLUDE_DIRS}
+  ${nlohmann_json_INCLUDE_DIRS}
   )
 
 set(${KIT}_SRCS
   vtkSlicer${MODULE_NAME}Logic.cxx
   vtkSlicer${MODULE_NAME}Logic.h
   )
+
+# add_library(lNvidiaAIAAClient SHARED ${CMAKE_BINARY_DIR}/lib/libNvidiaAIAAClient.so)
 
 set(${KIT}_TARGET_LIBRARIES
   ${ITK_LIBRARIES}
@@ -31,8 +36,12 @@ set(${KIT}_TARGET_LIBRARIES
   vtkSlicerVolumeRenderingModuleLogic
   vtkSlicerMarkupsModuleMRML
   vtkSlicerMarkupsModuleLogic
+  vtkSlicerSegmentationsModuleLogic
   # utilities
-  NeuroKinematics
+  NeuroRobot
+  NvidiaAIAAClient
+  # nlohmann_json
+  ${Boost_LIBRARIES}
   )
 
 #-----------------------------------------------------------------------------

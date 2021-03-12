@@ -40,15 +40,20 @@
       "launchCompleteCommand": "exec-run",
       "linux": {
         "MIMode": "gdb",
-        "miDebuggerPath": "/usr/bin/gdb"
+        // "miDebuggerPath": "/usr/bin/gdb",
+        "additionalSOLibSearchPath": "${workspaceFolder}/build/lib/Slicer-4.11/qt-loadable-modules;/home/dhruv/Slicer/build/Slicer-build/lib/Slicer-4.11/qt-loadable-modules",
+        "setupCommands": [
+          {
+            "text": "-enable-pretty-printing"
+          }
+        ],
       },
       "symbolLoadInfo": {
         "loadAll": true,
-        "exceptionList": ""
+        // "exceptionList": ""
       },
       "environment": [],
-      "externalConsole": true,
-      "additionalSOLibSearchPath": "${workspaceFolder}/build/lib/Slicer-4.11/qt-loadable-modules;/home/dhruv/Slicer/build/Slicer-build/lib/Slicer-4.11/qt-loadable-modules"
+      "externalConsole": true
     },
     {
       "name": "(Linux) Launch Extension",

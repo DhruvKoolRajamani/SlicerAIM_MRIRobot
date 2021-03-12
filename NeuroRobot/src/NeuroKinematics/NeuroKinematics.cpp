@@ -2,22 +2,20 @@
 // Name        : NeuroKinematics.hpp
 // Author      : Produced in the WPI AIM Lab
 // Description : This file is where the custom forward and inverse kinematics
-//				 code for the robot resides
+//				 code for the NeuroRobot resides
 //============================================================================
 
 #include "NeuroKinematics/NeuroKinematics.hpp"
-/* Below is the constructor for the NeuroKinematics class object
- There are two constructors defined. One is the default method without the
-Probe specifications and the other one is with the probe specifications. */
+
 NeuroKinematics::NeuroKinematics()
 {
   _lengthOfAxialTrapezoidSideLink = 0;
-  _widthTrapezoidTop = 0;
-  _initialAxialSeperation = 0;
-  _xInitialRCM = 0;
-  _yInitialRCM = 0;
-  _zInitialRCM = 0;
-  _robotToRCMOffset = 0;
+  _widthTrapezoidTop              = 0;
+  _initialAxialSeperation         = 0;
+  _xInitialRCM                    = 0;
+  _yInitialRCM                    = 0;
+  _zInitialRCM                    = 0;
+  _robotToRCMOffset               = 0;
 
   // Object that stores probe specific configurations
   _probe = NULL;
@@ -26,39 +24,36 @@ NeuroKinematics::NeuroKinematics()
   _zFrameToRCM = Eigen::Matrix4d::Identity();
 
   // Optimizations
-  xRotationDueToYawRotationFK = Eigen::Matrix3d::Identity();
+  xRotationDueToYawRotationFK   = Eigen::Matrix3d::Identity();
   yRotationDueToPitchRotationFK = Eigen::Matrix3d::Identity();
   zRotationDueToProbeRotationFK = Eigen::Matrix3d::Identity();
-  zFrameToRCMRotation = Eigen::Matrix4d::Identity();
-  zFrameToRCMPrime = Eigen::Matrix4d::Identity();
-  RCMToTreatment = Eigen::Matrix4d::Identity();
-
-  xRotationDueToYawRotationIK = Eigen::Matrix3d::Identity();
+  zFrameToRCMRotation           = Eigen::Matrix4d::Identity();
+  zFrameToRCMPrime              = Eigen::Matrix4d::Identity();
+  RCMToTreatment                = Eigen::Matrix4d::Identity();
+  xRotationDueToYawRotationIK   = Eigen::Matrix3d::Identity();
+  RCMToEntryPoint               = Eigen::Matrix4d::Identity();
   yRotationDueToPitchRotationIK = Eigen::Matrix3d::Identity();
   zRotationDueToProbeRotationIK = Eigen::Matrix3d::Identity();
-  zFrameToTargetPointFinal = Eigen::Matrix4d::Identity();
+  zFrameToTargetPointFinal      = Eigen::Matrix4d::Identity();
 }
 
-NeuroKinematics::NeuroKinematics(Probe* probe)
+NeuroKinematics::NeuroKinematics(Probe* probe) : _probe(probe)
 {
   // All values are in units of mm
-  _lengthOfAxialTrapezoidSideLink = 60;  // L1 link
-  _widthTrapezoidTop = 30;               // L2 Link
-  _initialAxialSeperation = 143;         // delta_Zh in the formula
-  _xInitialRCM = 18.32;
-  _yInitialRCM = 178.39;
-  _zInitialRCM = 72.91;
-  _robotToRCMOffset = 72.5;
-
-  // Object that stores probe specific configurations
-  _probe = probe;
+  _lengthOfAxialTrapezoidSideLink = 60;   // L1 link
+  _widthTrapezoidTop              = 30;   // L2 Link
+  _initialAxialSeperation         = 143;  // delta_Zh in the formula
+  _xInitialRCM                    = 18.32;
+  _yInitialRCM                    = 178.39;
+  _zInitialRCM                    = 72.91;
+  _robotToRCMOffset               = 72.5;
 
   // Transformation that accounts for change in rotation between zFrame and RCM
   _zFrameToRCM << -1, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 1;
 
   // Optimizations
   // These are the values for the RCM shown in the paper
-  xRotationDueToYawRotationFK = Eigen::Matrix3d::Identity();
+  xRotationDueToYawRotationFK   = Eigen::Matrix3d::Identity();
   yRotationDueToPitchRotationFK = Eigen::Matrix3d::Identity();
   zRotationDueToProbeRotationFK = Eigen::Matrix3d::Identity();
   // Rotation from the fixed z-frame to the RCM point
@@ -67,12 +62,14 @@ NeuroKinematics::NeuroKinematics(Probe* probe)
   zFrameToRCMPrime = Eigen::Matrix4d::Identity();
   // RCM to the tooltip (probe's tip)
   RCMToTreatment = Eigen::Matrix4d::Identity();
+  // RCM to the Entry point (probe's tip)
+  RCMToEntryPoint = Eigen::Matrix4d::Identity();
 
   // IK related attributes
-  xRotationDueToYawRotationIK = Eigen::Matrix3d::Identity();
+  xRotationDueToYawRotationIK   = Eigen::Matrix3d::Identity();
   yRotationDueToPitchRotationIK = Eigen::Matrix3d::Identity();
   zRotationDueToProbeRotationIK = Eigen::Matrix3d::Identity();
-  zFrameToTargetPointFinal = Eigen::Matrix4d::Identity();
+  zFrameToTargetPointFinal      = Eigen::Matrix4d::Identity();
 }
 
 // This method defines the forward kinematics for the neurosurgery robot.
@@ -138,23 +135,77 @@ Neuro_FK_outputs NeuroKinematics::ForwardKinematics(
 
   // Now Calculate zFrame to RCM given the calculated values above
   Eigen::Matrix4d zFrameToRCM = zFrameToRCMPrime * zFrameToRCMRotation;
-  // std::cout << "zFrameToRCM :  \n"
-  // 		  << zFrameToRCM << std::endl; // Added Farid
 
   // Create RCM to Treatment Matrix
   RCMToTreatment(2, 3) =
     ProbeInsertion + _probe->_robotToTreatmentAtHome - _robotToRCMOffset;
-  // std::cout << "RCMToTreatment :  \n"
-  // 		  << RCMToTreatment << std::endl; // Added Farid
+
   // Finally calculate Base to Treatment zone using the measured transformation
   // for RCM to Treatment
   FK.zFrameToTreatment = zFrameToRCM * RCMToTreatment;
-  // std::cout << "zFrameToTreatment :  \n"
-  // 		  << FK.zFrameToTreatment << std::endl;
 
   return FK;
 }
+Neuro_FK_outputs NeuroKinematics::ForwardKinematics_EntryPoint(
+  double AxialHeadTranslation, double AxialFeetTranslation,
+  double LateralTranslation, double ProbeInsertion, double ProbeRotation,
+  double PitchRotation, double YawRotation)
+{
+  // Structure to return with the FK output( struct can be remove )
+  struct Neuro_FK_outputs FK;
 
+  // Z position of RCM is solely defined as the midpoint of the axial trapezoid
+  double axialTrapezoidMidpoint =
+    (AxialHeadTranslation - AxialFeetTranslation + _initialAxialSeperation) /
+    2;  // initial position
+  double zDeltaRCM = (AxialFeetTranslation + AxialHeadTranslation) / 2;
+
+  // Y position of RCM is found by pythagorean theorem of the axial trapezoid
+  double yTrapezoidHypotenuseSquared = pow(_lengthOfAxialTrapezoidSideLink, 2);
+  double yTrapezoidSideSquared =
+    pow((axialTrapezoidMidpoint - _widthTrapezoidTop / 2), 2);
+  double yTrapezoidInitialSeparationSquared =
+    pow((_initialAxialSeperation - _widthTrapezoidTop) / 2, 2);
+  double yDeltaRCM =
+    sqrt(yTrapezoidHypotenuseSquared - yTrapezoidSideSquared) -
+    sqrt(yTrapezoidHypotenuseSquared - yTrapezoidInitialSeparationSquared);
+
+  // X position of RCM is solely defined as the amount traveled in lateral
+  // translation
+  double xDeltaRCM = LateralTranslation;
+
+  // Obtain basic Yaw, Pitch, and Roll Rotations
+  xRotationDueToYawRotationFK << 1, 0, 0, 0, cos(YawRotation),
+    -sin(YawRotation), 0, sin(YawRotation), cos(YawRotation);
+
+  yRotationDueToPitchRotationFK << cos(PitchRotation), 0, sin(PitchRotation), 0,
+    1, 0, -sin(PitchRotation), 0, cos(PitchRotation);
+
+  zRotationDueToProbeRotationFK << cos(ProbeRotation), -sin(ProbeRotation), 0,
+    sin(ProbeRotation), cos(ProbeRotation), 0, 0, 0, 1;
+
+  // Calculate the XYZ Rotation
+  zFrameToRCMRotation.block(0, 0, 3, 3) =
+    (xRotationDueToYawRotationFK * yRotationDueToPitchRotationFK *
+     zRotationDueToProbeRotationFK)
+      .block(0, 0, 3, 3);
+
+  // Calculate the XYZ Translation
+  zFrameToRCMPrime << -1, 0, 0, _xInitialRCM + xDeltaRCM, 0, 0, -1,
+    _yInitialRCM + yDeltaRCM, 0, -1, 0, _zInitialRCM + zDeltaRCM, 0, 0, 0, 1;
+
+  // Now Calculate zFrame to RCM given the calculated values above
+  Eigen::Matrix4d zFrameToRCM = zFrameToRCMPrime * zFrameToRCMRotation;
+
+  // Create RCM to Treatment Matrix
+  RCMToEntryPoint(2, 3) = _probe->_robotToEntry - _robotToRCMOffset;
+
+  // Finally calculate Base to Treatment zone using the measured transformation
+  // for RCM to Treatment
+  FK.zFrameToTreatment = zFrameToRCM * RCMToEntryPoint;
+
+  return FK;
+}
 // This method defines the inverse kinematics for the neurosurgery robot
 // Given: Vectors for the 3D location of the entry point and target point with
 // respect to the zFrame Returns: The joint values for the given approach
@@ -325,14 +376,38 @@ Neuro_IK_outputs NeuroKinematics::InverseKinematics(
 
   return IK;
 }
-// Entry point IK calculation
-IK_Solver_outputs NeuroKinematics::IK_solver(Eigen::Vector4d entryPointzFrame)
+// Method to calculate the Cartesian base location and the Pitch and Yaw
+// rotation of the robot given an EP and the RCM point as the TP.
+Neuro_IK_outputs NeuroKinematics::InverseKinematicsWithZeroProbeInsertion(
+  Eigen::Vector4d EntryPoint, Eigen::Vector4d TargetPoint)
 {
-  IK_Solver_outputs IK;
+  /* In this method the target point is going to be the the RCM point. The IK
+  solver will try to find the values for lateral and Axial feet and Axial head
+  translation that would result in the placement of the RCM on the given TP. The
+  Yaw and Pitch values will be similar to the General InverseKinematics method.
+  */
+  Neuro_IK_outputs IK;
+  //**Temporary values**
+  IK.ProbeRotation  = 0;
+  IK.ProbeInsertion = 0;
+
   double AxialHeadTranslation{}, AxialFeetTranslation{}, LateralTranslation{},
     yTrapezoidHypotenuseSquared{}, axialTrapezoidMidpoint{};
   double yTrapezoidSideSquared{}, yTrapezoidInitialSeparationSquared{};
   double zDeltaRCM{}, xDeltaRCM{}, yDeltaRCM{};
+  // Get the entry point with respect to the orientation of the zFrame
+  Eigen::Vector4d rcmToEntry = _zFrameToRCM.inverse() * EntryPoint;
+
+  // Get the target point with respect to the orientation of the zFrame
+  Eigen::Vector4d rcmToTarget = _zFrameToRCM.inverse() * TargetPoint;
+
+  // The yaw and pitch components of the robot rely solely on the entry point's
+  // location with respect to the target point This calculation is done with
+  // respect to the RCM Orientation
+  IK.YawRotation = (3.1415 / 2) + atan2(rcmToEntry(2) - rcmToTarget(2),
+                                        rcmToEntry(1) - rcmToTarget(1));
+  IK.PitchRotation =
+    atan((rcmToEntry(0) - rcmToTarget(0)) / (rcmToEntry(2) - rcmToTarget(2)));
   // for the calculation of A * x = B, -->  x = inv(A) * B;
   Eigen::Vector2d x;
   Eigen::Matrix2d A;
@@ -340,9 +415,9 @@ IK_Solver_outputs NeuroKinematics::IK_solver(Eigen::Vector4d entryPointzFrame)
 
   Eigen::Vector2d B;
 
-  xDeltaRCM = entryPointzFrame(0) - _xInitialRCM;  // finding the delta values
-  yDeltaRCM = entryPointzFrame(1) - _yInitialRCM;
-  zDeltaRCM = entryPointzFrame(2) - _zInitialRCM;
+  xDeltaRCM = TargetPoint(0) - _xInitialRCM;  // finding the delta values
+  yDeltaRCM = TargetPoint(1) - _yInitialRCM;
+  zDeltaRCM = TargetPoint(2) - _zInitialRCM;
 
   yTrapezoidHypotenuseSquared = pow(_lengthOfAxialTrapezoidSideLink, 2);
   yTrapezoidInitialSeparationSquared =
@@ -371,8 +446,63 @@ IK_Solver_outputs NeuroKinematics::IK_solver(Eigen::Vector4d entryPointzFrame)
   B(1) = zDeltaRCM * 2;
   // [1 1][AxialHeadTranslation;AxialFeetTranslation]=zDeltaRCM * 2 ;
 
-  x = A.inverse() * B;
+  x                       = A.inverse() * B;
   IK.AxialHeadTranslation = x(0);
   IK.AxialFeetTranslation = x(1);
   return IK;
 };
+
+// Method to calculate the RCM location w.r.t Z-frame
+Neuro_FK_outputs NeuroKinematics::GetRcm(
+  double AxialHeadTranslation, double AxialFeetTranslation,
+  double LateralTranslation, double ProbeInsertion, double ProbeRotation,
+  double PitchRotation, double YawRotation)
+{
+  // Structure to return with the FK output( struct can be remove )
+  struct Neuro_FK_outputs RCM;
+
+  // Z position of RCM is solely defined as the midpoint of the axial trapezoid
+  double axialTrapezoidMidpoint =
+    (AxialHeadTranslation - AxialFeetTranslation + _initialAxialSeperation) /
+    2;  // initial position
+  double zDeltaRCM = (AxialFeetTranslation + AxialHeadTranslation) / 2;
+
+  // Y position of RCM is found by pythagorean theorem of the axial trapezoid
+  double yTrapezoidHypotenuseSquared = pow(_lengthOfAxialTrapezoidSideLink, 2);
+  double yTrapezoidSideSquared =
+    pow((axialTrapezoidMidpoint - _widthTrapezoidTop / 2), 2);
+  double yTrapezoidInitialSeparationSquared =
+    pow((_initialAxialSeperation - _widthTrapezoidTop) / 2, 2);
+  double yDeltaRCM =
+    sqrt(yTrapezoidHypotenuseSquared - yTrapezoidSideSquared) -
+    sqrt(yTrapezoidHypotenuseSquared - yTrapezoidInitialSeparationSquared);
+
+  // X position of RCM is solely defined as the amount traveled in lateral
+  // translation
+  double xDeltaRCM = LateralTranslation;
+
+  // Obtain basic Yaw, Pitch, and Roll Rotations
+  xRotationDueToYawRotationFK << 1, 0, 0, 0, cos(YawRotation),
+    -sin(YawRotation), 0, sin(YawRotation), cos(YawRotation);
+
+  yRotationDueToPitchRotationFK << cos(PitchRotation), 0, sin(PitchRotation), 0,
+    1, 0, -sin(PitchRotation), 0, cos(PitchRotation);
+
+  zRotationDueToProbeRotationFK << cos(ProbeRotation), -sin(ProbeRotation), 0,
+    sin(ProbeRotation), cos(ProbeRotation), 0, 0, 0, 1;
+
+  // Calculate the XYZ Rotation
+  zFrameToRCMRotation.block(0, 0, 3, 3) =
+    (xRotationDueToYawRotationFK * yRotationDueToPitchRotationFK *
+     zRotationDueToProbeRotationFK)
+      .block(0, 0, 3, 3);
+
+  // Calculate the XYZ Translation
+  zFrameToRCMPrime << -1, 0, 0, _xInitialRCM + xDeltaRCM, 0, 0, -1,
+    _yInitialRCM + yDeltaRCM, 0, -1, 0, _zInitialRCM + zDeltaRCM, 0, 0, 0, 1;
+
+  // Now Calculate zFrame to RCM given the calculated values above
+  Eigen::Matrix4d zFrameToRCM = zFrameToRCMPrime * zFrameToRCMRotation;
+  RCM.zFrameToTreatment       = zFrameToRCM;
+  return RCM;
+}

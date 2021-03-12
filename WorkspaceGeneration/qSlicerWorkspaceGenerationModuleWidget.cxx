@@ -34,8 +34,8 @@
 #include "vtkMRMLInteractionNode.h"
 #include "vtkMRMLMarkupsDisplayNode.h"
 #include "vtkMRMLMarkupsFiducialNode.h"
-#include "vtkMRMLModelDisplayNode.h"
 #include "vtkMRMLModelNode.h"
+#include "vtkMRMLSegmentationDisplayNode.h"
 #include "vtkMRMLTransformNode.h"
 #include "vtkMRMLTransformableNode.h"
 #include "vtkMRMLVolumeDisplayNode.h"
@@ -50,6 +50,10 @@
 // module includes
 #include "vtkMRMLWorkspaceGenerationNode.h"
 #include "vtkSlicerWorkspaceGenerationLogic.h"
+
+// Isosurface creation
+#include <vtkMarchingCubes.h>
+#include <vtkStripper.h>
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -73,17 +77,21 @@ public:
 
   // vtkMRMLVolumeNode* InputVolumeNode;
   // vtkMRMLAnnotationROINode* AnnotationROINode;
-  vtkMRMLModelNode* WorkspaceMeshModelNode;
+  vtkMRMLSegmentationNode* WorkspaceMeshSegmentationNode;
+  vtkMRMLSegmentationNode* EPWorkspaceMeshSegmentationNode;
+  vtkMRMLSegmentationNode* SubWorkspaceMeshSegmentationNode;
+  vtkMRMLSegmentationNode* BurrHoleSegmentationNode;
 
   vtkMRMLVolumeRenderingDisplayNode* InputVolumeRenderingDisplayNode;
-  vtkMRMLModelDisplayNode*           WorkspaceMeshModelDisplayNode;
+  vtkMRMLSegmentationDisplayNode*    WorkspaceMeshSegmentationDisplayNode;
+  vtkMRMLSegmentationDisplayNode*    EPWorkspaceMeshSegmentationDisplayNode;
+  vtkMRMLSegmentationDisplayNode*    SubWorkspaceMeshSegmentationDisplayNode;
+  vtkMRMLSegmentationDisplayNode*    BurrHoleSegmentationDisplayNode;
+  vtkMRMLMarkupsDisplayNode*         BHExtremePointDisplayNode;
   vtkMRMLMarkupsDisplayNode*         EntryPointDisplayNode;
   vtkMRMLMarkupsDisplayNode*         TargetPointDisplayNode;
 
   vtkMRMLVolumePropertyNode* VolumePropertyNode;
-
-  vtkMatrix4x4*         WorkspaceMeshRegistrationMatrix;
-  vtkMRMLTransformNode* WorkspaceMeshTransformNode;
 };
 
 //-----------------------------------------------------------------------------
@@ -139,7 +147,12 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
   allInteractiveWidgets = QList< QWidget* >();
   foreach (QWidget* w, allWidgets)
   {
-    if (QString::compare(w->objectName(), "") != 0)
+    if (QString::compare(w->objectName(),
+                         "InputVolumeRenderingPresetComboBox__2_6") == 0)
+    {
+      continue;
+    }
+    else if (QString::compare(w->objectName(), "") != 0)
     {
       allInteractiveWidgets.append(w);
     }
@@ -175,30 +188,69 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
   //         this, SLOT(onPresetComboBoxNodeChanged(vtkMRMLNode*)));
   connect(d->WorkspaceModelSelector__3_2,
           SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
-          SLOT(onWorkspaceMeshModelNodeChanged(vtkMRMLNode*)));
+          SLOT(onWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode*)));
   connect(d->WorkspaceModelSelector__3_2, SIGNAL(nodeAddedByUser(vtkMRMLNode*)),
-          this, SLOT(onWorkspaceMeshModelNodeAdded(vtkMRMLNode*)));
+          this, SLOT(onWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode*)));
   connect(d->GenerateWorkspaceButton__3_11, SIGNAL(released()), this,
           SLOT(onGenerateWorkspaceClick()));
   connect(d->WorkspaceVisibilityToggle__3_12, SIGNAL(toggled(bool)), this,
           SLOT(onWorkspaceMeshVisibilityChanged(bool)));
-  connect(d->EntryPointFiducialSelector__4_2,
+  connect(d->EntryPointWorkspaceModelSelector__3_13,
+          SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
+          SLOT(onEntryPointWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode*)));
+  connect(d->EntryPointWorkspaceModelSelector__3_13,
+          SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
+          SLOT(onEntryPointWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode*)));
+  connect(d->GenerateEntryPointWorkspaceButton__3_15, SIGNAL(released()), this,
+          SLOT(onGenerateEntryPointWorkspaceClick()));
+  connect(d->EntryPointWorkspaceVisibilityToggle__3_14, SIGNAL(toggled(bool)),
+          this, SLOT(onEntryPointWorkspaceMeshVisibilityChanged(bool)));
+  connect(d->BurrHoleSegmentationSelector__4_5,
+          SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
+          SLOT(onBurrHoleSegmentationNodeAdded(vtkMRMLNode*)));
+  connect(d->BurrHoleSegmentationSelector__4_5,
+          SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
+          SLOT(onBurrHoleSegmentationNodeChanged(vtkMRMLNode*)));
+  connect(d->BurrHoleSetVisibilityCheckBox__4_6, SIGNAL(toggled(bool)), this,
+          SLOT(onBurrHoleVisibilityChanged(bool)));
+  connect(d->BurrHoleExtremeMarkupsFiducialSelector__4_2,
+          SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
+          SLOT(onBHExtremePointAdded(vtkMRMLNode*)));
+  connect(d->BurrHoleExtremeMarkupsFiducialSelector__4_2,
+          SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
+          SLOT(onBHExtremePointChanged(vtkMRMLNode*)));
+  connect(d->DetectBurrHoleButton__4_4, SIGNAL(released()), this,
+          SLOT(onDetectBurrHoleClick()));
+  connect(d->EntryPointFiducialSelector__5_2,
           SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
           SLOT(onEntryPointAdded(vtkMRMLNode*)));
-  connect(d->EntryPointFiducialSelector__4_2,
+  connect(d->EntryPointFiducialSelector__5_2,
           SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
           SLOT(onEntryPointSelectionChanged(vtkMRMLNode*)));
-  connect(d->TargetPointFiducialSelector__4_4,
+  connect(d->SubWorkspaceMeshSelector__5_4,
+          SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
+          SLOT(onSubWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode*)));
+  connect(d->SubWorkspaceMeshSelector__5_4,
+          SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
+          SLOT(onSubWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode*)));
+  connect(d->GenerateSubWorkspaceButton__5_6, SIGNAL(released()), this,
+          SLOT(onGenerateSubWorkspaceClick()));
+  connect(d->SubWorkspaceMeshSetVisibilityCheckBox__5_5, SIGNAL(toggled(bool)),
+          this, SLOT(onSubWorkspaceMeshVisibilityChanged(bool)));
+  connect(d->TargetPointFiducialSelector__5_7,
           SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
           SLOT(onTargetPointAdded(vtkMRMLNode*)));
-  connect(d->TargetPointFiducialSelector__4_4,
+  connect(d->TargetPointFiducialSelector__5_7,
           SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
           SLOT(onTargetPointSelectionChanged(vtkMRMLNode*)));
 
-  d->EntryPointMarkupsPlaceWidget__4_3->setPlaceMultipleMarkups(
+  d->BurrHoleExtremeMarkupsPlaceWidget__4_3->setPlaceMultipleMarkups(
+    qSlicerMarkupsPlaceWidget::PlaceMultipleMarkupsType::
+      ForcePlaceMultipleMarkups);
+  d->EntryPointMarkupsPlaceWidget__5_3->setPlaceMultipleMarkups(
     qSlicerMarkupsPlaceWidget::PlaceMultipleMarkupsType::
       ForcePlaceSingleMarkup);
-  d->TargetPointMarkupsPlaceWidget__4_5->setPlaceMultipleMarkups(
+  d->TargetPointMarkupsPlaceWidget__5_8->setPlaceMultipleMarkups(
     qSlicerMarkupsPlaceWidget::PlaceMultipleMarkupsType::
       ForcePlaceSingleMarkup);
 }
@@ -294,10 +346,10 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
   setCheckState(d->WorkspaceVisibilityToggle__3_12, false);
 
   // Set default probe specs
-  double _cannulaToTreatment{5.0};       // C
-  double _treatmentToTip{10.0};          // A
+  double _cannulaToTreatment{0.0};       // C
+  double _treatmentToTip{7.0};           // A
   double _robotToEntry{5.0};             // B
-  double _robotToTreatmentAtHome{41.0};  // D
+  double _robotToTreatmentAtHome{33.0};  // D
 
   d->A_DoubleSpinBox__3_5->setValue(_treatmentToTip);
   d->B_DoubleSpinBox__3_6->setValue(_robotToEntry);
@@ -310,6 +362,22 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
   d->D_DoubleSpinBox__3_8->setEnabled(true);
   d->RegistrationMatrix__3_10->setEnabled(true);
   d->RegistrationMatrix__3_10->setEditable(true);
+
+  // Set temporary values for temp mri image.
+  // TODO: Remove once testing pig images
+  auto regMat = d->RegistrationMatrix__3_10->values();
+  regMat[3]   = 3.59;
+  regMat[7]   = -131.75;
+  regMat[11]  = -15.38;
+  qDebug() << Q_FUNC_INFO << regMat;
+  d->RegistrationMatrix__3_10->setValues(regMat);
+
+  d->InputVolumeRenderingPresetSettingsCollapsibleButton__2_5->setCollapsed(
+    true);
+  d->InputVolumeRenderingPresetComboBox__2_6->setDisabled(true);
+
+  d->ProbeSpecsCollapsibleButton__3_3->setCollapsed(true);
+  d->RegistrationMatrixCollapsibleButton__3_9->setCollapsed(true);
 
   this->updateGUIFromMRML();
 }
@@ -353,6 +421,15 @@ void qSlicerWorkspaceGenerationModuleWidget::onInputVolumeNodeSelectionChanged(
       inputVolumeNode->GetID());
   }
 
+  d->InputVolumeRenderingPresetSettingsCollapsibleButton__2_5->setCollapsed(
+    true);
+  d->InputVolumeRenderingPresetComboBox__2_6->setDisabled(true);
+
+  d->WorkspaceModelSelector__3_2->addNode();
+  d->EntryPointWorkspaceModelSelector__3_13->addNode();
+  d->ProbeSpecsCollapsibleButton__3_3->setCollapsed(false);
+  d->RegistrationMatrixCollapsibleButton__3_9->setCollapsed(false);
+
   this->updateGUIFromMRML();
 }
 
@@ -393,6 +470,13 @@ void qSlicerWorkspaceGenerationModuleWidget::onAnnotationROISelectionChanged(
     return;
   }
 
+  // auto prevNode = workspaceGenerationNode->GetAnnotationROINode();
+  // if (prevNode != NULL)
+  // {
+  //   qDebug() << Q_FUNC_INFO << ": Deleting previous node";
+  //   this->mrmlScene()->RemoveNode(prevNode);
+  // }
+
   vtkMRMLAnnotationROINode* annotationROINode =
     vtkMRMLAnnotationROINode::SafeDownCast(selectedNode);
 
@@ -402,6 +486,14 @@ void qSlicerWorkspaceGenerationModuleWidget::onAnnotationROISelectionChanged(
     workspaceGenerationNode->SetAndObserveAnnotationROINodeID(NULL);
     return;
   }
+
+  int n =
+    this->mrmlScene()->GetNumberOfNodesByClass("vtkMRMLAnnotationROINode");
+  std::string name =
+    "ROI_" +
+    std::string(workspaceGenerationNode->GetInputVolumeNode()->GetName()) +
+    ((n > 1) ? std::string("_") + std::to_string(n) : "");
+  annotationROINode->SetName(name.c_str());
 
   workspaceGenerationNode->SetAndObserveAnnotationROINodeID(
     annotationROINode->GetID());
@@ -536,8 +628,8 @@ void qSlicerWorkspaceGenerationModuleWidget::onPresetOffsetChanged(double,
 
 // 2.1 Generate general workspace of the robot
 //-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeChanged(
-  vtkMRMLNode* nodeSelected)
+void qSlicerWorkspaceGenerationModuleWidget::
+  onWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode* nodeSelected)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
   qInfo() << Q_FUNC_INFO;
@@ -550,9 +642,9 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeChanged(
   {
     qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
 
-    workspaceGenerationNode->SetAndObserveWorkspaceMeshModelNodeID(NULL);
+    workspaceGenerationNode->SetAndObserveWorkspaceMeshSegmentationNodeID(NULL);
     d->RegistrationMatrix__3_10->setDisabled(true);
-    d->WorkspaceMeshModelDisplayNode = NULL;
+    d->WorkspaceMeshSegmentationDisplayNode = NULL;
 
     return;
   }
@@ -561,35 +653,45 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeChanged(
   {
     qCritical() << Q_FUNC_INFO << ": unexpected workspace mesh model node type";
 
-    workspaceGenerationNode->SetAndObserveWorkspaceMeshModelNodeID(NULL);
+    workspaceGenerationNode->SetAndObserveWorkspaceMeshSegmentationNodeID(NULL);
     d->RegistrationMatrix__3_10->setDisabled(true);
-    d->WorkspaceMeshModelDisplayNode = NULL;
+    d->WorkspaceMeshSegmentationDisplayNode = NULL;
 
     return;
   }
 
-  vtkMRMLModelNode* workspaceMeshModelNode =
-    vtkMRMLModelNode::SafeDownCast(nodeSelected);
+  // auto prevNode =
+  // workspaceGenerationNode->GetWorkspaceMeshSegmentationNode(); if (prevNode
+  // != NULL)
+  // {
+  //   qDebug() << Q_FUNC_INFO << ": Deleting previous node";
+  //   this->mrmlScene()->RemoveNode(prevNode);
+  // }
 
-  if (workspaceMeshModelNode == NULL)
+  vtkMRMLSegmentationNode* workspaceMeshSegmentationNode =
+    vtkMRMLSegmentationNode::SafeDownCast(nodeSelected);
+
+  if (workspaceMeshSegmentationNode == NULL)
   {
     qCritical() << Q_FUNC_INFO
                 << ": workspace mesh node has not been added yet.";
 
-    workspaceGenerationNode->SetAndObserveWorkspaceMeshModelNodeID(NULL);
+    workspaceGenerationNode->SetAndObserveWorkspaceMeshSegmentationNodeID(NULL);
     d->RegistrationMatrix__3_10->setDisabled(true);
-    d->WorkspaceMeshModelDisplayNode = NULL;
+    d->WorkspaceMeshSegmentationDisplayNode = NULL;
 
     return;
   }
 
-  workspaceGenerationNode->SetAndObserveWorkspaceMeshModelNodeID(
-    workspaceMeshModelNode->GetID());
-  auto modelDisplayNode = workspaceMeshModelNode->GetModelDisplayNode();
-  qvtkReconnect(d->WorkspaceMeshModelDisplayNode, modelDisplayNode,
-                vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
-  // d->WorkspaceMeshModelDisplayNode = modelDisplayNode;
-  d->logic()->setWorkspaceMeshModelDisplayNode(modelDisplayNode);
+  workspaceGenerationNode->SetAndObserveWorkspaceMeshSegmentationNodeID(
+    workspaceMeshSegmentationNode->GetID());
+  auto segmentationDisplayNode = vtkMRMLSegmentationDisplayNode::SafeDownCast(
+    workspaceMeshSegmentationNode->GetDisplayNode());
+  qvtkReconnect(d->WorkspaceMeshSegmentationDisplayNode,
+                segmentationDisplayNode, vtkCommand::ModifiedEvent, this,
+                SLOT(updateGUIFromMRML()));
+  // d->WorkspaceMeshSegmentationDisplayNode = segmentationDisplayNode;
+  d->logic()->setWorkspaceMeshSegmentationDisplayNode(segmentationDisplayNode);
 
   // Create logic to accommodate creating a new annotation ROI node.
   // Should you transfer the data to the new node? Reset all visibility params?
@@ -599,8 +701,8 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeChanged(
 
 // 2.1 Generate general workspace of the robot
 //-----------------------------------------------------------------------------
-void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeAdded(
-  vtkMRMLNode* addedNode)
+void qSlicerWorkspaceGenerationModuleWidget::
+  onWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode* addedNode)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
   qInfo() << Q_FUNC_INFO;
@@ -615,7 +717,8 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeAdded(
     return;
   }
 
-  vtkMRMLModelNode* modelNode = vtkMRMLModelNode::SafeDownCast(addedNode);
+  vtkMRMLSegmentationNode* modelNode =
+    vtkMRMLSegmentationNode::SafeDownCast(addedNode);
   if (modelNode == NULL)
   {
     qCritical() << Q_FUNC_INFO << ": Failed, invalid node";
@@ -628,6 +731,23 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshModelNodeAdded(
     // std::string(modelNode->GetName()).append("GeneralWorkspace");
     modelNode->SetName(outputModelNodeName.c_str());
   }
+
+  std::string general_name = "GeneralWorkspace";
+  int n = this->mrmlScene()->GetNumberOfNodesByClass("vtkMRMLSegmentationNode");
+  int count = 0;
+  for (int i = 0; i < n; i++)
+  {
+    vtkMRMLNode* node =
+      this->mrmlScene()->GetNthNodeByClass(i, "vtkMRMLSegmentationNode");
+    std::string nodeName = node->GetName();
+    if (nodeName.find(general_name) != std::string::npos)
+    {
+      count++;
+    }
+  }
+  std::string name =
+    general_name + ((count > 1) ? "_" + std::to_string(count) : "");
+  modelNode->SetName(name.c_str());
 }
 
 // 2.1 Generate general workspace of the robot
@@ -647,10 +767,10 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
     return;
   }
 
-  vtkMRMLModelNode* workspaceMeshModelNode =
-    workspaceGenerationNode->GetWorkspaceMeshModelNode();
+  vtkMRMLSegmentationNode* workspaceMeshSegmentationNode =
+    workspaceGenerationNode->GetWorkspaceMeshSegmentationNode();
 
-  if (!workspaceMeshModelNode)
+  if (!workspaceMeshSegmentationNode)
   {
     qCritical() << Q_FUNC_INFO << ": No workspace mesh model node created";
     return;
@@ -663,20 +783,25 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
     d->D_DoubleSpinBox__3_8->value()   // _robotToTreatmentAtHome
   };
 
-  d->WorkspaceMeshRegistrationMatrix = vtkMatrix4x4::New();
-  d->WorkspaceMeshRegistrationMatrix->DeepCopy(
-    d->RegistrationMatrix__3_10->values().data());
+  vtkNew< vtkMatrix4x4 > registration_matrix;
+  registration_matrix->DeepCopy(d->RegistrationMatrix__3_10->values().data());
 
-  d->logic()->GenerateWorkspace(workspaceMeshModelNode,
-                                d->ProbeSpecs.convertToProbe(),
-                                d->WorkspaceMeshRegistrationMatrix);
+  Probe probe = d->ProbeSpecs.convertToProbe();
+  qDebug() << Q_FUNC_INFO
+           << ": Probe Specifications are: A=" << probe._treatmentToTip
+           << " B= " << probe._robotToEntry
+           << " C= " << probe._cannulaToTreatment
+           << " D= " << probe._robotToTreatmentAtHome;
 
-  // d->WorkspaceMeshModelNode = d->logic()->getWorkspaceMeshModelNode();
-  d->WorkspaceMeshModelNode = workspaceMeshModelNode;
-  d->WorkspaceModelSelector__3_2->setCurrentNode(workspaceMeshModelNode);
+  d->logic()->GenerateGeneralWorkspace(workspaceMeshSegmentationNode,
+                                       d->ProbeSpecs.convertToProbe());
 
-  // workspaceMeshModelNode->ApplyTransformMatrix(
-  //   d->WorkspaceMeshRegistrationMatrix);
+  // d->WorkspaceMeshSegmentationNode =
+  // d->logic()->getWorkspaceMeshSegmentationNode();
+  d->WorkspaceMeshSegmentationNode = workspaceMeshSegmentationNode;
+  d->WorkspaceModelSelector__3_2->setCurrentNode(workspaceMeshSegmentationNode);
+
+  workspaceMeshSegmentationNode->ApplyTransformMatrix(registration_matrix);
 
   this->updateGUIFromMRML();
 }
@@ -699,23 +824,241 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceMeshVisibilityChanged(
     return;
   }
 
-  vtkMRMLModelNode* workspaceMeshModelNode =
-    d->logic()->getWorkspaceMeshModelNode();
+  vtkMRMLSegmentationNode* workspaceMeshSegmentationNode =
+    d->logic()->getWorkspaceMeshSegmentationNode();
 
-  if (!workspaceMeshModelNode)
+  if (!workspaceMeshSegmentationNode)
   {
     qCritical() << Q_FUNC_INFO << ": No workspace mesh model node created";
     return;
   }
 
   // Get volume rendering display node for volume. Create if absent.
-  if (!d->WorkspaceMeshModelDisplayNode)
+  if (!d->WorkspaceMeshSegmentationDisplayNode)
   {
     qCritical() << Q_FUNC_INFO << ": No workspace mesh model display node";
     return;
   }
 
-  d->WorkspaceMeshModelDisplayNode->SetVisibility(visible);
+  d->WorkspaceMeshSegmentationDisplayNode->SetVisibility(visible);
+
+  // Update widget from display node of the volume node
+  this->updateGUIFromMRML();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::
+  onEntryPointWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode* addedNode)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  vtkMRMLSegmentationNode* modelNode =
+    vtkMRMLSegmentationNode::SafeDownCast(addedNode);
+  if (modelNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Failed, invalid node";
+    return;
+  }
+
+  if (modelNode->GetName())
+  {
+    std::string outputModelNodeName = "EntryPointWorkspace";
+    // std::string(modelNode->GetName()).append("GeneralWorkspace");
+    modelNode->SetName(outputModelNodeName.c_str());
+  }
+
+  std::string general_name = "EntryPointWorkspace";
+  int n = this->mrmlScene()->GetNumberOfNodesByClass("vtkMRMLSegmentationNode");
+  int count = 0;
+  for (int i = 0; i < n; i++)
+  {
+    vtkMRMLNode* node =
+      this->mrmlScene()->GetNthNodeByClass(i, "vtkMRMLSegmentationNode");
+    std::string nodeName = node->GetName();
+    if (nodeName.find(general_name) != std::string::npos)
+    {
+      count++;
+    }
+  }
+  std::string name =
+    general_name + ((count > 1) ? "_" + std::to_string(count) : "");
+  modelNode->SetName(name.c_str());
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::
+  onEntryPointWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode* nodeSelected)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": invalid Entry Point Workspace Generation Node";
+
+    workspaceGenerationNode->SetAndObserveEPWorkspaceMeshSegmentationNodeID(
+      NULL);
+    d->RegistrationMatrix__3_10->setDisabled(true);
+    d->EPWorkspaceMeshSegmentationDisplayNode = NULL;
+
+    return;
+  }
+
+  if (nodeSelected == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": unexpected workspace mesh model node type";
+
+    workspaceGenerationNode->SetAndObserveEPWorkspaceMeshSegmentationNodeID(
+      NULL);
+    d->EPWorkspaceMeshSegmentationDisplayNode = NULL;
+
+    return;
+  }
+
+  // auto prevNode =
+  // workspaceGenerationNode->GetEPWorkspaceMeshSegmentationNode(); if (prevNode
+  // != NULL)
+  // {
+  //   qDebug() << Q_FUNC_INFO << ": Deleting previous node";
+  //   this->mrmlScene()->RemoveNode(prevNode);
+  // }
+
+  vtkMRMLSegmentationNode* ePWorkspaceMeshSegmentationNode =
+    vtkMRMLSegmentationNode::SafeDownCast(nodeSelected);
+
+  if (ePWorkspaceMeshSegmentationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": entry point workspace mesh node has not been added yet.";
+
+    workspaceGenerationNode->SetAndObserveEPWorkspaceMeshSegmentationNodeID(
+      NULL);
+    d->EPWorkspaceMeshSegmentationDisplayNode = NULL;
+
+    return;
+  }
+
+  workspaceGenerationNode->SetAndObserveEPWorkspaceMeshSegmentationNodeID(
+    ePWorkspaceMeshSegmentationNode->GetID());
+  auto segmentationDisplayNode = vtkMRMLSegmentationDisplayNode::SafeDownCast(
+    ePWorkspaceMeshSegmentationNode->GetDisplayNode());
+  qvtkReconnect(d->EPWorkspaceMeshSegmentationDisplayNode,
+                segmentationDisplayNode, vtkCommand::ModifiedEvent, this,
+                SLOT(updateGUIFromMRML()));
+  // d->WorkspaceMeshSegmentationDisplayNode = segmentationDisplayNode;
+  d->logic()->setEPWorkspaceMeshSegmentationDisplayNode(
+    segmentationDisplayNode);
+
+  // Create logic to accommodate creating a new annotation ROI node.
+  // Should you transfer the data to the new node? Reset all visibility params?
+
+  this->updateGUIFromMRML();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::
+  onGenerateEntryPointWorkspaceClick()
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  vtkMRMLSegmentationNode* ePWorkspaceMeshSegmentationNode =
+    workspaceGenerationNode->GetEPWorkspaceMeshSegmentationNode();
+
+  if (!ePWorkspaceMeshSegmentationNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No workspace mesh model node created";
+    return;
+  }
+
+  d->ProbeSpecs = {
+    d->A_DoubleSpinBox__3_5->value(),  // _treatmentToTip
+    d->B_DoubleSpinBox__3_6->value(),  // _robotToEntry
+    d->C_DoubleSpinBox__3_7->value(),  // _cannulaToTreatment
+    d->D_DoubleSpinBox__3_8->value()   // _robotToTreatmentAtHome
+  };
+
+  vtkNew< vtkMatrix4x4 > registration_matrix;
+  registration_matrix->DeepCopy(d->RegistrationMatrix__3_10->values().data());
+
+  d->logic()->GenerateEPWorkspace(ePWorkspaceMeshSegmentationNode,
+                                  d->ProbeSpecs.convertToProbe());
+  // ,
+  // d->WorkspaceMeshRegistrationMatrix);
+
+  // d->WorkspaceMeshSegmentationNode =
+  // d->logic()->getWorkspaceMeshSegmentationNode();
+  d->EPWorkspaceMeshSegmentationNode = ePWorkspaceMeshSegmentationNode;
+  d->EntryPointWorkspaceModelSelector__3_13->setCurrentNode(
+    ePWorkspaceMeshSegmentationNode);
+
+  ePWorkspaceMeshSegmentationNode->ApplyTransformMatrix(registration_matrix);
+
+  this->updateGUIFromMRML();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::
+  onEntryPointWorkspaceMeshVisibilityChanged(bool visible)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* selectedWorkspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (selectedWorkspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": No workspace generation node created yet.";
+    return;
+  }
+
+  vtkMRMLSegmentationNode* ePWorkspaceMeshSegmentationNode =
+    d->logic()->getEPWorkspaceMeshSegmentationNode();
+
+  if (!ePWorkspaceMeshSegmentationNode)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": No entry point workspace mesh model node created";
+    return;
+  }
+
+  // Get volume rendering display node for volume. Create if absent.
+  if (!d->EPWorkspaceMeshSegmentationDisplayNode)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": No entry point workspace mesh model display node";
+    return;
+  }
+
+  d->EPWorkspaceMeshSegmentationDisplayNode->SetVisibility(visible);
 
   // Update widget from display node of the volume node
   this->updateGUIFromMRML();
@@ -742,7 +1085,8 @@ void qSlicerWorkspaceGenerationModuleWidget::onWorkspaceLoadButtonClick()
 
   if (d->logic()->LoadWorkspace(fileName))
   {
-    d->WorkspaceMeshModelNode = d->logic()->getWorkspaceMeshModelNode();
+    d->WorkspaceMeshSegmentationNode =
+d->logic()->getWorkspaceMeshSegmentationNode();
     d->WorkspaceModelSelector__3_2->setCurrentNode(d->WorkspaceGenerationNode);
   }
 }
@@ -765,7 +1109,7 @@ void qSlicerWorkspaceGenerationModuleWidget::onApplyTransformClick()
   }
 
   vtkMRMLModelNode* workspaceMeshModelNode =
-    workspaceGenerationNode->GetWorkspaceMeshModelNode();
+    workspaceGenerationNode->GetWorkspaceMeshSegmentationNode();
 
   if (workspaceMeshModelNode == NULL)
   {
@@ -784,6 +1128,366 @@ void qSlicerWorkspaceGenerationModuleWidget::onApplyTransformClick()
 }
 //-----------------------------------------------------------------------------
 */
+
+// 1 + 2 = 3.1 Markup Burr Hole Segment.
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onBurrHoleSegmentationNodeAdded(
+  vtkMRMLNode* addedNode)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  vtkMRMLSegmentationNode* burrHoleSegmentationNodeAdded =
+    vtkMRMLSegmentationNode::SafeDownCast(addedNode);
+  if (burrHoleSegmentationNodeAdded == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Failed, invalid node";
+    return;
+  }
+
+  if (burrHoleSegmentationNodeAdded->GetName())
+  {
+    std::string burrHoleNodeName = "BurrHole";
+    // std::string(modelNode->GetName()).append("GeneralWorkspace");
+    burrHoleSegmentationNodeAdded->SetName(burrHoleNodeName.c_str());
+  }
+
+  std::string general_name = "BurrHole";
+  int n = this->mrmlScene()->GetNumberOfNodesByClass("vtkMRMLSegmentationNode");
+  int count = 0;
+  for (int i = 0; i < n; i++)
+  {
+    vtkMRMLNode* node =
+      this->mrmlScene()->GetNthNodeByClass(i, "vtkMRMLSegmentationNode");
+    std::string nodeName = node->GetName();
+    if (nodeName.find(general_name) != std::string::npos)
+    {
+      count++;
+    }
+  }
+  std::string name =
+    general_name + ((count > 1) ? "_" + std::to_string(count) : "");
+  burrHoleSegmentationNodeAdded->SetName(name.c_str());
+}
+
+// 1 + 2 = 3.1 Markup Burr Hole Segment.
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onBHExtremePointAdded(
+  vtkMRMLNode* addedNode)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  vtkMRMLMarkupsFiducialNode* markupNode =
+    vtkMRMLMarkupsFiducialNode::SafeDownCast(addedNode);
+  if (markupNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Failed, invalid node";
+    return;
+  }
+
+  if (markupNode->GetName())
+  {
+    std::string nodeName = "BHPoints";
+
+    // std::string(modelNode->GetName()).append("GeneralWorkspace");
+    markupNode->SetName(nodeName.c_str());
+  }
+
+  std::string general_name = "BHPoints";
+  int         n =
+    this->mrmlScene()->GetNumberOfNodesByClass("vtkMRMLMarkupsFiducialNode");
+  int count = 0;
+  for (int i = 0; i < n; i++)
+  {
+    vtkMRMLNode* node =
+      this->mrmlScene()->GetNthNodeByClass(i, "vtkMRMLMarkupsFiducialNode");
+    std::string nodeName = node->GetName();
+    if (nodeName.find(general_name) != std::string::npos)
+    {
+      count++;
+    }
+  }
+  std::string name =
+    general_name + ((count > 1) ? "_" + std::to_string(count) : "");
+  markupNode->SetName(name.c_str());
+}
+
+// 1 + 2 = 3.1 Markup Burr Hole Segment.
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onBHExtremePointChanged(
+  vtkMRMLNode* selectedNode)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+
+    workspaceGenerationNode->SetAndObserveBHExtremePointNodeId(NULL);
+    d->BHExtremePointDisplayNode = NULL;
+
+    return;
+  }
+
+  if (selectedNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": unexpected markup node";
+
+    workspaceGenerationNode->SetAndObserveBHExtremePointNodeId(NULL);
+    d->BHExtremePointDisplayNode = NULL;
+
+    return;
+  }
+
+  // auto prevNode = workspaceGenerationNode->GetBHExtremePointNode();
+  // if (prevNode != NULL)
+  // {
+  //   qDebug() << Q_FUNC_INFO << ": Deleting previous node";
+  //   this->mrmlScene()->RemoveNode(prevNode);
+  // }
+
+  vtkMRMLMarkupsFiducialNode* bHExtremePointNode =
+    vtkMRMLMarkupsFiducialNode::SafeDownCast(selectedNode);
+
+  if (bHExtremePointNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Markup Fiducial has not been added yet.";
+
+    workspaceGenerationNode->SetAndObserveBHExtremePointNodeId(NULL);
+    d->BHExtremePointDisplayNode = NULL;
+
+    return;
+  }
+
+  workspaceGenerationNode->SetAndObserveBHExtremePointNodeId(
+    bHExtremePointNode->GetID());
+
+  vtkMRMLMarkupsDisplayNode* bHExtremePointDisplayNode =
+    vtkMRMLMarkupsDisplayNode::SafeDownCast(
+      bHExtremePointNode->GetDisplayNode());
+  if (bHExtremePointDisplayNode == NULL)
+  {
+    bHExtremePointNode->CreateDefaultDisplayNodes();
+    bHExtremePointDisplayNode = vtkMRMLMarkupsDisplayNode::SafeDownCast(
+      bHExtremePointNode->GetDisplayNode());
+  }
+
+  bHExtremePointDisplayNode->PointLabelsVisibilityOff();
+
+  qvtkReconnect(d->BHExtremePointDisplayNode, bHExtremePointDisplayNode,
+                vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
+  d->BHExtremePointDisplayNode = bHExtremePointDisplayNode;
+
+  subscribeToMarkupEvents(bHExtremePointNode);
+
+  // Create logic to accommodate creating a new annotation ROI node.
+  // Should you transfer the data to the new node? Reset all visibility params?
+
+  this->updateGUIFromMRML();
+}
+
+// 4. Generate IsoSurface for burr hole identification
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onDetectBurrHoleClick()
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  vtkMRMLMarkupsFiducialNode* bHExtremePointNode =
+    workspaceGenerationNode->GetBHExtremePointNode();
+  if (bHExtremePointNode == NULL)
+  {
+    qWarning() << Q_FUNC_INFO << ": BH Extreme Points have not been created.";
+    return;
+  }
+
+  if (bHExtremePointNode->GetNumberOfDefinedControlPoints() <
+      nvidia::aiaa::Client::MIN_POINTS_FOR_SEGMENTATION)
+  {
+    qWarning() << Q_FUNC_INFO
+               << ": BurrHole Extreme points are less than the minimum "
+                  "required.";
+    return;
+  }
+
+  bool burrholeSet = d->logic()->IdentifyBurrHole(workspaceGenerationNode);
+
+  if (burrholeSet)
+  {
+    double* bHCenter = workspaceGenerationNode->GetBurrHoleCenter();
+
+    QString bHCenterString("[");
+    for (int i = 0; i < 3; i++)
+    {
+      bHCenterString += std::string(std::to_string(bHCenter[i]) + ",").c_str();
+    }
+    bHCenterString += "]";
+
+    qDebug() << Q_FUNC_INFO << ": Center of Burrhole: " << bHCenterString;
+
+    d->EntryPointFiducialSelector__5_2->addNode();
+    d->SubWorkspaceMeshSelector__5_4->addNode();
+
+    vtkSmartPointer< vtkMRMLMarkupsFiducialNode > entryPointFiducialsNode =
+      workspaceGenerationNode->GetEntryPointNode();
+
+    if (entryPointFiducialsNode != NULL)
+    {
+      entryPointFiducialsNode->AddControlPointWorld(vtkVector3d(bHCenter),
+                                                    "EntryPoint");
+
+      d->logic()->MarkupsLogic->JumpSlicesToNthPointInMarkup(
+        entryPointFiducialsNode->GetID(), 0, true);
+    }
+
+    // workspaceGenerationNode->SetAndObserveEntryPointNodeId()
+  }
+
+  // Should be ideally moved to burr hole detection.
+  workspaceGenerationNode->SetBurrHoleDetected(burrholeSet);
+}
+
+// 1 + 2 = 3.1 Markup Burr Hole Segment.
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onBurrHoleSegmentationNodeChanged(
+  vtkMRMLNode* nodeSelected)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  // vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+  //   vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+  //     d->ParameterNodeSelector__1_1->currentNode());
+
+  // if (workspaceGenerationNode == NULL)
+  // {
+  //   qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+
+  //   workspaceGenerationNode->SetAndObserveBurrHoleSegmentationNodeID(NULL);
+  //   d->BurrHoleSegmentationDisplayNode = NULL;
+
+  //   return;
+  // }
+
+  // if (nodeSelected == NULL)
+  // {
+  //   qCritical() << Q_FUNC_INFO << ": unexpected burrhole segmentation node
+  //   type";
+
+  //   workspaceGenerationNode->SetAndObserveBurrHoleSegmentationNodeID(NULL);
+  //   d->BurrHoleSegmentationDisplayNode = NULL;
+
+  //   return;
+  // }
+
+  // vtkMRMLSegmentationNode* burrHoleSegmentationNodeChanged =
+  //   vtkMRMLSegmentationNode::SafeDownCast(nodeSelected);
+
+  // if (burrHoleSegmentationNodeChanged == NULL)
+  // {
+  //   qCritical() << Q_FUNC_INFO
+  //               << ": burrhole segmentation node has not been added yet.";
+
+  //   workspaceGenerationNode->SetAndObserveBurrHoleSegmentationNodeID(NULL);
+  //   d->BurrHoleSegmentationDisplayNode = NULL;
+
+  //   return;
+  // }
+
+  // workspaceGenerationNode->SetAndObserveBurrHoleSegmentationNodeID(
+  //   burrHoleSegmentationNodeChanged->GetID());
+  // auto segmentationDisplayNode =
+  // vtkMRMLSegmentationDisplayNode::SafeDownCast(
+  //   burrHoleSegmentationNodeChanged->GetDisplayNode());
+  // qvtkReconnect(d->BurrHoleSegmentationDisplayNode, segmentationDisplayNode,
+  //               vtkCommand::ModifiedEvent, this, SLOT(updateGUIFromMRML()));
+  // d->WorkspaceMeshSegmentationDisplayNode = segmentationDisplayNode;
+  // d->logic()->setBurrHoleSegmentationDisplayNode(segmentationDisplayNode);
+
+  // Create logic to accommodate creating a new annotation ROI node.
+  // Should you transfer the data to the new node? Reset all visibility params?
+
+  this->updateGUIFromMRML();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onBurrHoleVisibilityChanged(
+  bool visible)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* selectedWorkspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (selectedWorkspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": No workspace generation node created yet.";
+    return;
+  }
+
+  vtkMRMLSegmentationNode* burrHoleSegmentationNode =
+    d->logic()->getBurrHoleSegmentationNode();
+
+  if (!burrHoleSegmentationNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No Burr Hole Segmentation node created";
+    return;
+  }
+
+  // Get volume rendering display node for volume. Create if absent.
+  if (!d->BurrHoleSegmentationDisplayNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No Burr Hole Segmentation display node";
+    return;
+  }
+
+  d->BurrHoleSegmentationDisplayNode->SetAllSegmentsVisibility(visible);
+  d->BurrHoleSegmentationDisplayNode->SetAllSegmentsVisibility3D(visible);
+
+  d->BurrHoleSegmentationDisplayNode->SetVisibility(visible);
+  d->BurrHoleSegmentationDisplayNode->SetVisibility3D(visible);
+
+  // Update widget from display node of the volume node
+  this->updateGUIFromMRML();
+}
 
 // 1 + 2 = 3.1 Place Entry Point.
 //-----------------------------------------------------------------------------
@@ -817,6 +1521,24 @@ void qSlicerWorkspaceGenerationModuleWidget::onEntryPointAdded(
     // std::string(modelNode->GetName()).append("GeneralWorkspace");
     markupNode->SetName(outputModelNodeName.c_str());
   }
+
+  std::string general_name = "EntryPoint";
+  int         n =
+    this->mrmlScene()->GetNumberOfNodesByClass("vtkMRMLMarkupsFiducialNode");
+  int count = 0;
+  for (int i = 0; i < n; i++)
+  {
+    vtkMRMLNode* node =
+      this->mrmlScene()->GetNthNodeByClass(i, "vtkMRMLMarkupsFiducialNode");
+    std::string nodeName = node->GetName();
+    if (nodeName.find(general_name) != std::string::npos)
+    {
+      count++;
+    }
+  }
+  std::string name =
+    general_name + ((count > 1) ? "_" + std::to_string(count) : "");
+  markupNode->SetName(name.c_str());
 }
 
 // 1 + 2 = 3.1 Place Entry Point.
@@ -851,6 +1573,13 @@ void qSlicerWorkspaceGenerationModuleWidget::onEntryPointSelectionChanged(
     return;
   }
 
+  // auto prevNode = workspaceGenerationNode->GetEntryPointNode();
+  // if (prevNode != NULL)
+  // {
+  //   qDebug() << Q_FUNC_INFO << ": Deleting previous node";
+  //   this->mrmlScene()->RemoveNode(prevNode);
+  // }
+
   vtkMRMLMarkupsFiducialNode* entryPointNode =
     vtkMRMLMarkupsFiducialNode::SafeDownCast(selectedNode);
 
@@ -881,6 +1610,222 @@ void qSlicerWorkspaceGenerationModuleWidget::onEntryPointSelectionChanged(
   // Create logic to accommodate creating a new annotation ROI node.
   // Should you transfer the data to the new node? Reset all visibility params?
 
+  this->updateGUIFromMRML();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::
+  onSubWorkspaceMeshSegmentationNodeAdded(vtkMRMLNode* addedNode)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  vtkMRMLSegmentationNode* modelNode =
+    vtkMRMLSegmentationNode::SafeDownCast(addedNode);
+  if (modelNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": Failed, invalid node";
+    return;
+  }
+
+  if (modelNode->GetName())
+  {
+    std::string outputModelNodeName = "SubWorkspace";
+    // std::string(modelNode->GetName()).append("GeneralWorkspace");
+    modelNode->SetName(outputModelNodeName.c_str());
+  }
+
+  std::string general_name = "SubWorkspace";
+  int n = this->mrmlScene()->GetNumberOfNodesByClass("vtkMRMLSegmentationNode");
+  int count = 0;
+  for (int i = 0; i < n; i++)
+  {
+    vtkMRMLNode* node =
+      this->mrmlScene()->GetNthNodeByClass(i, "vtkMRMLSegmentationNode");
+    std::string nodeName = node->GetName();
+    if (nodeName.find(general_name) != std::string::npos)
+    {
+      count++;
+    }
+  }
+  std::string name =
+    general_name + ((count > 1) ? "_" + std::to_string(count) : "");
+  modelNode->SetName(name.c_str());
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::
+  onSubWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode* nodeSelected)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid Workspace Generation Node";
+
+    workspaceGenerationNode->SetAndObserveSubWorkspaceMeshSegmentationNodeID(
+      NULL);
+    d->SubWorkspaceMeshSegmentationDisplayNode = NULL;
+
+    return;
+  }
+
+  if (nodeSelected == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": unexpected sub workspace mesh model node type";
+
+    workspaceGenerationNode->SetAndObserveSubWorkspaceMeshSegmentationNodeID(
+      NULL);
+    d->SubWorkspaceMeshSegmentationDisplayNode = NULL;
+
+    return;
+  }
+
+  // auto prevNode =
+  //   workspaceGenerationNode->GetSubWorkspaceMeshSegmentationNode();
+  // if (prevNode != NULL)
+  // {
+  //   qDebug() << Q_FUNC_INFO << ": Deleting previous node";
+  //   this->mrmlScene()->RemoveNode(prevNode);
+  // }
+
+  vtkMRMLSegmentationNode* subWorkspaceMeshSegmentationNode =
+    vtkMRMLSegmentationNode::SafeDownCast(nodeSelected);
+
+  if (subWorkspaceMeshSegmentationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": entry point workspace mesh node has not been added yet.";
+
+    workspaceGenerationNode->SetAndObserveSubWorkspaceMeshSegmentationNodeID(
+      NULL);
+    d->SubWorkspaceMeshSegmentationDisplayNode = NULL;
+
+    return;
+  }
+
+  workspaceGenerationNode->SetAndObserveSubWorkspaceMeshSegmentationNodeID(
+    subWorkspaceMeshSegmentationNode->GetID());
+  auto segmentationDisplayNode = vtkMRMLSegmentationDisplayNode::SafeDownCast(
+    subWorkspaceMeshSegmentationNode->GetDisplayNode());
+  qvtkReconnect(d->SubWorkspaceMeshSegmentationDisplayNode,
+                segmentationDisplayNode, vtkCommand::ModifiedEvent, this,
+                SLOT(updateGUIFromMRML()));
+  // d->WorkspaceMeshSegmentationDisplayNode = segmentationDisplayNode;
+  d->logic()->setSubWorkspaceMeshSegmentationDisplayNode(
+    segmentationDisplayNode);
+
+  // Create logic to accommodate creating a new annotation ROI node.
+  // Should you transfer the data to the new node? Reset all visibility params?
+
+  this->updateGUIFromMRML();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onGenerateSubWorkspaceClick()
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  vtkMRMLSegmentationNode* subWorkspaceMeshSegmentationNode =
+    workspaceGenerationNode->GetSubWorkspaceMeshSegmentationNode();
+
+  if (!subWorkspaceMeshSegmentationNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No workspace mesh model node created";
+    return;
+  }
+
+  d->ProbeSpecs = {
+    d->A_DoubleSpinBox__3_5->value(),  // _treatmentToTip
+    d->B_DoubleSpinBox__3_6->value(),  // _robotToEntry
+    d->C_DoubleSpinBox__3_7->value(),  // _cannulaToTreatment
+    d->D_DoubleSpinBox__3_8->value()   // _robotToTreatmentAtHome
+  };
+
+  vtkNew< vtkMatrix4x4 > registration_matrix;
+  registration_matrix->DeepCopy(d->RegistrationMatrix__3_10->values().data());
+
+  d->logic()->UpdateSubWorkspace(workspaceGenerationNode,
+                                 d->ProbeSpecs.convertToProbe(),
+                                 registration_matrix);
+  // ,
+  // d->WorkspaceMeshRegistrationMatrix);
+
+  // d->WorkspaceMeshSegmentationNode =
+  // d->logic()->getWorkspaceMeshSegmentationNode();
+  d->SubWorkspaceMeshSegmentationNode = subWorkspaceMeshSegmentationNode;
+  d->SubWorkspaceMeshSelector__5_4->setCurrentNode(
+    subWorkspaceMeshSegmentationNode);
+
+  d->SubWorkspaceMeshSegmentationNode->ApplyTransformMatrix(
+    registration_matrix);
+
+  this->updateGUIFromMRML();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::
+  onSubWorkspaceMeshVisibilityChanged(bool visible)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* selectedWorkspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (selectedWorkspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": No workspace generation node created yet.";
+    return;
+  }
+
+  vtkMRMLSegmentationNode* subWorkspaceMeshSegmentationNode =
+    d->logic()->getSubWorkspaceMeshSegmentationNode();
+
+  if (!subWorkspaceMeshSegmentationNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No sub workspace mesh node created";
+    return;
+  }
+
+  // Get volume rendering display node for volume. Create if absent.
+  if (!d->SubWorkspaceMeshSegmentationDisplayNode)
+  {
+    qCritical() << Q_FUNC_INFO << ": No Sub workspace mesh display node";
+    return;
+  }
+
+  d->SubWorkspaceMeshSegmentationDisplayNode->SetVisibility(visible);
+
+  // Update widget from display node of the volume node
   this->updateGUIFromMRML();
 }
 
@@ -916,6 +1861,24 @@ void qSlicerWorkspaceGenerationModuleWidget::onTargetPointAdded(
     // std::string(modelNode->GetName()).append("GeneralWorkspace");
     markupNode->SetName(outputModelNodeName.c_str());
   }
+
+  std::string general_name = "TargetPoint";
+  int         n =
+    this->mrmlScene()->GetNumberOfNodesByClass("vtkMRMLMarkupsFiducialNode");
+  int count = 0;
+  for (int i = 0; i < n; i++)
+  {
+    vtkMRMLNode* node =
+      this->mrmlScene()->GetNthNodeByClass(i, "vtkMRMLMarkupsFiducialNode");
+    std::string nodeName = node->GetName();
+    if (nodeName.find(general_name) != std::string::npos)
+    {
+      count++;
+    }
+  }
+  std::string name =
+    general_name + ((count > 1) ? "_" + std::to_string(count) : "");
+  markupNode->SetName(name.c_str());
 }
 
 // 3.2 (can be independent of 3.1) - Place Target Point
@@ -949,6 +1912,13 @@ void qSlicerWorkspaceGenerationModuleWidget::onTargetPointSelectionChanged(
 
     return;
   }
+
+  // auto prevNode = workspaceGenerationNode->GetTargetPointNode();
+  // if (prevNode != NULL)
+  // {
+  //   qDebug() << Q_FUNC_INFO << ": Deleting previous node";
+  //   this->mrmlScene()->RemoveNode(prevNode);
+  // }
 
   vtkMRMLMarkupsFiducialNode* targetPointNode =
     vtkMRMLMarkupsFiducialNode::SafeDownCast(selectedNode);
@@ -1043,13 +2013,10 @@ void qSlicerWorkspaceGenerationModuleWidget::onMarkupChanged(
       break;
     case vtkMRMLMarkupsNode::PointEndInteractionEvent:
       eventName = "vtkMRMLMarkupsNode::PointEndInteractionEvent";
-      // qDebug() << "Marker Name: " << markupNode->GetName();
       this->markupPlacedEventHandler(markupNode);
       break;
     case vtkMRMLMarkupsNode::PointPositionDefinedEvent:
       eventName = "vtkMRMLMarkupsNode::PointPositionDefinedEvent";
-      // qDebug() << "Marker Name: " << markupNode->GetName();
-      // d->logic()->UpdateMarkupFiducialNodes();
       this->markupPlacedEventHandler(markupNode);
       break;
     case vtkMRMLMarkupsNode::PointPositionUndefinedEvent:
@@ -1091,11 +2058,14 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
   vtkMRMLMarkupsNode* markup)
 {
   Q_D(qSlicerWorkspaceGenerationModuleWidget);
-  qDebug() << Q_FUNC_INFO;
+  qInfo() << Q_FUNC_INFO;
 
   vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
     vtkMRMLWorkspaceGenerationNode::SafeDownCast(
       d->ParameterNodeSelector__1_1->currentNode());
+
+  vtkMRMLMarkupsFiducialNode* bHExtremePointNode =
+    workspaceGenerationNode->GetBHExtremePointNode();
 
   vtkMRMLMarkupsFiducialNode* entryPointNode =
     workspaceGenerationNode->GetEntryPointNode();
@@ -1103,28 +2073,65 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
   vtkMRMLMarkupsFiducialNode* targetPointNode =
     workspaceGenerationNode->GetTargetPointNode();
 
+  if (bHExtremePointNode == NULL)
+  {
+    // qWarning() << Q_FUNC_INFO << ": burrhole extreme point has not been
+    // created.";
+    return;
+  }
+
   bool burrholeSet = workspaceGenerationNode->GetBurrHoleDetected();
+
+  if (!burrholeSet)
+  {
+    // qWarning() << Q_FUNC_INFO << ": Burr Hole has not been identified yet.";
+    return;
+  }
+  else
+  {
+    if (markup != NULL &&
+        strcmp(markup->GetName(), bHExtremePointNode->GetName()) == 0)
+    {
+      // qDebug() << Q_FUNC_INFO << ": Moved Burr Hole Markup";
+      // this->onDetectBurrHoleClick();
+    }
+  }
 
   if (entryPointNode == NULL)
   {
-    qWarning() << Q_FUNC_INFO << ": Entry point still hasn't been placed.";
+    // qWarning() << Q_FUNC_INFO << ": Entry point has not been created.";
+    return;
+  }
+
+  if (targetPointNode == NULL)
+  {
+    // qWarning() << Q_FUNC_INFO << ": Target point has not been created.";
+    return;
+  }
+
+  if (entryPointNode->GetNumberOfDefinedControlPoints() == 0)
+  {
+    // qWarning() << Q_FUNC_INFO << ": Entry point has not been placed yet.";
     return;
   }
 
   // Calculate Subworkspace
-  d->logic()->UpdateSubWorkspace(workspaceGenerationNode, burrholeSet);
+  // d->logic()->UpdateSubWorkspace(workspaceGenerationNode, burrholeSet);
 
-  if (targetPointNode != NULL)
+  if (targetPointNode->GetNumberOfDefinedControlPoints() == 0)
   {
-    // Easy to modify this to a lock if asynchronousity is required.
-    if (!burrholeSet)
-    {
-      burrholeSet = d->logic()->IdentifyBurrHole(workspaceGenerationNode);
-
-      // Should be ideally moved to burr hole detection.
-      workspaceGenerationNode->SetBurrHoleDetected(burrholeSet);
-    }
+    // qWarning() << Q_FUNC_INFO << ": Target point has not been placed yet.";
+    return;
   }
+
+  // Easy to modify this to a lock if asynchronousity is required.
+  // if (!burrholeSet)
+  // {
+  //   burrholeSet = d->logic()->IdentifyBurrHole(workspaceGenerationNode);
+
+  //   // Should be ideally moved to burr hole detection.
+  //   workspaceGenerationNode->SetBurrHoleDetected(burrholeSet);
+  // }
 }
 
 //-----------------------------------------------------------------------------
@@ -1229,35 +2236,72 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
   // d->WorkspaceModelSelector__3_2->blockSignals(true);
   d->WorkspaceModelSelector__3_2->setMRMLScene(this->mrmlScene());
 
-  vtkMRMLModelNode* workspaceMeshModelNode =
-    workspaceGenerationNode->GetWorkspaceMeshModelNode();
+  vtkMRMLSegmentationNode* workspaceMeshSegmentationNode =
+    workspaceGenerationNode->GetWorkspaceMeshSegmentationNode();
 
-  d->WorkspaceModelSelector__3_2->setCurrentNode(workspaceMeshModelNode);
+  d->WorkspaceModelSelector__3_2->setCurrentNode(workspaceMeshSegmentationNode);
   // d->WorkspaceModelSelector__3_2->blockSignals(false);
 
-  if (!workspaceMeshModelNode)
+  if (!workspaceMeshSegmentationNode)
   {
     setCheckState(d->WorkspaceVisibilityToggle__3_12, false);
     qWarning() << Q_FUNC_INFO << ": No Workspace Mesh Node available.";
-    d->WorkspaceMeshModelDisplayNode = NULL;
-    setCheckState(d->WorkspaceVisibilityToggle__3_12, false);
+    d->WorkspaceMeshSegmentationDisplayNode = NULL;
   }
   else
   {
-    d->WorkspaceMeshModelNode = workspaceMeshModelNode;
+    d->WorkspaceMeshSegmentationNode = workspaceMeshSegmentationNode;
 
     // Workspace Generation display options
-    d->WorkspaceMeshModelDisplayNode =
-      workspaceMeshModelNode->GetModelDisplayNode();
+    d->WorkspaceMeshSegmentationDisplayNode =
+      vtkMRMLSegmentationDisplayNode::SafeDownCast(
+        workspaceMeshSegmentationNode->GetDisplayNode());
 
-    if (d->WorkspaceMeshModelDisplayNode != NULL)
+    if (d->WorkspaceMeshSegmentationDisplayNode != NULL)
     {
-      auto visibility = d->WorkspaceMeshModelDisplayNode->GetVisibility();
+      auto visibility =
+        d->WorkspaceMeshSegmentationDisplayNode->GetVisibility();
       setCheckState(d->WorkspaceVisibilityToggle__3_12, visibility);
     }
     else
     {
       setCheckState(d->WorkspaceVisibilityToggle__3_12, false);
+    }
+  }
+
+  d->EntryPointWorkspaceModelSelector__3_13->setMRMLScene(this->mrmlScene());
+
+  vtkMRMLSegmentationNode* ePWorkspaceMeshSegmentationNode =
+    workspaceGenerationNode->GetEPWorkspaceMeshSegmentationNode();
+
+  d->EntryPointWorkspaceModelSelector__3_13->setCurrentNode(
+    ePWorkspaceMeshSegmentationNode);
+
+  if (!ePWorkspaceMeshSegmentationNode)
+  {
+    setCheckState(d->EntryPointWorkspaceVisibilityToggle__3_14, false);
+    qWarning() << Q_FUNC_INFO
+               << ": No Entry Point Workspace Mesh Node available.";
+    d->EPWorkspaceMeshSegmentationDisplayNode = NULL;
+  }
+  else
+  {
+    d->EPWorkspaceMeshSegmentationNode = ePWorkspaceMeshSegmentationNode;
+
+    // Workspace Generation display options
+    d->EPWorkspaceMeshSegmentationDisplayNode =
+      vtkMRMLSegmentationDisplayNode::SafeDownCast(
+        ePWorkspaceMeshSegmentationNode->GetDisplayNode());
+
+    if (d->EPWorkspaceMeshSegmentationDisplayNode != NULL)
+    {
+      auto visibility =
+        d->EPWorkspaceMeshSegmentationDisplayNode->GetVisibility();
+      setCheckState(d->EntryPointWorkspaceVisibilityToggle__3_14, visibility);
+    }
+    else
+    {
+      setCheckState(d->EntryPointWorkspaceVisibilityToggle__3_14, false);
     }
   }
 
@@ -1277,41 +2321,133 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
     // return;
   }
 
-  // d->EntryPointFiducialSelector__4_2->setEnabled(true);
-  // d->EntryPointFiducialSelector__4_2->blockSignals(true);
-  d->EntryPointFiducialSelector__4_2->setMRMLScene(this->mrmlScene());
+  d->BurrHoleExtremeMarkupsFiducialSelector__4_2->setMRMLScene(
+    this->mrmlScene());
+
+  vtkMRMLMarkupsFiducialNode* bHExtremePoint =
+    workspaceGenerationNode->GetBHExtremePointNode();
+
+  d->BurrHoleExtremeMarkupsFiducialSelector__4_2->setCurrentNode(
+    bHExtremePoint);
+  if (bHExtremePoint != NULL)
+  {
+    d->BurrHoleExtremeMarkupsPlaceWidget__4_3->setCurrentNode(bHExtremePoint);
+  }
+  else
+  {
+    qWarning() << Q_FUNC_INFO << ": Burr Hole Extreme Point is NULL";
+    d->BurrHoleExtremeMarkupsPlaceWidget__4_3->setCurrentNode(NULL);
+  }
+
+  // d->WorkspaceModelSelector__3_2->setEnabled(true);
+  // d->WorkspaceModelSelector__3_2->blockSignals(true);
+  d->BurrHoleSegmentationSelector__4_5->setMRMLScene(this->mrmlScene());
+
+  vtkMRMLSegmentationNode* burrHoleSegmentationNode =
+    workspaceGenerationNode->GetBurrHoleSegmentationNode();
+
+  d->BurrHoleSegmentationSelector__4_5->setCurrentNode(
+    burrHoleSegmentationNode);
+  // d->WorkspaceModelSelector__3_2->blockSignals(false);
+
+  if (!burrHoleSegmentationNode)
+  {
+    setCheckState(d->BurrHoleSetVisibilityCheckBox__4_6, false);
+    qWarning() << Q_FUNC_INFO << ": No BurrHole Segmentation Node available.";
+    d->BurrHoleSegmentationDisplayNode = NULL;
+    setCheckState(d->BurrHoleSetVisibilityCheckBox__4_6, false);
+  }
+  else
+  {
+    d->BurrHoleSegmentationNode = burrHoleSegmentationNode;
+
+    // Workspace Generation display options
+    d->BurrHoleSegmentationDisplayNode =
+      vtkMRMLSegmentationDisplayNode::SafeDownCast(
+        burrHoleSegmentationNode->GetDisplayNode());
+
+    if (d->BurrHoleSegmentationDisplayNode != NULL)
+    {
+      auto visibility = d->BurrHoleSegmentationDisplayNode->GetVisibility();
+      setCheckState(d->BurrHoleSetVisibilityCheckBox__4_6, visibility);
+    }
+    else
+    {
+      setCheckState(d->BurrHoleSetVisibilityCheckBox__4_6, false);
+    }
+  }
+
+  // d->EntryPointFiducialSelector__5_2->setEnabled(true);
+  // d->EntryPointFiducialSelector__5_2->blockSignals(true);
+  d->EntryPointFiducialSelector__5_2->setMRMLScene(this->mrmlScene());
 
   vtkMRMLMarkupsFiducialNode* entryPoint =
     workspaceGenerationNode->GetEntryPointNode();
 
-  d->EntryPointFiducialSelector__4_2->setCurrentNode(entryPoint);
+  d->EntryPointFiducialSelector__5_2->setCurrentNode(entryPoint);
   if (entryPoint != NULL)
   {
-    d->EntryPointMarkupsPlaceWidget__4_3->setCurrentNode(entryPoint);
+    d->EntryPointMarkupsPlaceWidget__5_3->setCurrentNode(entryPoint);
   }
   else
   {
     qWarning() << Q_FUNC_INFO << ": Entry point is NULL";
-    d->EntryPointMarkupsPlaceWidget__4_3->setCurrentNode(NULL);
+    d->EntryPointMarkupsPlaceWidget__5_3->setCurrentNode(NULL);
   }
-  // d->EntryPointFiducialSelector__4_2->blockSignals(false);
 
-  // d->TargetPointFiducialSelector__4_4->setEnabled(true);
-  // d->TargetPointFiducialSelector__4_4->blockSignals(true);
-  d->TargetPointFiducialSelector__4_4->setMRMLScene(this->mrmlScene());
+  d->SubWorkspaceMeshSelector__5_4->setMRMLScene(this->mrmlScene());
+
+  vtkMRMLSegmentationNode* subWorkspaceMeshSegmentationNode =
+    workspaceGenerationNode->GetSubWorkspaceMeshSegmentationNode();
+
+  d->SubWorkspaceMeshSelector__5_4->setCurrentNode(
+    subWorkspaceMeshSegmentationNode);
+
+  if (!subWorkspaceMeshSegmentationNode)
+  {
+    setCheckState(d->SubWorkspaceMeshSetVisibilityCheckBox__5_5, false);
+    qWarning() << Q_FUNC_INFO
+               << ": No Entry Point Workspace Mesh Node available.";
+    d->SubWorkspaceMeshSegmentationDisplayNode = NULL;
+  }
+  else
+  {
+    d->SubWorkspaceMeshSegmentationNode = subWorkspaceMeshSegmentationNode;
+
+    // Workspace Generation display options
+    d->SubWorkspaceMeshSegmentationDisplayNode =
+      vtkMRMLSegmentationDisplayNode::SafeDownCast(
+        subWorkspaceMeshSegmentationNode->GetDisplayNode());
+
+    if (d->SubWorkspaceMeshSegmentationDisplayNode != NULL)
+    {
+      auto visibility =
+        d->SubWorkspaceMeshSegmentationDisplayNode->GetVisibility();
+      setCheckState(d->SubWorkspaceMeshSetVisibilityCheckBox__5_5, visibility);
+    }
+    else
+    {
+      setCheckState(d->SubWorkspaceMeshSetVisibilityCheckBox__5_5, false);
+    }
+  }
+  // d->EntryPointFiducialSelector__5_2->blockSignals(false);
+
+  // d->TargetPointFiducialSelector__5_4->setEnabled(true);
+  // d->TargetPointFiducialSelector__5_4->blockSignals(true);
+  d->TargetPointFiducialSelector__5_7->setMRMLScene(this->mrmlScene());
   vtkMRMLMarkupsFiducialNode* targetPoint =
     workspaceGenerationNode->GetTargetPointNode();
-  d->TargetPointFiducialSelector__4_4->setCurrentNode(targetPoint);
+  d->TargetPointFiducialSelector__5_7->setCurrentNode(targetPoint);
   if (targetPoint != NULL)
   {
-    d->TargetPointMarkupsPlaceWidget__4_5->setCurrentNode(targetPoint);
+    d->TargetPointMarkupsPlaceWidget__5_8->setCurrentNode(targetPoint);
   }
   else
   {
     qWarning() << Q_FUNC_INFO << ": Target point is NULL";
-    d->TargetPointMarkupsPlaceWidget__4_5->setCurrentNode(NULL);
+    d->TargetPointMarkupsPlaceWidget__5_8->setCurrentNode(NULL);
   }
-  // d->TargetPointFiducialSelector__4_4->blockSignals(false);
+  // d->TargetPointFiducialSelector__5_4->blockSignals(false);
 
   // block ALL signals until the function returns
   // if a return is called after this line, then unblockAllSignals should also
@@ -1327,24 +2463,25 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
 
     if (d->InputVolumeRenderingDisplayNode != NULL)
     {
-      // Get the current Volume Property Node.
-      d->VolumePropertyNode =
-        d->InputVolumeRenderingDisplayNode->GetVolumePropertyNode();
+      // // Get the current Volume Property Node.
+      // d->VolumePropertyNode =
+      //   d->InputVolumeRenderingDisplayNode->GetVolumePropertyNode();
 
-      // Copy the MRI preset to the volume property node
-      d->VolumePropertyNode->Copy(
-        this->VolumeRenderingLogic->GetPresetByName("MR-Default"));
+      // // Copy the MRI preset to the volume property node
+      // d->VolumePropertyNode->Copy(
+      //   this->VolumeRenderingLogic->GetPresetByName("MR-Default"));
 
-      // Set the current mrml scene in the preset combo box widget
-      // d->InputVolumeRenderingPresetComboBox->setMRMLScene(this->mrmlScene());
+      // // Set the current mrml scene in the preset combo box widget
+      // d->InputVolumeRenderingPresetComboBox__2_6->setMRMLScene(
+      //   this->mrmlScene());
 
-      // Have the preset combo box observe the vol rendering display property
-      // node.
-      // d->InputVolumeRenderingPresetComboBox->setMRMLVolumePropertyNode(
+      // // Have the preset combo box observe the vol rendering display property
+      // // node.
+      // d->InputVolumeRenderingPresetComboBox__2_6->setMRMLVolumePropertyNode(
       //   d->VolumePropertyNode);
 
-      // Set the current node to the preset combo box
-      // d->InputVolumeRenderingPresetComboBox->setCurrentNode(
+      // // Set the current node to the preset combo box
+      // d->InputVolumeRenderingPresetComboBox__2_6->setCurrentNode(
       //   this->VolumeRenderingLogic->GetPresetByName("MR-Default"));
 
       auto visibility = d->InputVolumeRenderingDisplayNode->GetVisibility();
@@ -1356,22 +2493,28 @@ void qSlicerWorkspaceGenerationModuleWidget::updateGUIFromMRML()
     setCheckState(d->InputVolumeSetVisibilityCheckBox__2_3, false);
   }
 
-  d->EntryPointMarkupsPlaceWidget__4_3->setMRMLScene(this->mrmlScene());
-  d->TargetPointMarkupsPlaceWidget__4_5->setMRMLScene(this->mrmlScene());
+  d->BurrHoleExtremeMarkupsPlaceWidget__4_3->setMRMLScene(this->mrmlScene());
+  d->EntryPointMarkupsPlaceWidget__5_3->setMRMLScene(this->mrmlScene());
+  d->TargetPointMarkupsPlaceWidget__5_8->setMRMLScene(this->mrmlScene());
 
   // Determine visibility of widgets
+  bool isBHExtremePoint =
+    (vtkMRMLMarkupsFiducialNode::SafeDownCast(bHExtremePoint) != NULL);
   bool isEntryPoint =
     (vtkMRMLMarkupsFiducialNode::SafeDownCast(entryPoint) != NULL);
   bool isTargetPoint =
     (vtkMRMLMarkupsFiducialNode::SafeDownCast(targetPoint) != NULL);
 
+  qDebug() << Q_FUNC_INFO << ": BurrHole Extreme Point"
+           << ((isBHExtremePoint) ? "true" : "false");
   qDebug() << Q_FUNC_INFO << ": Entry Point"
            << ((isEntryPoint) ? "true" : "false");
   qDebug() << Q_FUNC_INFO << ": Target Point"
            << ((isTargetPoint) ? "true" : "false");
 
-  d->EntryPointMarkupsPlaceWidget__4_3->setVisible(isEntryPoint);
-  d->TargetPointMarkupsPlaceWidget__4_5->setVisible(isTargetPoint);
+  d->BurrHoleExtremeMarkupsPlaceWidget__4_3->setVisible(isBHExtremePoint);
+  d->EntryPointMarkupsPlaceWidget__5_3->setVisible(isEntryPoint);
+  d->TargetPointMarkupsPlaceWidget__5_8->setVisible(isTargetPoint);
 
   this->blockAllSignals(false);
 }

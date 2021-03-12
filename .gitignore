@@ -286,5 +286,9 @@ compile_commands.json
 # .vscode
 
 ### Other files ###
-General_workspace.xyz
-
+3rdparty/
+*.mlx
+*.log
+*.ply
+*.xyz
+!WorkspaceGeneration/Resources/meshes/mesh_generation_script.mlx

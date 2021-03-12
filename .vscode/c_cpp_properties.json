@@ -1,4 +1,7 @@
 {
+    "env": {
+        "MESHLAB_BIN_DIR": "/usr/bin/"
+    },
     "configurations": [
         {
             "name": "Linux",
@@ -6,9 +9,8 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/build/**",
                 "${workspaceFolder}/build/WorkspaceGeneration/**",
-                "${HOME}/Slicer/build/Slicer-build/**",
-                "${HOME}/Slicer/build/**",
-                "${HOME}/Slicer/build/Slicer-build/**"
+                "${env:Slicer_BUILD_DIR}/Slicer-build/**",
+                "${env:Slicer_BUILD_DIR}/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",
@@ -16,10 +18,11 @@
             "intelliSenseMode": "${default}",
             "configurationProvider": "ms-vscode.cmake-tools",
             "cppStandard": "c++11",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "browse": {
                 "path": [
-                    "${HOME}/Slicer/",
-                    "${workspaceFolder}/"
+                    "${workspaceFolder}/",
+                    "${workspaceFolder}/build/"
                 ],
                 "limitSymbolsToIncludedHeaders": true
             }
