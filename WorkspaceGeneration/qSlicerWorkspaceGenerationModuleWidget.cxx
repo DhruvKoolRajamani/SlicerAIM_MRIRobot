@@ -166,6 +166,8 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
   this->VolumeRenderingModule = d->logic()->getVolumeRenderingModule();
   this->VolumeRenderingLogic  = d->logic()->getVolumeRenderingLogic();
 
+  RetainedRegMatrixState = false;
+
   connect(d->ParameterNodeSelector__1_1,
           SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
           SLOT(onParameterNodeSelectionChanged()));
@@ -187,6 +189,7 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
   // connect(d->InputVolumeRenderingPresetComboBox,
   // SIGNAL(presetOffsetChanged()),
   //         this, SLOT(onPresetComboBoxNodeChanged(vtkMRMLNode*)));
+  // connect(d->RegistrationMatrix__3_10)
   connect(d->WorkspaceModelSelector__3_2,
           SIGNAL(currentNodeChanged(vtkMRMLNode*)), this,
           SLOT(onWorkspaceMeshSegmentationNodeChanged(vtkMRMLNode*)));
@@ -365,13 +368,60 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
   d->RegistrationMatrix__3_10->setEditable(true);
 
   // Set temporary values for temp mri image.
-  // TODO: Remove once testing pig images
-  auto regMat = d->RegistrationMatrix__3_10->values();
-  regMat[3]   = 3.59;
-  regMat[7]   = -131.75;
-  regMat[11]  = -15.38;
-  qDebug() << Q_FUNC_INFO << regMat;
-  d->RegistrationMatrix__3_10->setValues(regMat);
+  // TODO: Remove once testing pig
+  vtkSmartPointer< vtkMRMLTransformNode > regTransformNode =
+    selectedWorkspaceGenerationNode->GetRegistrationTransformNode();
+
+  if (regTransformNode == NULL)
+  {
+    qWarning() << Q_FUNC_INFO << ": Transform Node is null, creating a new one";
+    regTransformNode = vtkSmartPointer< vtkMRMLTransformNode >::New();
+
+    regTransformNode->SetName("RegistrationTransform");
+
+    this->mrmlScene()->AddNode(regTransformNode.GetPointer());
+
+    if (regTransformNode->GetID() != NULL)
+    {
+      selectedWorkspaceGenerationNode->SetAndObserveRegistrationTransformNodeID(
+        regTransformNode->GetID());
+    }
+    else
+    {
+      qWarning() << Q_FUNC_INFO << ": Unable to create a Transform Node";
+    }
+
+    auto regMat = d->RegistrationMatrix__3_10->values();
+    regMat[3]   = 3.59;
+    regMat[7]   = -131.75;
+    regMat[11]  = -15.38;
+    qDebug() << Q_FUNC_INFO << regMat;
+    d->RegistrationMatrix__3_10->setValues(regMat);
+  }
+  // else
+  // {
+  //   qDebug() << Q_FUNC_INFO
+  //            << ": Transform Node exists, setting matrix to previous matrix";
+  //   vtkNew< vtkMatrix4x4 > registration_matrix;
+  //   int                    status =
+  //     regTransformNode->GetMatrixTransformFromParent(registration_matrix);
+
+  //   if (status != 0)
+  //   {
+  //     d->RegistrationMatrix__3_10->setMRMLTransformNode(regTransformNode);
+  //   }
+
+  //   for (int i = 0; i < 4; i++)
+  //   {
+  //     for (int j = 0; j < 4; j++)
+  //     {
+  //       d->RegistrationMatrix__3_10->setValue(
+  //         i, j, registration_matrix->GetElement(i, j));
+  //     }
+  //   }
+
+  //   // d->RegistrationMatrix__3_10
+  // }
 
   d->InputVolumeRenderingPresetSettingsCollapsibleButton__2_5->setCollapsed(
     true);
@@ -802,7 +852,28 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
   d->WorkspaceMeshSegmentationNode = workspaceMeshSegmentationNode;
   d->WorkspaceModelSelector__3_2->setCurrentNode(workspaceMeshSegmentationNode);
 
-  workspaceMeshSegmentationNode->ApplyTransformMatrix(registration_matrix);
+  vtkSmartPointer< vtkMRMLTransformNode > regTransformNode =
+    workspaceGenerationNode->GetRegistrationTransformNode();
+
+  if (regTransformNode != NULL)
+  {
+    regTransformNode->SetMatrixTransformToParent(
+      registration_matrix.GetPointer());
+  }
+  else
+  {
+    qCritical() << Q_FUNC_INFO << ": Transform Node does not exist.";
+    return;
+  }
+
+  if (!this->RetainedRegMatrixState)
+  {
+    d->RegistrationMatrix__3_10->setMRMLTransformNode(regTransformNode);
+    this->RetainedRegMatrixState = true;
+  }
+
+  workspaceMeshSegmentationNode->SetAndObserveTransformNodeID(
+    regTransformNode->GetID());
 
   this->updateGUIFromMRML();
 }
@@ -1019,7 +1090,28 @@ void qSlicerWorkspaceGenerationModuleWidget::
   d->EntryPointWorkspaceModelSelector__3_13->setCurrentNode(
     ePWorkspaceMeshSegmentationNode);
 
-  ePWorkspaceMeshSegmentationNode->ApplyTransformMatrix(registration_matrix);
+  vtkSmartPointer< vtkMRMLTransformNode > regTransformNode =
+    workspaceGenerationNode->GetRegistrationTransformNode();
+
+  if (regTransformNode != NULL)
+  {
+    regTransformNode->SetMatrixTransformToParent(
+      registration_matrix.GetPointer());
+  }
+  else
+  {
+    qCritical() << Q_FUNC_INFO << ": Transform Node does not exist.";
+    return;
+  }
+
+  if (!this->RetainedRegMatrixState)
+  {
+    d->RegistrationMatrix__3_10->setMRMLTransformNode(regTransformNode);
+    this->RetainedRegMatrixState = true;
+  }
+
+  ePWorkspaceMeshSegmentationNode->SetAndObserveTransformNodeID(
+    regTransformNode->GetID());
 
   this->updateGUIFromMRML();
 }
@@ -1785,8 +1877,28 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateSubWorkspaceClick()
   d->SubWorkspaceMeshSelector__5_4->setCurrentNode(
     subWorkspaceMeshSegmentationNode);
 
-  d->SubWorkspaceMeshSegmentationNode->ApplyTransformMatrix(
-    registration_matrix);
+  vtkSmartPointer< vtkMRMLTransformNode > regTransformNode =
+    workspaceGenerationNode->GetRegistrationTransformNode();
+
+  if (regTransformNode != NULL)
+  {
+    regTransformNode->SetMatrixTransformToParent(
+      registration_matrix.GetPointer());
+  }
+  else
+  {
+    qCritical() << Q_FUNC_INFO << ": Transform Node does not exist.";
+    return;
+  }
+
+  if (!this->RetainedRegMatrixState)
+  {
+    d->RegistrationMatrix__3_10->setMRMLTransformNode(regTransformNode);
+    this->RetainedRegMatrixState = true;
+  }
+
+  subWorkspaceMeshSegmentationNode->SetAndObserveTransformNodeID(
+    regTransformNode->GetID());
 
   this->updateGUIFromMRML();
 }
@@ -2073,30 +2185,6 @@ void qSlicerWorkspaceGenerationModuleWidget::markupPlacedEventHandler(
 
   vtkMRMLMarkupsFiducialNode* targetPointNode =
     workspaceGenerationNode->GetTargetPointNode();
-
-  if (bHExtremePointNode == NULL)
-  {
-    // qWarning() << Q_FUNC_INFO << ": burrhole extreme point has not been
-    // created.";
-    return;
-  }
-
-  bool burrholeSet = workspaceGenerationNode->GetBurrHoleDetected();
-
-  if (!burrholeSet)
-  {
-    // qWarning() << Q_FUNC_INFO << ": Burr Hole has not been identified
-    yet."; return;
-  }
-  else
-  {
-    if (markup != NULL &&
-        strcmp(markup->GetName(), bHExtremePointNode->GetName()) == 0)
-    {
-      // qDebug() << Q_FUNC_INFO << ": Moved Burr Hole Markup";
-      // this->onDetectBurrHoleClick();
-    }
-  }
 
   if (entryPointNode == NULL)
   {

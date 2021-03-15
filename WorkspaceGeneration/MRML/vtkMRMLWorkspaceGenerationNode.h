@@ -29,6 +29,7 @@
 
 // vtk includes
 #include <vtkCommand.h>
+#include <vtkMatrix4x4.h>
 #include <vtkObject.h>
 #include <vtkObjectBase.h>
 #include <vtkObjectFactory.h>
@@ -49,6 +50,9 @@
 // Markups Fiducial Node
 #include <vtkMRMLMarkupsFiducialDisplayNode.h>
 #include <vtkMRMLMarkupsFiducialNode.h>
+
+// Transform Node
+#include <vtkMRMLTransformNode.h>
 
 // Slicer includes
 #include "vtkMRMLNode.h"
@@ -137,6 +141,9 @@ public:
   vtkGetMacro(BurrHoleRadius, float);
   vtkSetMacro(BurrHoleRadius, float);
 
+  vtkGetMacro(RegistrationMatrix, vtkMatrix4x4*);
+  vtkSetMacro(RegistrationMatrix, vtkMatrix4x4*);
+
 protected:
   // Constructor/destructor methods
   vtkMRMLWorkspaceGenerationNode();
@@ -151,8 +158,12 @@ public:
   void SetBurrHoleParameters(double center[3], double radius,
                              vtkMRMLModelNode* drill_bit = NULL);
 
+  // void SetRegistrationMatrix(vtkMatrix4x4* registration_matrix);
+
   void SetAndObserveInputVolumeNodeID(const char* inputNodeId);
   void SetAndObserveAnnotationROINodeID(const char* annotationROINodeId);
+  void SetAndObserveRegistrationTransformNodeID(
+    const char* registrationTransformNodeId);
   void SetAndObserveWorkspaceMeshSegmentationNodeID(
     const char* workspaceMeshSegmentationNodeId);
   void SetAndObserveEPWorkspaceMeshSegmentationNodeID(
@@ -169,6 +180,7 @@ public:
 
   vtkMRMLVolumeNode*          GetInputVolumeNode();
   vtkMRMLAnnotationROINode*   GetAnnotationROINode();
+  vtkMRMLTransformNode*       GetRegistrationTransformNode();
   vtkMRMLSegmentationNode*    GetWorkspaceMeshSegmentationNode();
   vtkMRMLSegmentationNode*    GetEPWorkspaceMeshSegmentationNode();
   vtkMRMLSegmentationNode*    GetSubWorkspaceMeshSegmentationNode();
@@ -177,6 +189,7 @@ public:
   vtkMRMLMarkupsFiducialNode* GetEntryPointNode();
   vtkMRMLMarkupsFiducialNode* GetTargetPointNode();
   BurrHoleParameters          GetBurrHoleParams();
+  // vtkMatrix4x4*               GetRegistrationMatrix();
 
 private:
   bool               AutoUpdateOutput;
@@ -184,8 +197,9 @@ private:
   double             BurrHoleCenter[3];
   float              BurrHoleRadius;
   BurrHoleParameters BurrHoleParams;
+  vtkMatrix4x4*      RegistrationMatrix;
 
   // int InputNodeType;
 };
 
-#endif  // __vtkMRMLWorkspaceGenerationNode_h
+#endif  // __vtkMRMLWorkspaceGenerationNode_hBurrHoleParameters

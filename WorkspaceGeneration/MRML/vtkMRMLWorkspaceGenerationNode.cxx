@@ -20,8 +20,9 @@
 #include <sstream>
 #include <string.h>
 
-static const char* INPUT_ROLE = "InputVolume";
-static const char* ROI_ROLE   = "ROI";
+static const char* INPUT_ROLE                  = "InputVolume";
+static const char* ROI_ROLE                    = "ROI";
+static const char* REGISTRATION_TRANSFORM_ROLE = "RegistrationTransform";
 static const char* WORKSPACEMESH_SEGMENTATION_ROLE =
   "WorkspaceMeshSegmentation";
 static const char* EP_WORKSPACEMESH_SEGMENTATION_ROLE =
@@ -73,6 +74,11 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
   vtkNew< vtkIntArray > inputVolumeEvents;
   inputVolumeEvents->InsertNextValue(vtkCommand::ModifiedEvent);
 
+  vtkNew< vtkIntArray > registrationTransformEvents;
+  registrationTransformEvents->InsertNextValue(vtkCommand::ModifiedEvent);
+  registrationTransformEvents->InsertNextValue(
+    vtkMRMLTransformNode::TransformModifiedEvent);
+
   vtkNew< vtkIntArray > workspaceMeshEvents;
   workspaceMeshEvents->InsertNextValue(vtkCommand::ModifiedEvent);
   workspaceMeshEvents->InsertNextValue(vtkMRMLModelNode::MeshModifiedEvent);
@@ -118,6 +124,8 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
 
   this->AddNodeReferenceRole(INPUT_ROLE, NULL, inputVolumeEvents.GetPointer());
   this->AddNodeReferenceRole(ROI_ROLE);
+  this->AddNodeReferenceRole(REGISTRATION_TRANSFORM_ROLE, NULL,
+                             registrationTransformEvents);
   this->AddNodeReferenceRole(WORKSPACEMESH_SEGMENTATION_ROLE, NULL,
                              workspaceMeshEvents.GetPointer());
   this->AddNodeReferenceRole(EP_WORKSPACEMESH_SEGMENTATION_ROLE, NULL,
@@ -262,6 +270,23 @@ vtkMRMLAnnotationROINode* vtkMRMLWorkspaceGenerationNode::GetAnnotationROINode()
   }
 
   return annotationROINode;
+}
+
+//-----------------------------------------------------------------
+vtkMRMLTransformNode*
+  vtkMRMLWorkspaceGenerationNode::GetRegistrationTransformNode()
+{
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLTransformNode* regTransformNode = vtkMRMLTransformNode::SafeDownCast(
+    this->GetNodeReference(REGISTRATION_TRANSFORM_ROLE));
+
+  if (!regTransformNode)
+  {
+    qWarning() << Q_FUNC_INFO << ": registration transform node is null";
+    return NULL;
+  }
+  return regTransformNode;
 }
 
 //-----------------------------------------------------------------
@@ -411,11 +436,28 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveInputVolumeNodeID(
 
   if (inputId == NULL)
   {
-    vtkErrorMacro("Input node cannot be null.");
+    qCritical() << Q_FUNC_INFO << ": Input node cannot be null.";
     return;
   }
 
   this->SetAndObserveNodeReferenceID(INPUT_ROLE, inputId);
+}
+
+//-----------------------------------------------------------------
+void vtkMRMLWorkspaceGenerationNode::SetAndObserveRegistrationTransformNodeID(
+  const char* regTransformId)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  if (regTransformId == NULL)
+  {
+    qCritical() << Q_FUNC_INFO
+                << ": Registration transform node cannot be null";
+    return;
+  }
+
+  this->SetAndObserveNodeReferenceID(REGISTRATION_TRANSFORM_ROLE,
+                                     regTransformId);
 }
 
 //-----------------------------------------------------------------
@@ -440,7 +482,8 @@ void vtkMRMLWorkspaceGenerationNode::
              subWorkspaceMeshSegmentationNodeId) == 0 &&
       strcmp(workspaceMeshSegmentationNodeId, roiId) == 0)
   {
-    vtkErrorMacro("Workspace Mesh node cannot match any other node");
+    qCritical() << Q_FUNC_INFO
+                << ": Workspace Mesh node cannot match any other node";
     return;
   }
 
@@ -470,7 +513,8 @@ void vtkMRMLWorkspaceGenerationNode::
              subWorkspaceMeshSegmentationNodeId) == 0 &&
       strcmp(ePWorkspaceMeshSegmentationNodeId, roiId) == 0)
   {
-    vtkErrorMacro("EP Workspace Mesh node cannot match any other node");
+    qCritical() << Q_FUNC_INFO
+                << ": EP Workspace Mesh node cannot match any other node";
     return;
   }
 
@@ -500,7 +544,8 @@ void vtkMRMLWorkspaceGenerationNode::
              ePWorkspaceMeshSegmentationNodeId) == 0 &&
       strcmp(subWorkspaceMeshSegmentationNodeId, roiId) == 0)
   {
-    vtkErrorMacro("Sub Workspace Mesh node cannot match any other node");
+    qCritical() << Q_FUNC_INFO
+                << ": Sub Workspace Mesh node cannot match any other node";
     return;
   }
 
@@ -520,7 +565,8 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveAnnotationROINodeID(
   if (workspaceMeshSegmentationNodeId != NULL && annotationROIId != NULL &&
       strcmp(annotationROIId, workspaceMeshSegmentationNodeId) == 0)
   {
-    vtkErrorMacro("Workspace Mesh node and annotation node cannot be null.");
+    qCritical() << Q_FUNC_INFO
+                << ": Workspace Mesh node and annotation node cannot be null.";
     return;
   }
 
@@ -540,9 +586,10 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveBurrHoleSegmentationNodeID(
       workspaceMeshSegmentationNodeId != NULL &&
       strcmp(burrHoleSegmentationNodeId, workspaceMeshSegmentationNodeId) == 0)
   {
-    vtkErrorMacro(
-      "Burr Hole Segmentation node and Workspace Mesh Segmentation Node cannot "
-      "be same.");
+    qCritical() << Q_FUNC_INFO
+                << ": Burr Hole Segmentation node and Workspace Mesh "
+                   "Segmentation Node cannot "
+                   "be same.";
     return;
   }
 
@@ -558,7 +605,7 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveBHExtremePointNodeId(
 
   if (bHExtremePointNodeId == NULL)
   {
-    vtkErrorMacro("Burr hole point node id cannot be null.");
+    qCritical() << Q_FUNC_INFO << ": Burr hole point node id cannot be null.";
     return;
   }
 
@@ -569,8 +616,9 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveBHExtremePointNodeId(
       (entryPointNodeId != NULL &&
        strcmp(bHExtremePointNodeId, entryPointNodeId) == 0))
   {
-    vtkErrorMacro(
-      "Extreme point cannot be the same as Entry point or target point.");
+    qCritical() << Q_FUNC_INFO
+                << ": Extreme point cannot be the same as Entry point or "
+                   "target point.";
     return;
   }
 
@@ -588,14 +636,15 @@ void vtkMRMLWorkspaceGenerationNode::SetAndObserveEntryPointNodeId(
   const char* targetPointNodeId = this->GetNodeReferenceID(TARGET_POINT_ROLE);
   if (entryPointNodeId == NULL)
   {
-    vtkErrorMacro("Entry point node id cannot be null.");
+    qCritical() << Q_FUNC_INFO << ": Entry point node id cannot be null.";
     return;
   }
 
   if (targetPointNodeId != NULL &&
       strcmp(targetPointNodeId, entryPointNodeId) == 0)
   {
-    vtkErrorMacro("Entry point and target point cannot be the same.");
+    qCritical() << Q_FUNC_INFO
+                << ": Entry point and target point cannot be the same.";
     return;
   }
 

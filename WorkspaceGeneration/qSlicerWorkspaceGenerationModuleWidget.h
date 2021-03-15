@@ -160,6 +160,8 @@ protected:
   vtkSlicerVolumeRenderingLogic* VolumeRenderingLogic;
   qSlicerAbstractCoreModule*     VolumeRenderingModule;
 
+  bool RetainedRegMatrixState;
+
   virtual void setup();
   virtual void enter();
   virtual void exit();
