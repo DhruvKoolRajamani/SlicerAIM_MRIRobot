@@ -137,6 +137,7 @@ vtkSlicerWorkspaceGenerationLogic::vtkSlicerWorkspaceGenerationLogic()
                                vtkSlicerSegmentationsModuleLogic::SafeDownCast(
                                  this->SegmentationsModule->logic()) :
                                0;
+  IsServerConnected        = false;
 }
 
 //----------------------------------------------------------------------------
@@ -580,6 +581,72 @@ bool vtkSlicerWorkspaceGenerationLogic::UpdateBHSegmentationMask(
 }
 
 //-----------------------------------------------------------------------------
+bool vtkSlicerWorkspaceGenerationLogic::ConnectClientToServer(
+  QString serverAddress)
+{
+  qInfo() << Q_FUNC_INFO;
+
+  try
+  {
+    // Delete previous Client
+    if (NvidiaAIAAClient != NULL)
+    {
+      delete NvidiaAIAAClient;
+    }
+
+    NvidiaAIAAClient = new nvidia::aiaa::Client(serverAddress.toUtf8().data());
+    if (!NvidiaAIAAClient)
+    {
+      IsServerConnected = false;
+    }
+    else
+    {
+      IsServerConnected = true;
+    }
+
+    // List all models
+    nvidia::aiaa::ModelList modelList = NvidiaAIAAClient->models();
+    qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
+             << modelList.toJson().c_str();
+    if (modelList.empty())
+    {
+      IsServerConnected = false;
+    }
+    else
+    {
+      IsServerConnected = true;
+    }
+
+    // annotation_mri_brain_tumors_t1ce_tc -> label: brain tumor core
+    AIAAModel = modelList.getMatchingModel("brain tumor core",
+                                           nvidia::aiaa::Model::annotation);
+    if (AIAAModel.type != nvidia::aiaa::Model::annotation)
+    {
+      IsServerConnected = false;
+    }
+    else
+    {
+      IsServerConnected = true;
+    }
+  }
+  catch (nvidia::aiaa::exception& e)
+  {
+    qCritical() << Q_FUNC_INFO
+                << "nvidia::aiaa::exception => nvidia.aiaa.error." << e.id
+                << "; description: " << e.name().c_str();
+    // throw
+    // nvidia::aiaa::exception(nvidia::aiaa::exception::RESPONSE_PARSE_ERROR,
+    //                               e.what());
+    IsServerConnected = false;
+  }
+
+  if (!IsServerConnected)
+    return false;
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
 bool vtkSlicerWorkspaceGenerationLogic::DebugIdentifyBurrHole(
   vtkMRMLWorkspaceGenerationNode* wsgn)
 {
@@ -673,7 +740,25 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   {
     try
     {
-      NvidiaAIAAClient = new nvidia::aiaa::Client("http://127.0.0.1:8123");
+      if (!this->IsServerConnected)
+      {
+        qWarning() << Q_FUNC_INFO << ": Reconnecting to AIAA Server";
+        AIAAServerAddress = wsgn->GetAIAAServerAddress();
+
+        if (AIAAServerAddress.isEmpty())
+        {
+          qCritical() << Q_FUNC_INFO << ": Defaulting to localhost";
+          AIAAServerAddress = "http://127.0.0.1:8123/";
+        }
+
+        bool state = ConnectClientToServer(AIAAServerAddress);
+        if (!state)
+        {
+          qCritical() << Q_FUNC_INFO
+                      << ": Unable to connect to nvidia AIAA server";
+          return false;
+        }
+      }
 
       std::string response = NvidiaAIAAClient->createSession(
         std::string(inFileInfo.absoluteFilePath().toUtf8().constData()));
@@ -741,17 +826,9 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
   {
     try
     {
-      // List all models
-      nvidia::aiaa::ModelList modelList = NvidiaAIAAClient->models();
-      qDebug() << Q_FUNC_INFO << "Models Supported by AIAA Server: "
-               << modelList.toJson().c_str();
-
-      // annotation_mri_brain_tumors_t1ce_tc -> label: brain tumor core
-      nvidia::aiaa::Model model = modelList.getMatchingModel(
-        "brain tumor core", nvidia::aiaa::Model::annotation);
-
       result = NvidiaAIAAClient->dextr3D(
-        model, bHExtremePointSet, QString(in_file + ext).toUtf8().constData(),
+        AIAAModel, bHExtremePointSet,
+        QString(in_file + ext).toUtf8().constData(),
         out_file.toUtf8().constData(), false, sessionID);
 
       if (result == 0)

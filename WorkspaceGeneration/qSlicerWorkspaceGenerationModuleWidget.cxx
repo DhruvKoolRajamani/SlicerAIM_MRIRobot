@@ -56,6 +56,9 @@
 #include <vtkMarchingCubes.h>
 #include <vtkStripper.h>
 
+// NeuroRobot includes
+#include <NeuroKinematics/NeuroKinematics.hpp>
+
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class qSlicerWorkspaceGenerationModuleWidgetPrivate
@@ -209,6 +212,8 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
           SLOT(onGenerateEntryPointWorkspaceClick()));
   connect(d->EntryPointWorkspaceVisibilityToggle__3_14, SIGNAL(toggled(bool)),
           this, SLOT(onEntryPointWorkspaceMeshVisibilityChanged(bool)));
+  connect(d->AIAAServerButtonCheckBox, SIGNAL(toggled(bool)), this,
+          SLOT(onAIAAServerChanged(bool)));
   connect(d->BurrHoleSegmentationSelector__4_5,
           SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this,
           SLOT(onBurrHoleSegmentationNodeAdded(vtkMRMLNode*)));
@@ -257,6 +262,55 @@ void qSlicerWorkspaceGenerationModuleWidget::setup()
   d->TargetPointMarkupsPlaceWidget__5_8->setPlaceMultipleMarkups(
     qSlicerMarkupsPlaceWidget::PlaceMultipleMarkupsType::
       ForcePlaceSingleMarkup);
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerWorkspaceGenerationModuleWidget::onAIAAServerChanged(bool state)
+{
+  Q_D(qSlicerWorkspaceGenerationModuleWidget);
+  qInfo() << Q_FUNC_INFO;
+
+  vtkMRMLWorkspaceGenerationNode* workspaceGenerationNode =
+    vtkMRMLWorkspaceGenerationNode::SafeDownCast(
+      d->ParameterNodeSelector__1_1->currentNode());
+
+  if (workspaceGenerationNode == NULL)
+  {
+    qCritical() << Q_FUNC_INFO << ": invalid workspaceGenerationNode";
+    return;
+  }
+
+  QString serverAddress = d->AIAAServerLineEdit->displayText();
+  if (serverAddress.isEmpty())
+  {
+    qDebug() << Q_FUNC_INFO << ": Server address is empty, using default";
+    serverAddress = "http://127.0.0.1:8123/";
+  }
+  else
+  {
+    qDebug() << Q_FUNC_INFO << ": Server address is: " << serverAddress;
+  }
+
+  d->AIAAServerProgressBar->setValue(25);
+  bool connectedState = d->logic()->ConnectClientToServer(serverAddress);
+  if (connectedState)
+  {
+    qDebug() << Q_FUNC_INFO << ": Successfully connected to server";
+    d->AIAAServerProgressBar->setValue(75);
+    setCheckState(d->AIAAServerButtonCheckBox, true);
+    workspaceGenerationNode->SetAIAAServerAddress(
+      serverAddress.toUtf8().data());
+    d->AIAAServerProgressBar->setValue(100);
+    d->AIAAServerButtonCheckBox->setText("Success");
+    d->AIAAServerLineEdit->setText(serverAddress);
+  }
+  else
+  {
+    qCritical() << Q_FUNC_INFO << ": Failed to connect to server";
+    d->AIAAServerProgressBar->setValue(0);
+    setCheckState(d->AIAAServerButtonCheckBox, false);
+    d->AIAAServerButtonCheckBox->setText("Failed");
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -355,10 +409,21 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
   double _robotToEntry{5.0};             // B
   double _robotToTreatmentAtHome{33.0};  // D
 
-  d->A_DoubleSpinBox__3_5->setValue(_treatmentToTip);
-  d->B_DoubleSpinBox__3_6->setValue(_robotToEntry);
-  d->C_DoubleSpinBox__3_7->setValue(_cannulaToTreatment);
-  d->D_DoubleSpinBox__3_8->setValue(_robotToTreatmentAtHome);
+  Probe probe(_cannulaToTreatment, _treatmentToTip, _robotToEntry,
+              _robotToTreatmentAtHome);
+  d->ProbeSpecs = selectedWorkspaceGenerationNode->GetProbeSpecs();
+
+  if (!d->ProbeSpecs.Default)
+  {
+    d->ProbeSpecs = ProbeSpecifications::convertToProbeSpecifications(probe);
+    d->ProbeSpecs.Default = true;
+    selectedWorkspaceGenerationNode->SetProbeSpecs(d->ProbeSpecs);
+  }
+
+  d->A_DoubleSpinBox__3_5->setValue(d->ProbeSpecs.A);
+  d->B_DoubleSpinBox__3_6->setValue(d->ProbeSpecs.B);
+  d->C_DoubleSpinBox__3_7->setValue(d->ProbeSpecs.C);
+  d->D_DoubleSpinBox__3_8->setValue(d->ProbeSpecs.D);
 
   d->A_DoubleSpinBox__3_5->setEnabled(true);
   d->B_DoubleSpinBox__3_6->setEnabled(true);
@@ -429,6 +494,8 @@ void qSlicerWorkspaceGenerationModuleWidget::onParameterNodeSelectionChanged()
 
   d->ProbeSpecsCollapsibleButton__3_3->setCollapsed(true);
   d->RegistrationMatrixCollapsibleButton__3_9->setCollapsed(true);
+
+  d->BurrHoleConfigCollapsibleButton__4_2->setCollapsed(true);
 
   this->updateGUIFromMRML();
 }
@@ -827,12 +894,23 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
     return;
   }
 
-  d->ProbeSpecs = {
+  d->ProbeSpecs = workspaceGenerationNode->GetProbeSpecs();
+
+  ProbeSpecifications probeSpecs = {
     d->A_DoubleSpinBox__3_5->value(),  // _treatmentToTip
     d->B_DoubleSpinBox__3_6->value(),  // _robotToEntry
     d->C_DoubleSpinBox__3_7->value(),  // _cannulaToTreatment
-    d->D_DoubleSpinBox__3_8->value()   // _robotToTreatmentAtHome
-  };
+    d->D_DoubleSpinBox__3_8->value(),  // _robotToTreatmentAtHome
+    false};
+
+  if (d->ProbeSpecs != probeSpecs)
+  {
+    qDebug() << Q_FUNC_INFO << ": Probe Specifications have been changed";
+    d->ProbeSpecs         = probeSpecs;
+    d->ProbeSpecs.Default = true;
+
+    workspaceGenerationNode->SetProbeSpecs(d->ProbeSpecs);
+  }
 
   vtkNew< vtkMatrix4x4 > registration_matrix;
   registration_matrix->DeepCopy(d->RegistrationMatrix__3_10->values().data());
@@ -874,6 +952,8 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateWorkspaceClick()
 
   workspaceMeshSegmentationNode->SetAndObserveTransformNodeID(
     regTransformNode->GetID());
+
+  d->BurrHoleConfigCollapsibleButton__4_2->setCollapsed(false);
 
   this->updateGUIFromMRML();
 }
@@ -1069,12 +1149,23 @@ void qSlicerWorkspaceGenerationModuleWidget::
     return;
   }
 
-  d->ProbeSpecs = {
+  d->ProbeSpecs = workspaceGenerationNode->GetProbeSpecs();
+
+  ProbeSpecifications probeSpecs = {
     d->A_DoubleSpinBox__3_5->value(),  // _treatmentToTip
     d->B_DoubleSpinBox__3_6->value(),  // _robotToEntry
     d->C_DoubleSpinBox__3_7->value(),  // _cannulaToTreatment
-    d->D_DoubleSpinBox__3_8->value()   // _robotToTreatmentAtHome
-  };
+    d->D_DoubleSpinBox__3_8->value(),  // _robotToTreatmentAtHome
+    false};
+
+  if (d->ProbeSpecs != probeSpecs)
+  {
+    qDebug() << Q_FUNC_INFO << ": Probe Specifications have been changed";
+    d->ProbeSpecs         = probeSpecs;
+    d->ProbeSpecs.Default = true;
+
+    workspaceGenerationNode->SetProbeSpecs(d->ProbeSpecs);
+  }
 
   vtkNew< vtkMatrix4x4 > registration_matrix;
   registration_matrix->DeepCopy(d->RegistrationMatrix__3_10->values().data());
@@ -1112,6 +1203,8 @@ void qSlicerWorkspaceGenerationModuleWidget::
 
   ePWorkspaceMeshSegmentationNode->SetAndObserveTransformNodeID(
     regTransformNode->GetID());
+
+  d->BurrHoleConfigCollapsibleButton__4_2->setCollapsed(false);
 
   this->updateGUIFromMRML();
 }
@@ -1855,12 +1948,23 @@ void qSlicerWorkspaceGenerationModuleWidget::onGenerateSubWorkspaceClick()
     return;
   }
 
-  d->ProbeSpecs = {
+  d->ProbeSpecs = workspaceGenerationNode->GetProbeSpecs();
+
+  ProbeSpecifications probeSpecs = {
     d->A_DoubleSpinBox__3_5->value(),  // _treatmentToTip
     d->B_DoubleSpinBox__3_6->value(),  // _robotToEntry
     d->C_DoubleSpinBox__3_7->value(),  // _cannulaToTreatment
-    d->D_DoubleSpinBox__3_8->value()   // _robotToTreatmentAtHome
-  };
+    d->D_DoubleSpinBox__3_8->value(),  // _robotToTreatmentAtHome
+    false};
+
+  if (d->ProbeSpecs != probeSpecs)
+  {
+    qDebug() << Q_FUNC_INFO << ": Probe Specifications have been changed";
+    d->ProbeSpecs         = probeSpecs;
+    d->ProbeSpecs.Default = true;
+
+    workspaceGenerationNode->SetProbeSpecs(d->ProbeSpecs);
+  }
 
   vtkNew< vtkMatrix4x4 > registration_matrix;
   registration_matrix->DeepCopy(d->RegistrationMatrix__3_10->values().data());

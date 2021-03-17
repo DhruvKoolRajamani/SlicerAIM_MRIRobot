@@ -61,6 +61,9 @@
 // WorkspaceGeneration includes
 #include "vtkSlicerWorkspaceGenerationModuleMRMLExport.h"
 
+// NeuroRobot includes
+#include <NeuroKinematics/NeuroKinematics.hpp>
+
 class vtkMRMLModelNode;
 
 class BurrHoleParameters
@@ -144,6 +147,9 @@ public:
   vtkGetMacro(RegistrationMatrix, vtkMatrix4x4*);
   vtkSetMacro(RegistrationMatrix, vtkMatrix4x4*);
 
+  vtkGetStringMacro(AIAAServerAddress);
+  vtkSetStringMacro(AIAAServerAddress);
+
 protected:
   // Constructor/destructor methods
   vtkMRMLWorkspaceGenerationNode();
@@ -152,11 +158,13 @@ protected:
   void operator=(const vtkMRMLWorkspaceGenerationNode&);
 
 public:
-  void SetBurrHoleParameters(BurrHoleParameters burrHoleParams);
-  void SetBurrHoleParameters(vtkVector3d center, double radius,
-                             vtkMRMLModelNode* drill_bit = NULL);
-  void SetBurrHoleParameters(double center[3], double radius,
-                             vtkMRMLModelNode* drill_bit = NULL);
+  void SetBurrHoleParams(BurrHoleParameters burrHoleParams);
+  void SetBurrHoleParams(vtkVector3d center, double radius,
+                         vtkMRMLModelNode* drill_bit = NULL);
+  void SetBurrHoleParams(double center[3], double radius,
+                         vtkMRMLModelNode* drill_bit = NULL);
+
+  void SetProbeSpecs(ProbeSpecifications probeSpecs);
 
   // void SetRegistrationMatrix(vtkMatrix4x4* registration_matrix);
 
@@ -189,15 +197,18 @@ public:
   vtkMRMLMarkupsFiducialNode* GetEntryPointNode();
   vtkMRMLMarkupsFiducialNode* GetTargetPointNode();
   BurrHoleParameters          GetBurrHoleParams();
+  ProbeSpecifications         GetProbeSpecs();
   // vtkMatrix4x4*               GetRegistrationMatrix();
 
 private:
-  bool               AutoUpdateOutput;
-  bool               BurrHoleDetected;
-  double             BurrHoleCenter[3];
-  float              BurrHoleRadius;
-  BurrHoleParameters BurrHoleParams;
-  vtkMatrix4x4*      RegistrationMatrix;
+  bool                AutoUpdateOutput;
+  bool                BurrHoleDetected;
+  double              BurrHoleCenter[3];
+  float               BurrHoleRadius;
+  BurrHoleParameters  BurrHoleParams;
+  vtkMatrix4x4*       RegistrationMatrix;
+  ProbeSpecifications ProbeSpecs;
+  char*               AIAAServerAddress;
 
   // int InputNodeType;
 };

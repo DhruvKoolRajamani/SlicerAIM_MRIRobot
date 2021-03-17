@@ -148,6 +148,8 @@ public:
   void GenerateEPWorkspace(vtkMRMLSegmentationNode* segmentationNode,
                            Probe                    probe);
 
+  bool ConnectClientToServer(QString serverAddress);
+
   // Getters
   vtkSlicerVolumeRenderingLogic* getVolumeRenderingLogic();
   qSlicerAbstractCoreModule*     getVolumeRenderingModule();
@@ -235,7 +237,10 @@ protected:
   qSlicerAbstractCoreModule*         SegmentationsModule;
 
   // Nvidia AIAA
+  QString               AIAAServerAddress;
   nvidia::aiaa::Client* NvidiaAIAAClient;
+  bool                  IsServerConnected;
+  nvidia::aiaa::Model   AIAAModel;
 
   // Burr Hole Segmentation Node
   vtkMRMLSegmentationNode* BurrHoleSegmentationNode;

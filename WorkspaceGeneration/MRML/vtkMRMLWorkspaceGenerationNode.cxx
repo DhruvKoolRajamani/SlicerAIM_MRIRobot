@@ -37,14 +37,14 @@ static const char* TARGET_POINT_ROLE          = "TargetPoint";
 vtkMRMLNodeNewMacro(vtkMRMLWorkspaceGenerationNode);
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParameters(
+void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParams(
   BurrHoleParameters burrHoleParams)
 {
   this->BurrHoleParams = burrHoleParams;
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParameters(
+void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParams(
   vtkVector3d center, double radius, vtkMRMLModelNode* drill_bit)
 {
   this->BurrHoleParams = BurrHoleParameters();
@@ -54,13 +54,20 @@ void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParameters(
 }
 
 //-----------------------------------------------------------------
-void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParameters(
+void vtkMRMLWorkspaceGenerationNode::SetBurrHoleParams(
   double center[], double radius, vtkMRMLModelNode* drill_bit)
 {
   this->BurrHoleParams = BurrHoleParameters();
   this->BurrHoleParams.setCenter(vtkVector3d(center[0], center[1], center[2]));
   this->BurrHoleParams.setRadius(radius);
   this->BurrHoleParams.setDrillBit(drill_bit);
+}
+
+//-----------------------------------------------------------------
+void vtkMRMLWorkspaceGenerationNode::SetProbeSpecs(
+  ProbeSpecifications probeSpecs)
+{
+  this->ProbeSpecs = probeSpecs;
 }
 
 //-----------------------------------------------------------------
@@ -147,8 +154,8 @@ vtkMRMLWorkspaceGenerationNode::vtkMRMLWorkspaceGenerationNode()
   this->BurrHoleRadius   = 1.0;
 
   std::copy(this->BurrHoleCenter, this->BurrHoleCenter + 3, center);
-  this->SetBurrHoleParameters(vtkVector3d(this->BurrHoleCenter),
-                              this->BurrHoleRadius);
+  this->SetBurrHoleParams(vtkVector3d(this->BurrHoleCenter),
+                          this->BurrHoleRadius);
   // this->InputNodeType = NONE;
 }
 
@@ -426,6 +433,12 @@ vtkMRMLMarkupsFiducialNode* vtkMRMLWorkspaceGenerationNode::GetTargetPointNode()
 BurrHoleParameters vtkMRMLWorkspaceGenerationNode::GetBurrHoleParams()
 {
   return this->BurrHoleParams;
+}
+
+//-----------------------------------------------------------------
+ProbeSpecifications vtkMRMLWorkspaceGenerationNode::GetProbeSpecs()
+{
+  return this->ProbeSpecs;
 }
 
 //-----------------------------------------------------------------

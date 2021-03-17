@@ -56,25 +56,6 @@
 class qSlicerWorkspaceGenerationModuleWidgetPrivate;
 class vtkMRMLNode;
 
-struct ProbeSpecifications
-{
-  double A;
-  double B;
-  double C;
-  double D;
-
-  Probe convertToProbe()
-  {
-    Probe probe;
-    probe._treatmentToTip         = A;
-    probe._robotToEntry           = B;
-    probe._cannulaToTreatment     = C;
-    probe._robotToTreatmentAtHome = D;
-
-    return probe;
-  }
-};
-
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class Q_SLICER_QTMODULES_WORKSPACEGENERATION_EXPORT
   qSlicerWorkspaceGenerationModuleWidget : public qSlicerAbstractModuleWidget
@@ -123,6 +104,7 @@ protected slots:
   void onGenerateWorkspaceClick();
   void onDetectBurrHoleClick();
   void onSceneImportedEvent();
+  void onAIAAServerChanged(bool state);
 
   // // DEPRECATED
   // void onWorkspaceLoadButtonClick();

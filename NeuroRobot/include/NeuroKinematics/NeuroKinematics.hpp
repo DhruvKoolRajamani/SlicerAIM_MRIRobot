@@ -47,7 +47,107 @@ struct Probe
   double _treatmentToTip;
   double _robotToEntry;
   double _robotToTreatmentAtHome;
+
+  /**
+   * @brief Construct a new Probe object
+   *
+   * @param double cTT _cannulaToTreatment
+   * @param double tTT _treatmentToTip
+   * @param double rTE _robotToEntry
+   * @param double rTTTAH _robotToTreatmentAtHome
+   */
+  Probe(double cTT, double tTT, double rTE, double rTTTAH)
+    : _cannulaToTreatment(cTT)
+    , _treatmentToTip(tTT)
+    , _robotToEntry(rTE)
+    , _robotToTreatmentAtHome(rTTTAH)
+  {
+  }
+
+  /**
+   * @brief Construct a new DEFAULT Probe object
+   *
+   */
+  Probe()
+    : _cannulaToTreatment(0.0)
+    , _treatmentToTip(0.0)
+    , _robotToEntry(0.0)
+    , _robotToTreatmentAtHome(0.0)
+  {
+  }
 };
+
+struct ProbeSpecifications
+{
+  double A;
+  double B;
+  double C;
+  double D;
+
+  bool Default = false;
+
+  /**
+   * @brief Construct a new Probe Specifications object
+   *
+   * @param double a _treatmentToTip
+   * @param double b _robotToEntry
+   * @param double c _cannulaToTreatment
+   * @param double d _robotToTreatmentAtHome
+   * @param bool   def Is this the default Probe
+   */
+  ProbeSpecifications(double a, double b, double c, double d, bool def = false)
+    : A(a), B(b), C(c), D(d), Default(def)
+  {
+  }
+
+  /**
+   * @brief Construct a new DEFAULT Probe Specifications object
+   *
+   */
+  ProbeSpecifications() : A(0.0), B(0.0), C(0.0), D(0.0), Default(false)
+  {
+  }
+
+  Probe convertToProbe()
+  {
+    Probe probe;
+    probe._treatmentToTip         = A;
+    probe._robotToEntry           = B;
+    probe._cannulaToTreatment     = C;
+    probe._robotToTreatmentAtHome = D;
+
+    return probe;
+  }
+
+  static ProbeSpecifications convertToProbeSpecifications(Probe probe)
+  {
+    ProbeSpecifications ps;
+    ps.A       = probe._treatmentToTip;
+    ps.B       = probe._robotToEntry;
+    ps.C       = probe._cannulaToTreatment;
+    ps.D       = probe._robotToTreatmentAtHome;
+    ps.Default = false;
+
+    return ps;
+  }
+};
+
+inline bool operator==(ProbeSpecifications const& lhs,
+                       ProbeSpecifications const& rhs)
+{
+  if ((lhs.A == rhs.A) && (lhs.B == rhs.B) && (lhs.C == rhs.C) &&
+      (lhs.D == rhs.D))
+    return true;
+  return false;
+}
+
+inline bool operator!=(ProbeSpecifications const& lhs,
+                       ProbeSpecifications const& rhs)
+{
+  if (lhs == rhs)
+    return false;
+  return true;
+}
 
 class NeuroKinematics
 {
