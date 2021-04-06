@@ -132,7 +132,7 @@ vtkSlicerWorkspaceGenerationLogic::vtkSlicerWorkspaceGenerationLogic()
 
   this->SegmentationsModule =
     qSlicerCoreApplication::application()->moduleManager()->module(
-      "Segmentation");
+      "Segmentations");
   this->SegmentationsLogic = this->SegmentationsModule ?
                                vtkSlicerSegmentationsModuleLogic::SafeDownCast(
                                  this->SegmentationsModule->logic()) :
