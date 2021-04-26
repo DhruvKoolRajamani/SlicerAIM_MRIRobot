@@ -1177,7 +1177,7 @@
                   </font>
                 </property>
                 <property name="text">
-                  <string>Burr Hole Segmentation</string>
+                  <string>Sub Workspace Segmentation</string>
                 </property>
               </widget>
             </item>

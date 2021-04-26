@@ -859,7 +859,7 @@ bool vtkSlicerWorkspaceGenerationLogic::IdentifyBurrHole(
 
   // Clear temp files
   std::remove(QString(in_file + ext).toUtf8().constData());
-  std::remove(out_file.toUtf8().constData());
+  // std::remove(out_file.toUtf8().constData());
 
   if (result == 1)
     return true;
